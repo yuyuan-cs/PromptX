@@ -31,10 +31,11 @@ PromptX默认支持以下通用且已有共识的协议，这些协议符合`@�
 (* EBNF形式化定义 *)
 resource_element ::= '<resource' ' protocol="' protocol_name '"' '>' content '</resource>'
 protocol_name ::= [a-zA-Z][a-zA-Z0-9_-]*
-content ::= (markdown_content | location_element | params_element)+
+content ::= (markdown_content | location_element | params_element | registry_element)+
 
 location_element ::= '<location>' markdown_content '</location>'
 params_element ::= '<params>' markdown_content '</params>'
+registry_element ::= '<registry>' markdown_content '</registry>'
 
 markdown_content ::= (* 任何有效的Markdown文本，包括代码块、表格等 *)
 ```
@@ -43,12 +44,13 @@ markdown_content ::= (* 任何有效的Markdown文本，包括代码块、表格
 
 ### 子标签语义
 
-resource标签包含两个核心子标签，用于定义资源协议的具体内容：
+resource标签包含三个核心子标签，用于定义资源协议的具体内容：
 
 - **location**：定义该资源协议的路径规则。通常采用EBNF形式化语法描述路径结构，并可包含示例说明。
 - **params**：定义该资源协议支持的查询参数。通常采用表格形式列出参数名称、类型、描述和用法示例。
+- **registry**：根据location和params定义注册抽象参数与具体资源的映射关系。通常采用表格形式列出ID到实际资源路径的映射。
 
-location和params子标签共同构成资源协议的完整定义，前者规定了资源的定位方式，后者规定了资源的访问选项。这两部分内容决定了如何解析和处理资源引用。
+这三个子标签共同构成资源协议的完整定义：location定义资源的定位格式，params定义资源的访问选项，registry将抽象ID映射到具体资源路径。标签应按照location、params、registry的顺序定义，确保registry可以基于前两个标签的内容建立正确的映射关系。
 
 ### `@` 引用协议
 
@@ -132,6 +134,36 @@ query_params ::= '?' param_name '=' param_value {'&' param_name '=' param_value}
 - `@file://document.md?line=5-10` - 只获取文件的第5-10行
 - `@http://api.example.com/data?format=json&cache=false` - 指定返回格式并禁用缓存
 
+#### 资源注册与抽象引用
+
+使用registry定义的资源可以通过抽象ID引用，无需知道具体路径：
+```
+@protocol://resource_id
+```
+
+例如定义了以下registry：
+```xml
+<resource protocol="thought">
+  <location>
+    location ::= thought://{thought_id}
+    thought_id ::= [a-zA-Z][a-zA-Z0-9_-]*
+  </location>
+  
+  <registry>
+    | 思维ID | 文件路径 |
+    |--------|---------|
+    | analytical | @file://PromptX/core/thoughts/analytical.thought.md |
+    | creative | @file://PromptX/core/thoughts/creative.thought.md |
+  </registry>
+</resource>
+```
+
+使用时可以简单引用：
+- `@thought://analytical` - 自动映射到对应文件
+- `@thought://creative` - 自动映射到对应文件
+
+这种抽象引用机制提供了路由层，使资源引用与实际存储位置解耦，方便管理和移植。
+
 ### 解析规则
 
 1. 资源引用解析从左至右进行，先识别协议名称，再解析资源位置和查询参数
@@ -147,7 +179,8 @@ query_params ::= '?' param_name '=' param_value {'&' param_name '=' param_value}
 2. **立即加载义务**: 特别是对于@!前缀资源，AI必须立即执行工具调用获取内容
 3. **自主判断懒加载**: 对于@?前缀资源，AI应记录位置但暂不加载，直到实际需要使用时
 4. **加载验证**: AI应验证资源是否成功加载，并适当处理加载失败情况
+5. **注册表解析**: 对于使用`registry`注册的资源引用，AI应首先解析资源ID，找到对应的实际资源路径，然后再应用上述规则获取资源
 
-这种主动获取模式确保AI能正确执行协议定义的资源加载语义，而不依赖系统层面的自动处理。
+这种主动获取模式确保AI能正确执行协议定义的资源加载语义，而不依赖系统层面的自动处理。registry机制则提供了资源引用的抽象层，使资源组织更加灵活和模块化。
 
 
