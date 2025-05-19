@@ -14,7 +14,8 @@ DPML角色合成提示词框架说明了如何通过基础协议的组合构建A
 
 ```ebnf
 (* EBNF形式化定义 *)
-role_composite ::= (thought_element | execution_element | memory_element)+
+role_element ::= '<role' attributes? '>' role_content '</role>'
+role_content ::= (thought_element | execution_element | memory_element)+
 
 (* 复用现有协议的语法定义 *)
 thought_element ::= '<thought' attributes? '>' thought_content '</thought>'
@@ -33,6 +34,8 @@ memory_content ::= (* 见memory.protocol.md中的定义 *)
 ```
 
 ## 🧩 语义说明
+
+`<role>`标签是DPML中定义AI角色的顶层标签，它封装了思考模式、执行模式和记忆模式三大基础协议，共同构成一个完整的角色定义。角色定义必须使用`<role>`作为根标签，而不应直接使用其他标签的组合。
 
 角色是思考模式、执行模式和记忆模式三大基础协议的组合表达。每个协议分别定义了角色的不同方面：
 
