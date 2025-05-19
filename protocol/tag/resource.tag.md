@@ -52,17 +52,26 @@ location和params子标签共同构成资源协议的完整定义，前者规定
 
 ### `@` 引用协议
 
-
 resource标签定义了一个资源协议，指定了如何使用`@`符号作为统一入口，遵循以下核心语法规则：
 
 ```ebnf
-resource_reference ::= '@' protocol_name ':' resource_location [query_params]
+resource_reference ::= ('[@]' | '@!' | '@?') protocol_name ':' resource_location [query_params]
 resource_location ::= uri | nested_reference
 uri ::= protocol_name '://' path
-nested_reference ::= ['@'] protocol_name ':' resource_location
+nested_reference ::= ['[@]' | '@!' | '@?'] protocol_name ':' resource_location
 path ::= path_segment {'/' path_segment}
 query_params ::= '?' param_name '=' param_value {'&' param_name '=' param_value}
 ```
+
+#### 资源加载语义
+
+资源引用支持三种加载语义前缀：
+
+| 前缀 | 语义 | 示例 |
+|-----|------|------|
+| `@` | 默认加载模式，由AI自行决定加载时机 | `@file://document.md` |
+| `@!` | 强制立即加载，AI看到引用时必须立即获取内容 | `@!https://example.com/data` |
+| `@?` | 显式懒加载，AI仅记录资源位置，在实际需要使用时才获取内容 | `@?file://large-dataset.csv` |
 
 #### 基础资源引用
 
@@ -75,6 +84,8 @@ query_params ::= '?' param_name '=' param_value {'&' param_name '=' param_value}
 - `@file://document.md` - 引用文件系统中的文档
 - `@http://example.com/api/data.json` - 引用网络资源
 - `@memory://user_preferences` - 引用内存中的数据
+- `@!file://important.md` - 立即加载重要文档
+- `@?file://large-dataset.csv` - 懒加载大型数据集
 
 #### 嵌套资源引用
 
@@ -90,10 +101,17 @@ query_params ::= '?' param_name '=' param_value {'&' param_name '=' param_value}
 @outer:inner://path
 ```
 
+嵌套引用时也可以指定加载语义：
+```
+@outer:@!inner://path  // 内部资源立即加载
+@!outer:@?inner://path  // 外部立即处理，内部懒加载
+```
+
 例如：
 - `@thinking:@file://method.md` - 对文件内容应用thinking协议处理
 - `@execution:file://workflow.md` - 对文件内容应用execution协议处理
 - `@outer:middle:inner://resource` - 多层嵌套（从内向外处理）
+- `@!thinking:@?file://large-file.md` - 立即应用thinking，但文件内容懒加载
 
 #### 路径通配符
 
@@ -120,5 +138,6 @@ query_params ::= '?' param_name '=' param_value {'&' param_name '=' param_value}
 2. 嵌套引用从内向外解析，内层资源引用的结果作为外层引用的输入
 3. 查询参数应用于资源加载后的处理阶段，不影响资源的基本定位
 4. 相对路径解析基于当前上下文的工作目录或基础路径
+5. 资源加载语义前缀（@、@!、@?）优先于其他部分解析，决定资源的加载策略
 
 

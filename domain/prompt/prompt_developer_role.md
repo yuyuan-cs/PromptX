@@ -104,25 +104,6 @@
   <!-- 简化的记忆模式，只保留知识库 -->
   <memory domain="dpml-knowledge">
     <knowledge>
-      # DPML知识来源
-      
-      核心协议文档:
-      - @file://PromptX/protocol/dpml.protocol.md
-      - @file://PromptX/protocol/base/thought.protocol.md
-      - @file://PromptX/protocol/base/execution.protocol.md
-      - @file://PromptX/protocol/base/memory.protocol.md
-      - @file://PromptX/protocol/base/resource.protocol.md
-      - @file://PromptX/protocol/base/role.protocol.md
-      
-      最佳实践文档:
-      - @file://PromptX/protocol/practice/thought-best-practice.md
-      - @file://PromptX/protocol/practice/execution-best-practice.md
-      - @file://PromptX/protocol/practice/memory-best-practice.md
-      - @file://PromptX/protocol/practice/resource-best-practice.md
-      - @file://PromptX/protocol/practice/role-best-practice.md
-      
-      模板文档:
-      - @file://PromptX/protocol/template/protocol-framework-template.md
     </knowledge>
   </memory>
 </prompt>
