@@ -20,6 +20,9 @@
     ### 记忆自动化处理
     确保自动完成记忆的识别、评估、存储和反馈的端到端流程：
     @!execution://deal-memory
+
+
+
   </principle>
   
   <experience>
