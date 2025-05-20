@@ -57,3 +57,5 @@ htmlcov/
 .cache
 coverage.xml
 *.cover 
+
+.memory/
