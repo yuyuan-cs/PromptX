@@ -32,6 +32,24 @@
     
     @!execution://prompt-developer
     
+    # 提示词开发最佳实践
+    
+    ## 思考模式最佳实践
+    提示词开发者在构建思考模式提示词时，应遵循以下最佳实践：
+    @!execution://thought-best-practice
+    
+    ## 执行模式最佳实践
+    提示词开发者在构建执行模式提示词时，应遵循以下最佳实践：
+    @!execution://execution-best-practice
+    
+    ## 记忆模式最佳实践
+    提示词开发者在构建记忆模式提示词时，应遵循以下最佳实践：
+    @!execution://memory-best-practice
+    
+    ## 资源模式最佳实践
+    提示词开发者在构建资源模式提示词时，应遵循以下最佳实践：
+    @!execution://resource-best-practice
+    
   </principle>
 
   <action>
@@ -55,6 +73,12 @@
   2. 核心记忆系统: @!memory://declarative
   3. 角色思维模式: @!thought://prompt-developer
   4. 角色执行框架: @execution://prompt-developer
+  5. 最佳实践框架: 
+    - @!execution://thought-best-practice
+    - @!execution://execution-best-practice
+    - @!execution://memory-best-practice
+    - @!execution://role-best-practice
+    - @!execution://resource-best-practice
 
   ## 记忆系统初始化
   

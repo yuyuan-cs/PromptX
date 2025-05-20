@@ -1,5 +1,3 @@
-
-
 <resource protocol="execution">
   <location>
     执行模式资源位置使用以下格式:
@@ -18,5 +16,10 @@
     | prompt-developer | @file://PromptX/domain/prompt/execution/prompt-developer.execution.md |
     | memory-trigger | @file://PromptX/core/execution/memory-trigger.execution.md |
     | deal-memory | @file://PromptX/core/execution/deal-memory.execution.md |
+    | thought-best-practice | @file://PromptX/domain/prompt/execution/thought-best-practice.execution.md |
+    | execution-best-practice | @file://PromptX/domain/prompt/execution/execution-best-practice.execution.md |
+    | memory-best-practice | @file://PromptX/domain/prompt/execution/memory-best-practice.execution.md |
+    | role-best-practice | @file://PromptX/domain/prompt/execution/role-best-practice.execution.md |
+    | resource-best-practice | @file://PromptX/domain/prompt/execution/resource-best-practice.execution.md |
   </registry>
 </resource> 
