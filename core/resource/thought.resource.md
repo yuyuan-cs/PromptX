@@ -12,5 +12,6 @@
     <!-- 思维模式ID到文件路径的映射表 -->
     | 思维ID | 文件路径 |
     |--------|---------|
+    | prompt-developer | @file://PromptX/domain/prompt/thought/prompt-developer.thought.md |
   </registry>
 </resource> 

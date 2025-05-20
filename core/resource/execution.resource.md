@@ -15,5 +15,8 @@
     | 执行ID | 文件路径 |
     |--------|---------|
     | deal-at-reference | @file://PromptX/core/execution/deal-at-reference.execution.md |
+    | prompt-developer | @file://PromptX/domain/prompt/execution/prompt-developer.execution.md |
+    | memory-trigger | @file://PromptX/core/execution/memory-trigger.execution.md |
+    | deal-memory | @file://PromptX/core/execution/deal-memory.execution.md |
   </registry>
 </resource> 

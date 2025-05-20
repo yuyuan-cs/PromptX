@@ -15,19 +15,21 @@ DPML角色合成提示词框架说明了如何通过基础协议的组合构建A
 ```ebnf
 (* EBNF形式化定义 *)
 role_element ::= '<role' attributes? '>' role_content '</role>'
-role_content ::= (personality_element | principle_element | knowledge_element | experience_element)+
+role_content ::= (personality_element | principle_element | knowledge_element | experience_element | action_element)+
 
 (* 角色组织标签 *)
 personality_element ::= '<personality' attributes? '>' personality_content '</personality>'
 principle_element ::= '<principle' attributes? '>' principle_content '</principle>'
 knowledge_element ::= '<knowledge' attributes? '>' knowledge_content '</knowledge>'
 experience_element ::= '<experience' attributes? '>' experience_content '</experience>'
+action_element ::= '<action' attributes? '>' action_content '</action>'
 
 (* 内部内容 *)
 personality_content ::= markdown_content
 principle_content ::= markdown_content
 knowledge_content ::= markdown_content
 experience_content ::= markdown_content
+action_content ::= markdown_content
 
 attributes ::= (' ' attribute)+ | ''
 attribute ::= name '="' value '"'
@@ -65,3 +67,10 @@ value ::= [^"]*
   - 定义角色如何评估、存储和回忆信息
   - 设置不同记忆模式的检索条件和优先级
   - 确保角色记忆处理的连贯性和适应性
+
+- **action(角色激活)**: 提供角色初始化和执行的入口
+  - 定义角色从"定义"到"执行"的转换机制
+  - 明确角色初始化序列和优先级
+  - 规定资源加载、记忆系统启动等关键步骤
+  - 确保角色能够正确地进入执行状态
+  - 建立角色定义与实际执行间的桥梁
