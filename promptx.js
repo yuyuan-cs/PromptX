@@ -139,6 +139,87 @@ function printFile(filePath) {
 }
 
 /**
+ * 解析记忆命令参数
+ * @param {string} content - 记忆内容，可能包含标签、评分和有效期
+ * @param {string[]} args - 其他参数
+ */
+function parseMemoryArgs(content, args) {
+  const options = {
+    tags: [],
+    score: 5,
+    duration: '短期'
+  };
+  
+  // 从内容中提取标签、评分和有效期
+  const contentParts = content.trim().split(/\s+/);
+  let cleanContent = [];
+  
+  for (let part of contentParts) {
+    if (part.startsWith('#')) {
+      // 检查是否是特殊标记
+      if (part.includes('评分:')) {
+        const scoreText = part.split('评分:')[1].trim();
+        const score = parseInt(scoreText);
+        if (!isNaN(score) && score >= 1 && score <= 10) {
+          options.score = score;
+        }
+      } else if (part.includes('有效期:')) {
+        const duration = part.split('有效期:')[1].trim();
+        if (['短期', '中期', '长期'].includes(duration)) {
+          options.duration = duration;
+        }
+      } else {
+        // 普通标签
+        const tag = part.slice(1);
+        if (tag) {
+          options.tags.push(tag);
+        }
+      }
+    } else {
+      cleanContent.push(part);
+    }
+  }
+  
+  // 处理剩余的命令行参数
+  for (let arg of args) {
+    // 移除参数前后的引号（如果有）
+    arg = arg.replace(/^['"]|['"]$/g, '').trim();
+    
+    if (arg.startsWith('#')) {
+      // 检查是否是特殊标记
+      if (arg.includes('评分:')) {
+        const score = parseInt(arg.split('评分:')[1]);
+        if (!isNaN(score) && score >= 1 && score <= 10) {
+          options.score = score;
+        }
+      } else if (arg.includes('有效期:')) {
+        const duration = arg.split('有效期:')[1];
+        if (['短期', '中期', '长期'].includes(duration)) {
+          options.duration = duration;
+        }
+      } else {
+        // 普通标签
+        const tag = arg.slice(1);
+        if (tag) {
+          options.tags.push(tag);
+        }
+      }
+    }
+  }
+  
+  // 如果没有标签,使用默认标签
+  if (options.tags.length === 0) {
+    options.tags = ['其他'];
+  }
+  
+  // 返回清理后的内容和选项
+  return {
+    cleanContent: cleanContent.join(' '),
+    options: options
+  };
+}
+
+/**
  * 添加记忆条目
  * @param {string} content - 记忆内容
  * @param {object} options - 配置选项
@@ -164,10 +245,8 @@ function addMemory(content, options = {}) {
     tags: options.tags && options.tags.length > 0 ? options.tags : defaultOptions.tags
   };
   
-  console.log('最终选项:', finalOptions); // 添加调试输出
-  
   // 构建记忆条目,确保格式统一
-  const memoryEntry = `\n- ${content.trim()} ${finalOptions.tags.map(tag => `#${tag}`).join(' ')} #评分:${finalOptions.score} #有效期:${finalOptions.duration} #时间:${finalOptions.timestamp}\n`;
+  const memoryEntry = `\n- ${finalOptions.timestamp} ${content.trim()} ${finalOptions.tags.map(tag => `#${tag}`).join(' ')} #评分:${finalOptions.score} #有效期:${finalOptions.duration}\n`;
   
   // 确保.memory目录存在
   const memoryDir = path.join(process.cwd(), '.memory');
@@ -196,61 +275,6 @@ function addMemory(content, options = {}) {
 }
 
 /**
- * 解析记忆命令参数
- * @param {string} content - 记忆内容
- * @param {string[]} args - 其他参数
- */
-function parseMemoryArgs(content, args) {
-  const options = {
-    tags: [],
-    score: 5,
-    duration: '短期'
-  };
-  
-  console.log('原始参数:', args); // 调试输出
-  
-  // 解析标签和其他选项
-  for (let arg of args) {
-    // 移除参数前后的引号（如果有）
-    arg = arg.replace(/^['"]|['"]$/g, '').trim();
-    
-    console.log('处理参数:', arg); // 调试输出
-    
-    if (arg.startsWith('#')) {
-      // 检查是否是特殊标记
-      if (arg.includes('评分:')) {
-        const score = parseInt(arg.split('评分:')[1]);
-        console.log('解析评分:', score); // 调试输出
-        if (!isNaN(score) && score >= 1 && score <= 10) {
-          options.score = score;
-        }
-      } else if (arg.includes('有效期:')) {
-        const duration = arg.split('有效期:')[1];
-        console.log('解析有效期:', duration); // 调试输出
-        if (['短期', '中期', '长期'].includes(duration)) {
-          options.duration = duration;
-        }
-      } else {
-        // 普通标签
-        const tag = arg.slice(1);
-        console.log('解析标签:', tag); // 调试输出
-        if (tag) {
-          options.tags.push(tag);
-        }
-      }
-    }
-  }
-  
-  // 如果没有标签,使用默认标签
-  if (options.tags.length === 0) {
-    options.tags = ['其他'];
-  }
-  
-  console.log('解析结果:', options); // 调试输出
-  return options;
-}
-
-/**
  * 打印帮助信息
  */
 function printHelp() {
@@ -262,17 +286,18 @@ PromptX 工具 - 协议和角色内容查看器
   node promptx.js protocols  - 同上，打印所有协议内容
   node promptx.js role <路径> - 打印指定角色文件内容
   node promptx.js file <路径> - 打印指定文件内容
-  node promptx.js remember <内容> [选项] - 添加记忆条目
+  node promptx.js remember <内容> - 添加记忆条目，标签、评分和有效期可直接包含在内容中
   node promptx.js help       - 显示此帮助信息
 
-记忆命令选项:
+记忆命令用法:
+  将标签、评分和有效期直接包含在内容字符串中，时间戳会自动添加到行首
   #标签名    - 添加标签 (可多个)
-  score:数字  - 设置重要性评分 (1-10)
-  duration:时长 - 设置有效期 (短期/长期)
+  #评分:数字  - 设置重要性评分 (1-10)
+  #有效期:时长 - 设置有效期 (短期/中期/长期)
 
 示例:
-  node promptx.js remember "用户提出了重要建议" #用户反馈 #改进建议 score:7 duration:长期
-  node promptx.js remember "临时配置信息" #配置 score:3
+  node promptx.js remember "用户提出了重要建议 #用户反馈 #改进建议 #评分:8 #有效期:长期"
+  node promptx.js remember "临时配置信息 #配置 #评分:3 #有效期:短期"
   `);
 }
 
@@ -300,34 +325,20 @@ switch (command) {
   case 'remember':
     if (!param) {
       console.error('错误: 缺少记忆内容');
-      console.log('使用方法: node promptx.js remember 记忆内容 [#标签1 #标签2] [#评分:7] [#有效期:长期]');
+      console.log('使用方法: node promptx.js remember "记忆内容 #标签1 #标签2 #评分:8 #有效期:长期"');
     } else {
       try {
-        // 获取所有参数
-        const allArgs = process.argv.slice(2); // 从 remember 开始的所有参数
-        console.log('所有参数:', allArgs);
+        // 记忆内容就是传入的第一个参数
+        const memoryContent = param;
         
-        // 找到第一个标签（以#开头的参数）的位置
-        const tagStartIndex = allArgs.findIndex(arg => arg.startsWith('#'));
-        console.log('标签起始位置:', tagStartIndex);
+        // 解析内容中的标签、评分和有效期
+        const { cleanContent, options } = parseMemoryArgs(memoryContent, []);
         
-        // 如果没有找到标签，使用所有剩余参数作为内容
-        const contentEndIndex = tagStartIndex === -1 ? allArgs.length : tagStartIndex;
-        
-        // 组合记忆内容（去掉 remember 命令）
-        const memoryContent = allArgs.slice(1, contentEndIndex).join(' ');
-        console.log('记忆内容:', memoryContent);
-        
-        // 获取所有标签和选项
-        const memoryArgs = allArgs.slice(contentEndIndex);
-        console.log('记忆参数:', memoryArgs);
-        
-        const options = parseMemoryArgs(memoryContent, memoryArgs);
-        console.log('解析的选项:', options);
-        addMemory(memoryContent, options);
+        // 添加记忆
+        addMemory(cleanContent, options);
       } catch (err) {
         console.error('错误:', err.message);
-        console.log('使用方法: node promptx.js remember 记忆内容 [#标签1 #标签2] [#评分:7] [#有效期:长期]');
+        console.log('使用方法: node promptx.js remember "记忆内容 #标签1 #标签2 #评分:8 #有效期:长期"');
       }
     }
     break;
