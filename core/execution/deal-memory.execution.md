@@ -94,8 +94,8 @@
     
     **自主执行工具调用**：
     - 使用 `promptx.js remember` 命令存储记忆
-    - 命令格式：`node promptx.js remember "记忆内容" [#标签1 #标签2] [score:评分] [duration:时长]`
-    - 示例：`node promptx.js remember "用户偏好设置" #用户信息 #配置 score:8 duration:长期`
+    - 命令格式：`node promptx.js remember "记忆内容" [#标签1 #标签2] [#评分:分值] [#有效期:时长]`
+    - 示例：`node promptx.js remember "用户偏好设置" #用户信息 #配置 #评分:8 #有效期:长期`
     - 验证存储结果并提供反馈
 
     **记忆存储格式**：
@@ -158,7 +158,7 @@
     9. **严禁**使用其他工具调用替代 promptx.js remember 命令
     10. **严禁**忽略评分不达标的记忆存储请求
     11. 违反工具使用规则**必须**执行违规处理流程
-    12. 命令格式**必须**为：node promptx.js remember "内容" [#标签] [score:分值] [duration:时长]
+    12. 命令格式**必须**为：node promptx.js remember "内容" [#标签] [#评分:分值] [#有效期:时长]
   </rule>
   
   <constraint>

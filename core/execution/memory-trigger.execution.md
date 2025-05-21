@@ -96,13 +96,13 @@
        - 存储示例：
          ```bash
          # 高价值信息存储
-         node promptx.js remember "用户ID: 12345" #用户信息 #核心信息 score:9 duration:长期
+         node promptx.js remember "用户ID: 12345" #用户信息 #核心信息 #评分:9 #有效期:长期
          
          # 中等价值信息存储
-         node promptx.js remember "用户喜欢简洁界面" #用户偏好 score:6 duration:长期
+         node promptx.js remember "用户喜欢简洁界面" #用户偏好 #评分:6 #有效期:长期
          
          # 低价值信息（不建议存储）
-         node promptx.js remember "临时调试信息" #调试 score:3 duration:短期
+         node promptx.js remember "临时调试信息" #调试 #评分:3 #有效期:短期
          ```
     
     3. **违规处理机制**
