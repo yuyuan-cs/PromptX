@@ -139,6 +139,94 @@ function printFile(filePath) {
 }
 
 /**
+ * 添加记忆条目
+ * @param {string} content - 记忆内容
+ * @param {object} options - 配置选项
+ */
+function addMemory(content, options = {}) {
+  const defaultOptions = {
+    tags: ['其他'],
+    score: 5,
+    duration: '短期',
+    timestamp: new Date().toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  };
+
+  const finalOptions = { ...defaultOptions, ...options };
+  
+  // 构建记忆条目,确保格式统一
+  const memoryEntry = `\n- ${content.trim()} ${finalOptions.tags.map(tag => `#${tag}`).join(' ')} #评分:${finalOptions.score} #有效期:${finalOptions.duration} #时间:${finalOptions.timestamp}\n`;
+  
+  // 确保.memory目录存在
+  const memoryDir = path.join(process.cwd(), '.memory');
+  if (!fs.existsSync(memoryDir)) {
+    fs.mkdirSync(memoryDir, { recursive: true });
+  }
+  
+  // 追加到记忆文件
+  const memoryFile = path.join(memoryDir, 'declarative.md');
+  try {
+    // 如果文件不存在,创建文件并添加标题
+    if (!fs.existsSync(memoryFile)) {
+      fs.writeFileSync(memoryFile, '# 陈述性记忆库\n\n## 高价值记忆（评分 ≥ 7）\n');
+    }
+    
+    fs.appendFileSync(memoryFile, memoryEntry);
+    console.log('✅ 记忆已成功保存');
+    
+    // 如果评分大于等于7,输出高价值提醒
+    if (finalOptions.score >= 7) {
+      console.log('🌟 这是一条高价值记忆');
+    }
+  } catch (err) {
+    console.error('❌ 记忆保存失败:', err);
+  }
+}
+
+/**
+ * 解析记忆命令参数
+ * @param {string} content - 记忆内容
+ * @param {string[]} args - 其他参数
+ */
+function parseMemoryArgs(content, args) {
+  const options = {
+    tags: [],
+    score: 5,
+    duration: '短期'
+  };
+  
+  // 解析标签和其他选项
+  args.forEach(arg => {
+    if (arg.startsWith('#')) {
+      // 去掉#号并添加到标签数组
+      options.tags.push(arg.slice(1).trim());
+    } else if (arg.startsWith('score:')) {
+      const score = parseInt(arg.split(':')[1]);
+      if (!isNaN(score) && score >= 1 && score <= 10) {
+        options.score = score;
+      }
+    } else if (arg.startsWith('duration:')) {
+      const duration = arg.split(':')[1].trim();
+      if (['短期', '长期'].includes(duration)) {
+        options.duration = duration;
+      }
+    }
+  });
+  
+  // 如果没有标签,使用默认标签
+  if (options.tags.length === 0) {
+    options.tags = ['其他'];
+  }
+  
+  return options;
+}
+
+/**
  * 打印帮助信息
  */
 function printHelp() {
@@ -150,16 +238,17 @@ PromptX 工具 - 协议和角色内容查看器
   node promptx.js protocols  - 同上，打印所有协议内容
   node promptx.js role <路径> - 打印指定角色文件内容
   node promptx.js file <路径> - 打印指定文件内容
+  node promptx.js remember <内容> [选项] - 添加记忆条目
   node promptx.js help       - 显示此帮助信息
 
-路径说明:
-  - 对于'role'和'file'命令，路径应该是相对于PromptX目录的路径
-  - 也支持绝对路径
+记忆命令选项:
+  #标签名    - 添加标签 (可多个)
+  score:数字  - 设置重要性评分 (1-10)
+  duration:时长 - 设置有效期 (短期/长期)
 
 示例:
-  node promptx.js
-  node promptx.js role domain/prompt/prompt-developer.role.md
-  node promptx.js file protocol/tag/thought.tag.md
+  node promptx.js remember "用户提出了重要建议" #用户反馈 #改进建议 score:7 duration:长期
+  node promptx.js remember "临时配置信息" #配置 score:3
   `);
 }
 
@@ -182,6 +271,17 @@ switch (command) {
       printHelp();
     } else {
       printFile(param);
+    }
+    break;
+  case 'remember':
+    if (!param) {
+      console.error('错误: 缺少记忆内容');
+      console.log('使用方法: node promptx.js remember "记忆内容" [#标签1 #标签2] [score:7] [duration:长期]');
+    } else {
+      const memoryContent = param;
+      const memoryArgs = args.slice(2); // 获取其他参数
+      const options = parseMemoryArgs(memoryContent, memoryArgs);
+      addMemory(memoryContent, options);
     }
     break;
   case 'help':

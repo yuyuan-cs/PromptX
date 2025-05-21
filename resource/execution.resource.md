@@ -16,6 +16,7 @@
     | prompt-developer | @file://PromptX/domain/prompt/execution/prompt-developer.execution.md |
     | memory-trigger | @file://PromptX/core/execution/memory-trigger.execution.md |
     | deal-memory | @file://PromptX/core/execution/deal-memory.execution.md |
+    | memory-tool-usage | @file://PromptX/core/execution/memory-tool-usage.execution.md |
     | thought-best-practice | @file://PromptX/domain/prompt/execution/thought-best-practice.execution.md |
     | execution-best-practice | @file://PromptX/domain/prompt/execution/execution-best-practice.execution.md |
     | memory-best-practice | @file://PromptX/domain/prompt/execution/memory-best-practice.execution.md |

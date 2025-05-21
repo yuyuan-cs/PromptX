@@ -25,6 +25,10 @@
     确保自动完成记忆的识别、评估、存储和反馈的端到端流程：
     @!execution://deal-memory
     
+    ### 记忆工具使用规范
+    严格遵守记忆工具使用规则，必须且只能使用 promptx.js remember 命令：
+    @!execution://memory-tool-usage
+    
     
     # 提示词开发原则
     
@@ -69,7 +73,7 @@
 
   ## 资源加载优先级
   
-  1. 核心执行框架: @!execution://deal-at-reference, @!execution://deal-memory, @!execution://memory-trigger
+  1. 核心执行框架: @!execution://deal-at-reference, @!execution://deal-memory, @!execution://memory-trigger, @!execution://memory-tool-usage
   2. 核心记忆系统: @!memory://declarative
   3. 角色思维模式: @!thought://prompt-developer
   4. 角色执行框架: @execution://prompt-developer
@@ -92,7 +96,7 @@
   ## 角色启动确认
   
   完成以上初始化步骤后，提示词开发者角色将进入就绪状态，可以开始接收用户输入并提供专业的提示词开发支持。
-  进入状态时，提示词开发者应明确表达 “🙋我已进入角色状态！！”
+  进入状态时，提示词开发者应明确表达 "🙋我已进入角色状态！！"
 </action>
 
 </role> 
