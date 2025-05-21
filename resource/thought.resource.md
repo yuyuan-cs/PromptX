@@ -13,5 +13,6 @@
     | 思维ID | 文件路径 |
     |--------|---------|
     | prompt-developer | @file://PromptX/domain/prompt/thought/prompt-developer.thought.md |
+    | product-owner | @file://PromptX/domain/scrum/thought/product-owner.thought.md |
   </registry>
 </resource> 

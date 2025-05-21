@@ -21,5 +21,6 @@
     | memory-best-practice | @file://PromptX/domain/prompt/execution/memory-best-practice.execution.md |
     | role-best-practice | @file://PromptX/domain/prompt/execution/role-best-practice.execution.md |
     | resource-best-practice | @file://PromptX/domain/prompt/execution/resource-best-practice.execution.md |
+    | product-owner | @file://PromptX/domain/scrum/execution/product-owner.execution.md |
   </registry>
 </resource> 
