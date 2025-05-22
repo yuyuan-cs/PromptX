@@ -71,7 +71,7 @@ query_params ::= '?' param_name '=' param_value {'&' param_name '=' param_value}
 
 | 前缀 | 语义 | 示例 |
 |-----|------|------|
-| `@` | 默认加载模式，由AI自行决定加载时机 | `@file://document.md` |
+| `@` | 默认模式，由AI自行决定加载时机 | `@file://document.md` |
 | `@!` | 强制立即加载，AI看到引用时必须立即使用工具调用获取内容 | `@!https://example.com/data` |
 | `@?` | 显式懒加载，AI仅记录资源位置，在实际需要使用时才获取内容 | `@?file://large-dataset.csv` |
 

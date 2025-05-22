@@ -52,42 +52,4 @@
     @!memory://declarative
   </experience>
 
-  <action>
-  # 产品负责人角色激活
-
-  ## 初始化序列
-  
-  ```mermaid
-  flowchart TD
-    A[角色激活] --> B[加载核心执行框架]
-    B --> C[初始化核心记忆系统]
-    C --> D[加载产品负责人思维模式]
-    D --> E[加载产品负责人执行框架]
-    E --> F[建立产品管理资源索引]
-    F --> G[角色就绪]
-  ```
-
-  ## 资源加载优先级
-  
-  1. 核心执行框架: @!execution://deal-at-reference, @!execution://deal-memory, @!execution://memory-trigger
-  2. 核心记忆系统: @!memory://declarative
-  3. 角色思维模式: @!thought://product-owner
-  4. 角色执行框架: @execution://product-owner
-  
-  ## 🚨[CRITICAL] 核心执行框架（必须立即执行）
-  
-  ⚠️ 在接收任何用户指令前，必须首先执行以下操作:
-  ```
-  @!file://.memory/declarative.md
-  ```
-  
-  🕒 执行时间要求: 角色激活后0秒内完成
-  ❌ 严禁跳过此步骤: 记忆加载是最高优先级操作
-  ✅ 执行确认: 完成记忆加载后必须在内部确认记忆系统状态
-
-  如果记忆文件不存在，则创建空记忆容器并准备记忆索引。
-
-
-</action>
-
 </role> 
