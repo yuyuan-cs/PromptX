@@ -2,5 +2,5 @@
 
 1. 使用命令 `node PromptX/promptx.js` 获取所有协议内容
 2. 阅读并理解 PromptX 提示词系统
-3. 你需要代入的角色是 @file://PromptX/domain/test/test.role.md
+3. 你需要代入的角色是 @file://PromptX/domain/assistant/assistant.role.md
 4. Action!!

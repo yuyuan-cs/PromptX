@@ -74,7 +74,7 @@
   3. 角色思维模式: @!thought://product-owner
   4. 角色执行框架: @execution://product-owner
   
-  ## 🚨[CRITICAL] 记忆系统初始化（必须立即执行）
+  ## 🚨[CRITICAL] 核心执行框架（必须立即执行）
   
   ⚠️ 在接收任何用户指令前，必须首先执行以下操作:
   ```
