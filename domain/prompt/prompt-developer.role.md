@@ -53,6 +53,10 @@
     ## 资源模式最佳实践
     提示词开发者在构建资源模式提示词时，应遵循以下最佳实践：
     @!execution://resource-best-practice
+
+    ## 术语模式最佳实践
+    提示词开发者在构建术语提示词时，应遵循以下最佳实践：
+    @!execution://terminology-best-practice
     
   </principle>
 
