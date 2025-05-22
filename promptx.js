@@ -151,12 +151,12 @@ function printCore() {
  * 打印指定角色内容
  */
 function printRole(rolePath) {
-  // 如果传入的是相对路径，则基于PromptX目录解析
+  // 如果传入的是相对路径，则基于当前工作目录解析
   let fullPath;
   if (path.isAbsolute(rolePath)) {
     fullPath = rolePath;
   } else {
-    fullPath = path.join(promptxDir, rolePath);
+    fullPath = path.join(process.cwd(), rolePath);
   }
   
   if (!fs.existsSync(fullPath)) {
@@ -167,7 +167,7 @@ function printRole(rolePath) {
   try {
     const content = fs.readFileSync(fullPath, 'utf8');
     const separator = "=".repeat(80);
-    console.log(`\n${separator}\n### 角色文件: ${path.relative(promptxDir, fullPath)}\n${separator}\n`);
+    console.log(`\n${separator}\n### 角色文件: ${path.relative(process.cwd(), fullPath)}\n${separator}\n`);
     console.log(content);
   } catch (err) {
     console.error(`读取角色文件错误: ${fullPath}`, err);
@@ -351,6 +351,7 @@ PromptX 工具 - 协议和角色内容查看器
   node promptx.js role <路径> - 打印指定角色文件内容
   node promptx.js file <路径> - 打印指定文件内容
   node promptx.js remember <内容> - 添加记忆条目，标签、评分和有效期可直接包含在内容中
+  node promptx.js bootstrap  - 打印bootstrap.md内容
   node promptx.js help       - 显示此帮助信息
 
 记忆命令用法:
@@ -372,6 +373,10 @@ switch (command) {
     break;
   case 'core':
     printCore();
+    break;
+  case 'bootstrap':
+    // 只打印 bootstrap.md
+    printFile('bootstrap.md');
     break;
   case 'role':
     if (!param) {
