@@ -19,7 +19,6 @@ function printProtocols() {
   // 定义目录优先级顺序
   const directories = [
     { path: path.join(promptxDir, 'protocol'), name: 'protocol' },
-    { path: path.join(promptxDir, 'core'), name: 'core' },
     { path: path.join(promptxDir, 'resource'), name: 'resource' }
   ];
   
@@ -82,6 +81,70 @@ function printProtocols() {
   }
   
   console.log(`\n总计读取了 ${allFiles.length} 个协议文件。`);
+}
+
+/**
+ * 打印核心提示词内容
+ */
+function printCore() {
+  const coreDir = path.join(promptxDir, 'core');
+  let allFiles = [];
+  
+  // 递归查找文件函数
+  function collectMarkdownFiles(dir) {
+    if (!fs.existsSync(dir)) {
+      console.warn(`警告: 目录不存在 ${dir}`);
+      return [];
+    }
+    
+    let files = [];
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      
+      if (entry.isDirectory()) {
+        files = files.concat(collectMarkdownFiles(fullPath));
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        files.push(fullPath);
+      }
+    }
+    
+    return files;
+  }
+  
+  // 收集核心目录下的所有文件
+  const coreFiles = collectMarkdownFiles(coreDir);
+  
+  // 文件按字母顺序排序
+  coreFiles.sort();
+  
+  // 合并到总文件列表
+  allFiles = allFiles.concat(coreFiles);
+  
+  console.log(`从 core 目录收集了 ${coreFiles.length} 个文件`);
+  
+  // 没有文件时的提示
+  if (allFiles.length === 0) {
+    console.log("未找到任何核心提示词文件。请确认PromptX目录结构是否正确。");
+    return;
+  }
+  
+  // 打印每个文件
+  for (const file of allFiles) {
+    const relativePath = path.relative(promptxDir, file);
+    const separator = "=".repeat(80);
+    console.log(`\n${separator}\n### 文件: ${relativePath}\n${separator}\n`);
+    
+    try {
+      const content = fs.readFileSync(file, 'utf8');
+      console.log(content);
+    } catch (err) {
+      console.error(`读取文件错误: ${file}`, err);
+    }
+  }
+  
+  console.log(`\n总计读取了 ${allFiles.length} 个核心提示词文件。`);
 }
 
 /**
@@ -282,8 +345,9 @@ function printHelp() {
 PromptX 工具 - 协议和角色内容查看器
 
 使用方法:
-  node promptx.js            - 打印所有协议内容 (按protocol、core、resource顺序)
+  node promptx.js            - 打印所有协议内容 (按protocol、resource顺序)
   node promptx.js protocols  - 同上，打印所有协议内容
+  node promptx.js core      - 打印所有核心提示词内容
   node promptx.js role <路径> - 打印指定角色文件内容
   node promptx.js file <路径> - 打印指定文件内容
   node promptx.js remember <内容> - 添加记忆条目，标签、评分和有效期可直接包含在内容中
@@ -305,6 +369,9 @@ PromptX 工具 - 协议和角色内容查看器
 switch (command) {
   case 'protocols':
     printProtocols();
+    break;
+  case 'core':
+    printCore();
     break;
   case 'role':
     if (!param) {
