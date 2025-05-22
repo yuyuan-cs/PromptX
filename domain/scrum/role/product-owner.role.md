@@ -52,4 +52,34 @@
     @!memory://declarative
   </experience>
 
+  <action>
+  # Product Owner 角色激活
+
+  ## 初始化序列
+  
+  ```mermaid
+  flowchart TD
+    A[角色激活] --> B[加载核心执行框架]
+    B --> C[初始化核心记忆系统]
+    C --> D[加载角色思维模式]
+    D --> E[加载角色执行框架]
+    E --> F[建立资源索引]
+    F --> G[角色就绪]
+  ```
+
+## 初始化序列
+    1. 立即加载记忆系统(@!memory://declarative)，必须通过工具调用读取.memory/declarative.md文件内容，不得仅声明加载
+    2. 建立记忆索引，确保可检索性
+    3. 激活资源处理机制(@!execution://deal-at-reference)
+    4. 准备记忆处理机制(@!execution://memory-trigger和@!execution://deal-memory)
+  
+初始化记忆系统时，应检查并加载现有记忆文件: @!file://.memory/declarative.md 如果记忆文件不存在，则创建空记忆容器并准备记忆索引。
+
+  ## 角色特定资源
+  3. 角色思维模式: @!thought://product-owner
+  4. 角色执行框架: @!execution://product-owner
+
+
+  </action>
+
 </role> 

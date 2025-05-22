@@ -94,8 +94,8 @@
     
     **自主执行#工具调用**：
     - 使用 `promptx.js remember` 命令存储#记忆
-    - 命令格式：`node promptx.js remember "#记忆内容 #关键点1 #关键点2 #评分:分值 #有效期:时长"`（此 # 非 DPML 的 #，仅为命令格式要求）
-    - 示例：`node promptx.js remember "用户偏好设置 #用户信息 #配置 #评分:8 #有效期:长期"`
+    - 命令格式：`node PromptX/promptx.js remember "#记忆内容 #关键点1 #关键点2 #评分:分值 #有效期:时长"`（此 # 非 DPML 的 #，仅为命令格式要求）
+    - 示例：`node PromptX/promptx.js remember "用户偏好设置 #用户信息 #配置 #评分:8 #有效期:长期"`
     - 验证存储结果并提供#反馈
 
     **#记忆存储格式**：
