@@ -51,6 +51,10 @@ cat PromptX/bootstrap.md
 #### 步骤3：将bootstrap.md作为系统提示词
 将修改后的bootstrap.md内容复制到您的AI系统的系统提示词中。
 
+您可以使用类似于 Cursor Rules 等默认规则文件加载提示词，也可以直接把启动提示词复制粘贴到对话框。
+
+<img src="assets/demo2.jpg" alt="系统提示词设置演示" width="500">
+
 #### 步骤4：发出Action指令
 向AI发送指令：
 ```
@@ -88,11 +92,11 @@ PromptX框架内置了多种专业角色，您可以直接使用：
 3. AI将自动生成完整的角色定义文件
 4. 将生成的角色文件保存并在bootstrap.md中引用
 
-这种方式让角色开发变得简单直观，无需手动编写复杂的角色结构。
+这种方式使得提示词开发也可以让 AI 代劳！ 
 
 ## 更多资源
 
-- [深度实践官网](https://www.deepracticex.com/) - AI智能协作平台
+- [深度实践官网](https://www.deepracticex.com/) - 深度实践 Deepractice
 - [DPML项目](https://github.com/Deepractice/dpml) - Deepractice Prompt Markup Language
 
 ### AI 学习社区交流群
