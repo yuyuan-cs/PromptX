@@ -104,7 +104,7 @@ AI将自动按照PromptX协议加载角色、思维模式、执行框架和记�
 
 提示词系统内置了简单的记忆模式，含有记忆评估（AI 自主评估哪些内容值得记忆），记忆存储（默认存储造项目根目录.memory下的文件），回忆（AI 启动时自主回忆已经存在的记忆内容）。
 
-在使用过程中用户可要求 ai 记忆某些信息， 例如“记住这个经验，下次我们还会用。”。同时 AI 也会根据自主意识去评估哪些内容值得记忆。
+在使用过程中用户可要求 ai 记忆某些信息， 例如"记住这个经验，下次我们还会用。"。同时 AI 也会根据自主意识去评估哪些内容值得记忆。
 
 <img src="assets/demo3.jpg" alt="AI 记忆示例" width="600">
 
@@ -119,6 +119,7 @@ PromptX框架内置了多种专业角色，您可以直接使用：
 | 基础角色 | 简单助手 (Assistant) | `@file://PromptX/domain/assistant/assistant.role.md` | 基础思考和记忆能力，适合一般对话和信息处理任务 |
 | Scrum敏捷 | 产品负责人 (Product Owner) | `@file://PromptX/domain/scrum/role/product-owner.role.md` | 产品规划、需求管理、优先级决策、用户导向思维、数据驱动决策 |
 | DPML开发 | 提示词开发者 (Prompt Developer) | `@file://PromptX/domain/prompt/prompt-developer.role.md` | 探索性、系统性和批判性思维，DPML开发规范，各类提示词最佳实践 |
+| 文案创作 | 视频文案写作专家 (Video Copywriter) | `@file://PromptX/domain/copywriter/video-copywriter.role.md` | 创意性、故事性和营销性思维，视频内容创作，文案写作规范，传播效果优化 |
 
 ## 自定义角色
 您可以使用PromptX轻松创建自定义角色：
