@@ -63,10 +63,7 @@ AI将自动按照PromptX协议加载角色、思维模式、执行框架和记�
 
 观看PromptX使用演示：
 
-<video width="600" controls>
-  <source src="assets/demo.mp4" type="video/mp4">
-  您的浏览器不支持视频标签。
-</video>
+<img src="assets/demo.gif" alt="PromptX使用演示" width="600">
 
 ## 可使用角色
 
@@ -78,7 +75,7 @@ PromptX框架内置了多种专业角色，您可以直接使用：
 | Scrum敏捷 | 产品负责人 (Product Owner) | `@file://PromptX/domain/scrum/role/product-owner.role.md` | 产品规划、需求管理、优先级决策、用户导向思维、数据驱动决策 |
 | DPML开发 | 提示词开发者 (Prompt Developer) | `@file://PromptX/domain/prompt/prompt-developer.role.md` | 探索性、系统性和批判性思维，DPML开发规范，各类提示词最佳实践 |
 
-### 自定义角色
+## 自定义角色
 您可以使用PromptX轻松创建自定义角色：
 
 1. 在bootstrap.md中引用提示词开发者角色：
