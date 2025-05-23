@@ -72,22 +72,11 @@ AI将自动按照PromptX协议加载角色、思维模式、执行框架和记�
 
 PromptX框架内置了多种专业角色，您可以直接使用：
 
-### 基础角色
-- **简单助手 (Assistant)** - `@file://PromptX/domain/assistant/assistant.role.md`
-  - 具备基础思考和记忆能力
-  - 适合一般对话和信息处理任务
-  - 包含完整的资源处理和记忆管理机制
-
-### Scrum敏捷角色
-- **产品负责人 (Product Owner)** - `@file://PromptX/domain/scrum/role/product-owner.role.md`
-  - 具备产品规划、需求管理、优先级决策等能力
-  - 擅长用户导向思维、数据驱动决策、敏捷协作
-
-### DPML开发角色
-- **提示词开发者 (Prompt Developer)** - `@file://PromptX/domain/prompt/prompt-developer.role.md`
-  - 具备探索性、系统性和批判性思维能力
-  - 擅长设计结构清晰的提示词，遵循DPML开发规范
-  - 掌握思维模式、执行模式、记忆模式等各类提示词最佳实践
+| 角色类别 | 角色名称 | 文件路径 | 主要能力 |
+|---------|---------|----------|----------|
+| 基础角色 | 简单助手 (Assistant) | `@file://PromptX/domain/assistant/assistant.role.md` | 基础思考和记忆能力，适合一般对话和信息处理任务 |
+| Scrum敏捷 | 产品负责人 (Product Owner) | `@file://PromptX/domain/scrum/role/product-owner.role.md` | 产品规划、需求管理、优先级决策、用户导向思维、数据驱动决策 |
+| DPML开发 | 提示词开发者 (Prompt Developer) | `@file://PromptX/domain/prompt/prompt-developer.role.md` | 探索性、系统性和批判性思维，DPML开发规范，各类提示词最佳实践 |
 
 ### 自定义角色
 您可以使用PromptX轻松创建自定义角色：
