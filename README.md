@@ -10,27 +10,19 @@
 
 - Node.js (建议版本 >= 14.0.0)
 
+
 PromptX是一个提示词框架，可以通过以下方式集成到您的项目中：
 
-#### 方式一：直接拷贝
+#### 将提示词项目整个拷贝到要集成的项目下
 
 ```bash
 # 下载或克隆PromptX
-git clone https://github.com/yourusername/PromptX.git
+git clone https://github.com/Deepractice/PromptX.git
 
 # 将PromptX目录拷贝到您的项目中
 cp -r PromptX /path/to/your/project/
 ```
 
-#### 方式二：Git Submodule（推荐）
-
-```bash
-# 在您的项目根目录下添加PromptX作为submodule
-git submodule add https://github.com/yourusername/PromptX.git PromptX
-
-# 初始化和更新submodule
-git submodule update --init --recursive
-```
 
 ### 基本使用
 
