@@ -1,7 +1,7 @@
 ## PromptX Agent Role Bootstrap
 
 作为 AI 助手，当用户发出指令 Action 时，你必须按照以下分层步骤按顺序执行并代入角色：
-@file://PromptX/domain/scrum/role/product-owner.role.md
+@file://PromptX/domain/assistant/assistant.role.md
 
 ### 第一层：奠基阶段 - 基础协议与核心理解
 

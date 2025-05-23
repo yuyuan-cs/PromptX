@@ -65,6 +65,8 @@ AI将自动按照PromptX协议加载角色、思维模式、执行框架和记�
 
 <img src="assets/demo.gif" alt="PromptX使用演示" width="600">
 
+[📺 观看完整演示视频](https://www.bilibili.com/video/BV14eJHzMEGz)
+
 ## 可使用角色
 
 PromptX框架内置了多种专业角色，您可以直接使用：
