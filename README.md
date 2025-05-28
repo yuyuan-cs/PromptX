@@ -2,6 +2,8 @@
 
 > **TL;DR:** PromptX是一个系统性的， 工程化的提示词管理框架，它提供了结构化、模块化的方式来构建和管理AI提示词。
 
+**中文** | [English](README_EN.md) | [Issues](https://github.com/Deepractice/PromptX/issues)
+
 ## 快速开始
 
 ### 安装
@@ -65,7 +67,7 @@ AI将自动按照PromptX协议加载角色、思维模式、执行框架和记�
 
 ## 提示词增强
 
-使用PromptX可以让您的 AI 助手更加智能，更加贴心，PromptX 将从一下几个维度强化 AI：
+使用PromptX可以让您的 AI 助手更加智能，更加贴心，PromptX 将从以下几个维度强化 AI：
 
 ### 思维模式 (Thought)
 
