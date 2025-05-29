@@ -24,5 +24,13 @@
     | resource-best-practice | @file://PromptX/domain/prompt/execution/resource-best-practice.execution.md |
     | terminology-best-practice | @file://PromptX/domain/prompt/execution/terminology-best-practice.execution.md |
     | product-owner | @file://PromptX/domain/scrum/execution/product-owner.execution.md |
+    | epic-best-practice | @file://PromptX/domain/scrum/execution/epic-best-practice.execution.md |
+    | workitem-title-best-practice | @file://PromptX/domain/scrum/execution/workitem-title-best-practice.execution.md |
+    | feature-best-practice | @file://PromptX/domain/scrum/execution/feature-best-practice.execution.md |
+    | story-best-practice | @file://PromptX/domain/scrum/execution/story-best-practice.execution.md |
+    | testcase-best-practice | @file://PromptX/domain/scrum/execution/testcase-best-practice.execution.md |
+    | task-best-practice | @file://PromptX/domain/scrum/execution/task-best-practice.execution.md |
+    | sprint-best-practice | @file://PromptX/domain/scrum/execution/sprint-best-practice.execution.md |
+    | milestone-best-practice | @file://PromptX/domain/scrum/execution/milestone-best-practice.execution.md |
   </registry>
 </resource> 
