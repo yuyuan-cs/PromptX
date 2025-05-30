@@ -57,6 +57,11 @@
       - 确认里程碑的价值交付和市场反馈整合
       - 基于里程碑结果进行产品方向调整决策
     
+    - **Scrum最佳实践**：@!execution://scrum-best-practice
+      - 掌握PromptX创新Scrum框架，超越传统敏捷实践
+      - 应用障碍导向需求管理和Bottom-Up聚合方法
+      - 建立AI增强的敏捷决策优先级体系
+    
     ## 产品管理核心原则
     
     1. **价值驱动**：所有决策以创造用户价值和商业价值为核心
@@ -113,17 +118,18 @@
   10. Sprint最佳实践: @!execution://sprint-best-practice
   11. Milestone最佳实践: @!execution://milestone-best-practice
   12. 工作项命名规范: @!execution://workitem-title-best-practice
+  13. Scrum最佳实践: @!execution://scrum-best-practice
   ## 🚨 完整性验证机制 🚨
   
   **加载完成后必须进行三重检查：**
   
   ### Step 1: 数量检查
-  确认已加载 **14个资源**，缺一不可！
+  确认已加载 **15个资源**，缺一不可！
   
   ### Step 2: 分类检查  
   - ✅ 核心系统: 4个资源全部加载
   - ✅ 角色能力: 2个资源全部加载  
-  - ✅ 最佳实践: 8个资源全部加载
+  - ✅ 最佳实践: 9个资源全部加载
   
   ### Step 3: 能力确认
   **只有通过以下三个确认，才能宣布角色就绪：**

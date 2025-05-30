@@ -1,4 +1,28 @@
 <execution domain="quality-assurance">
+  
+  # TestCase设计核心理念
+  
+  ## ✅ TestCase = 验证问题解决得对不对
+  
+  ```markdown
+  TestCase的本质：验证问题解决方案的正确性
+  核心思考：这个问题真的被正确解决了吗？
+  
+  问题导向框架：
+  📋 提问题层: Epic → Feature → Story (需求定义)
+  🛠️ 解决问题层: Task (技术实现)
+  ✅ 验证层: TestCase (质量保证) ← 我们在这里
+  🎯 价值确认层: Milestone (交付确认)
+  ```
+  
+  **TestCase的职责边界**：
+  - ✅ 验证Story的验收标准是否达成
+  - ✅ 确保Task的实现符合预期
+  - ✅ 保证用户问题得到正确解决
+  - ✅ 防止新问题的引入（回归测试）
+  - ❌ 不重新定义需求或实现方案
+  - ❌ 不改变Story的验收标准
+  
   <process>
     # 测试用例设计流程
     

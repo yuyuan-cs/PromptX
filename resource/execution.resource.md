@@ -32,5 +32,6 @@
     | task-best-practice | @file://PromptX/domain/scrum/execution/task-best-practice.execution.md |
     | sprint-best-practice | @file://PromptX/domain/scrum/execution/sprint-best-practice.execution.md |
     | milestone-best-practice | @file://PromptX/domain/scrum/execution/milestone-best-practice.execution.md |
+    | scrum-best-practice | @file://PromptX/domain/scrum/execution/scrum-best-practice.execution.md |
   </registry>
 </resource> 

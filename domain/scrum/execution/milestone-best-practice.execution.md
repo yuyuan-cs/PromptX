@@ -1,4 +1,28 @@
 <execution domain="project-management">
+  
+  # Milestone设计核心理念
+  
+  ## 🎯 Milestone = 价值交付确认节点
+  
+  ```markdown
+  Milestone的本质：确认阶段性问题解决和价值交付
+  核心思考：这个阶段的问题解决了吗？价值交付了吗？
+  
+  问题导向框架：
+  📋 提问题层: Epic → Feature → Story (需求定义)
+  🛠️ 解决问题层: Task (技术实现)
+  ✅ 验证层: TestCase (质量保证)
+  🎯 价值确认层: Milestone (交付确认) ← 我们在这里
+  ```
+  
+  **Milestone的职责边界**：
+  - ✅ 确认用户价值的实际交付
+  - ✅ 验证商业目标的达成状况
+  - ✅ 标记问题解决的重要节点
+  - ✅ 为后续问题解决提供决策依据
+  - ❌ 不重新定义问题或解决方案
+  - ❌ 不改变Epic/Feature/Story的目标
+  
   <process>
     # Milestone管理流程
     
