@@ -1,6 +1,6 @@
 {
   "name": "promptx",
-  "version": "0.0.1",
+  "version": "0.0.2-snapshot.0",
   "description": "A powerful AI prompt framework for role-based conversations and intelligent interactions. Build sophisticated AI agents with modular prompts, memory systems, and execution frameworks.",
   "main": "src/lib/index.js",
   "bin": {
