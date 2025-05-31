@@ -22,14 +22,14 @@ npx -y dpml-prompt@snapshot init
 
 ### 两种使用方式：
 
-1. 已安装 Node.js：
+1. 已安装 Node.js, 请复制这句话给AI：
    ```bash
-   请复制这句话给AI：npx -y dpml-prompt@snapshot init
+   npx -y dpml-prompt@snapshot init
    ```
 
-2. 未安装 Node.js：
+2. 未安装 Node.js, 请复制以下提示词给 AI：
    ```bash
-   请复制这个地址给AI：https://github.com/Deepractice/PromptX/blob/main/README.md
+   https://github.com/Deepractice/PromptX/blob/main/README.md 启动
    ```
    AI 会指导您完成所有安装和设置步骤！
 
