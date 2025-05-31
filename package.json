@@ -1,10 +1,10 @@
 {
-  "name": "promptx",
+  "name": "dpml-prompt",
   "version": "0.0.2-snapshot.0",
-  "description": "A powerful AI prompt framework for role-based conversations and intelligent interactions. Build sophisticated AI agents with modular prompts, memory systems, and execution frameworks.",
+  "description": "DPML-powered AI prompt framework - Revolutionary AI-First CLI system based on Deepractice Prompt Markup Language. Build sophisticated AI agents with structured prompts, memory systems, and execution frameworks.",
   "main": "src/lib/index.js",
   "bin": {
-    "promptx": "src/bin/promptx.js"
+    "dpml-prompt": "src/bin/promptx.js"
   },
   "scripts": {
     "start": "node src/bin/promptx.js",
@@ -28,8 +28,7 @@
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
     "validate": "npm run lint && npm run test:ci",
-    "precommit": "npm run lint && npm run test:unit",
-    "prepublishOnly": "npm run validate && npm run build"
+    "precommit": "npm run lint && npm run test:unit"
   },
   "files": [
     "src/bin/",
@@ -81,19 +80,21 @@
     "npm": ">=6.0.0"
   },
   "keywords": [
+    "dpml",
+    "deepractice",
     "ai",
     "prompt",
+    "prompt-engineering",
+    "markup-language",
+    "ai-first",
+    "cli",
     "chatgpt",
     "claude",
-    "prompt-engineering",
     "conversation",
     "agent",
     "framework",
     "role-playing",
     "memory-system",
-    "scrum",
-    "product-management",
-    "cli",
     "automation"
   ],
   "author": {

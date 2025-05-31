@@ -4,7 +4,7 @@
  */
 
 // 命令前缀配置 - 约定大于配置
-export const COMMAND_PREFIX = 'npx promptx';
+export const COMMAND_PREFIX = 'npx dpml-prompt'
 
 // 常用命令模板
 export const COMMANDS = {
@@ -15,7 +15,7 @@ export const COMMANDS = {
   RECALL: `${COMMAND_PREFIX} recall`,
   REMEMBER: `${COMMAND_PREFIX} remember`,
   HELP: `${COMMAND_PREFIX} help`
-};
+}
 
 // 带参数的命令构建函数
 export const buildCommand = {
@@ -23,7 +23,7 @@ export const buildCommand = {
   learn: (resource) => `${COMMAND_PREFIX} learn ${resource}`,
   recall: (query = '') => `${COMMAND_PREFIX} recall${query ? ' ' + query : ''}`,
   remember: (key, content = '<content>') => `${COMMAND_PREFIX} remember ${key}${content !== '<content>' ? ' "' + content + '"' : ' <content>'}`
-};
+}
 
 // 系统路径配置
 export const PATHS = {
@@ -31,10 +31,10 @@ export const PATHS = {
   MEMORY_DIR: '.promptx/memory',
   STATE_FILE: '.promptx/pouch.json',
   MEMORY_FILE: '.promptx/memory/declarative.md'
-};
+}
 
 // 版本信息
-export const VERSION = '0.0.1';
+export const VERSION = '0.0.1'
 
 // 系统状态
 export const STATES = {
@@ -44,4 +44,4 @@ export const STATES = {
   LEARNED_ROLE: 'learned_role',
   MEMORY_SAVED: 'memory_saved',
   RECALL_WAITING: 'recall-waiting'
-}; 
+}

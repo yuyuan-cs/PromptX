@@ -1,38 +1,38 @@
-const path = require('path');
-const fs = require('fs').promises;
-const os = require('os');
+const path = require('path')
+const fs = require('fs').promises
+const os = require('os')
 
 /**
  * 测试资源工厂
  * 提供测试用的固定数据和辅助函数
  */
 class TestResourceFactory {
-  constructor() {
-    this.tempDirs = new Set();
+  constructor () {
+    this.tempDirs = new Set()
   }
 
   /**
    * 创建临时测试目录
    * @returns {Promise<string>} 临时目录路径
    */
-  async createTempDir() {
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'promptx-test-'));
-    this.tempDirs.add(tempDir);
-    return tempDir;
+  async createTempDir () {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'promptx-test-'))
+    this.tempDirs.add(tempDir)
+    return tempDir
   }
 
   /**
    * 清理所有临时目录
    */
-  async cleanup() {
+  async cleanup () {
     for (const dir of this.tempDirs) {
       try {
-        await fs.rmdir(dir, { recursive: true });
+        await fs.rmdir(dir, { recursive: true })
       } catch (error) {
-        console.warn(`Failed to cleanup temp dir ${dir}:`, error.message);
+        console.warn(`Failed to cleanup temp dir ${dir}:`, error.message)
       }
     }
-    this.tempDirs.clear();
+    this.tempDirs.clear()
   }
 
   /**
@@ -40,18 +40,18 @@ class TestResourceFactory {
    * @param {string} baseDir - 基础目录
    * @returns {Promise<object>} 创建的文件路径映射
    */
-  async createPromptXStructure(baseDir) {
+  async createPromptXStructure (baseDir) {
     const structure = {
       prompt: path.join(baseDir, 'prompt'),
       core: path.join(baseDir, 'prompt', 'core'),
       domain: path.join(baseDir, 'prompt', 'domain'),
       protocol: path.join(baseDir, 'prompt', 'protocol'),
       memory: path.join(baseDir, '.memory')
-    };
+    }
 
     // 创建目录结构
     for (const dir of Object.values(structure)) {
-      await fs.mkdir(dir, { recursive: true });
+      await fs.mkdir(dir, { recursive: true })
     }
 
     // 创建测试文件
@@ -63,24 +63,24 @@ class TestResourceFactory {
       protocolDpml: path.join(structure.protocol, 'dpml.md'),
       memoryDeclarative: path.join(structure.memory, 'declarative.md'),
       memoryProcedural: path.join(structure.memory, 'procedural.md')
-    };
+    }
 
     // 创建core子目录
-    await fs.mkdir(path.join(structure.core, 'thought'), { recursive: true });
-    await fs.mkdir(path.join(structure.core, 'execution'), { recursive: true });
-    await fs.mkdir(path.join(structure.domain, 'test'), { recursive: true });
+    await fs.mkdir(path.join(structure.core, 'thought'), { recursive: true })
+    await fs.mkdir(path.join(structure.core, 'execution'), { recursive: true })
+    await fs.mkdir(path.join(structure.domain, 'test'), { recursive: true })
 
     // 写入测试文件内容
-    await this.writeTestFiles(files);
+    await this.writeTestFiles(files)
 
-    return { structure, files };
+    return { structure, files }
   }
 
   /**
    * 写入测试文件内容
    * @param {object} files - 文件路径映射
    */
-  async writeTestFiles(files) {
+  async writeTestFiles (files) {
     const contents = {
       [files.bootstrap]: `# PromptX Bootstrap
 
@@ -182,17 +182,17 @@ JSON结构化数据`,
 
 ## 存储格式
 步骤化序列`
-    };
+    }
 
     for (const [filePath, content] of Object.entries(contents)) {
-      await fs.writeFile(filePath, content, 'utf8');
+      await fs.writeFile(filePath, content, 'utf8')
     }
   }
 
   /**
    * 获取测试用的DPML资源引用
    */
-  getTestResourceRefs() {
+  getTestResourceRefs () {
     return {
       valid: [
         '@promptx://bootstrap',
@@ -224,13 +224,13 @@ JSON结构化数据`,
         '@file://@memory://declarative',
         '@promptx://@memory://@file://deep-nested.md'
       ]
-    };
+    }
   }
 
   /**
    * 获取测试用的查询参数
    */
-  getTestQueryParams() {
+  getTestQueryParams () {
     return {
       line: ['1', '5-10', '1-', '-10'],
       format: ['json', 'text', 'xml'],
@@ -238,21 +238,21 @@ JSON结构化数据`,
       encoding: ['utf8', 'gbk', 'ascii'],
       timeout: ['5000', '10000'],
       custom: ['value1', 'value2']
-    };
+    }
   }
 
   /**
    * 创建模拟的协议注册表
    */
-  getMockProtocolRegistry() {
+  getMockProtocolRegistry () {
     return {
       'test-protocol': {
         description: '测试协议',
         location: 'test://{resource_id}',
         registry: {
-          'resource1': '@file://test1.md',
-          'resource2': '@file://test2.md',
-          'nested': '@test-protocol://resource1'
+          resource1: '@file://test1.md',
+          resource2: '@file://test2.md',
+          nested: '@test-protocol://resource1'
         }
       },
       'mock-http': {
@@ -263,13 +263,13 @@ JSON结构化数据`,
           format: 'string'
         }
       }
-    };
+    }
   }
 
   /**
    * 创建错误场景测试数据
    */
-  getErrorScenarios() {
+  getErrorScenarios () {
     return {
       fileNotFound: '@file://nonexistent.md',
       permissionDenied: '@file://restricted.md',
@@ -277,16 +277,16 @@ JSON结构化数据`,
       malformedUrl: '@file://',
       networkTimeout: '@http://timeout.example.com',
       parseError: 'invalid-syntax'
-    };
+    }
   }
 }
 
 module.exports = {
   TestResourceFactory,
-  
+
   // 便捷工厂函数
   createTestFactory: () => new TestResourceFactory(),
-  
+
   // 常用测试数据
   SAMPLE_DPML_REFS: [
     '@promptx://protocols',
@@ -294,8 +294,8 @@ module.exports = {
     '@!memory://hot-memory',
     '@?file://lazy-file.md'
   ],
-  
+
   SAMPLE_PROTOCOLS: ['promptx', 'file', 'memory', 'http', 'https'],
-  
+
   SAMPLE_LOADING_SEMANTICS: ['@', '@!', '@?']
-}; 
+}

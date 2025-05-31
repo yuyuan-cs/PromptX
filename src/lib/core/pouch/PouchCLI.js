@@ -1,24 +1,24 @@
-const PouchStateMachine = require('./state/PouchStateMachine');
-const PouchRegistry = require('./PouchRegistry');
-const commands = require('./commands');
+const PouchStateMachine = require('./state/PouchStateMachine')
+const PouchRegistry = require('./PouchRegistry')
+const commands = require('./commands')
 
 /**
  * 锦囊CLI主入口
  * 提供命令行接口和统一的执行入口
  */
 class PouchCLI {
-  constructor() {
-    this.stateMachine = new PouchStateMachine();
-    this.registry = new PouchRegistry();
-    this.initialized = false;
+  constructor () {
+    this.stateMachine = new PouchStateMachine()
+    this.registry = new PouchRegistry()
+    this.initialized = false
   }
 
   /**
    * 初始化CLI
    */
-  async initialize() {
+  async initialize () {
     if (this.initialized) {
-      return;
+      return
     }
 
     // 批量注册所有命令
@@ -29,18 +29,18 @@ class PouchCLI {
       learn: commands.LearnCommand,
       recall: commands.RecallCommand,
       remember: commands.RememberCommand
-    });
+    })
 
     // 将命令注册到状态机
     for (const name of this.registry.list()) {
-      const command = this.registry.get(name);
-      this.stateMachine.registerCommand(name, command);
+      const command = this.registry.get(name)
+      this.stateMachine.registerCommand(name, command)
     }
 
     // 加载历史状态
-    await this.stateMachine.loadState();
+    await this.stateMachine.loadState()
 
-    this.initialized = true;
+    this.initialized = true
   }
 
   /**
@@ -49,32 +49,32 @@ class PouchCLI {
    * @param {Array} args - 命令参数
    * @returns {Promise<PouchOutput>} 执行结果
    */
-  async execute(commandName, args = []) {
+  async execute (commandName, args = []) {
     // 确保已初始化
     if (!this.initialized) {
-      await this.initialize();
+      await this.initialize()
     }
 
     // 验证命令是否存在
     if (!this.registry.validate(commandName)) {
-      throw new Error(`未知命令: ${commandName}\n使用 'npx promptx help' 查看可用命令`);
+      throw new Error(`未知命令: ${commandName}\n使用 'npx promptx help' 查看可用命令`)
     }
 
     try {
       // 通过状态机执行命令
-      const result = await this.stateMachine.transition(commandName, args);
-      
+      const result = await this.stateMachine.transition(commandName, args)
+
       // 如果结果有 toString 方法，打印人类可读格式
       if (result && result.toString && typeof result.toString === 'function') {
-        console.log(result.toString());
+        console.log(result.toString())
       } else {
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify(result, null, 2))
       }
 
-      return result;
+      return result
     } catch (error) {
-      console.error(`执行命令出错: ${error.message}`);
-      throw error;
+      console.error(`执行命令出错: ${error.message}`)
+      throw error
     }
   }
 
@@ -82,10 +82,10 @@ class PouchCLI {
    * 获取帮助信息
    * @returns {string} 帮助文本
    */
-  getHelp() {
-    const commands = this.registry.getCommandDetails();
-    const currentState = this.stateMachine.getCurrentState();
-    const availableTransitions = this.stateMachine.getAvailableTransitions();
+  getHelp () {
+    const commands = this.registry.getCommandDetails()
+    const currentState = this.stateMachine.getCurrentState()
+    const availableTransitions = this.stateMachine.getAvailableTransitions()
 
     let help = `
 🎯 PromptX 锦囊系统帮助
@@ -95,10 +95,10 @@ class PouchCLI {
 可用转换: ${availableTransitions.join(', ')}
 
 📋 可用命令:
-`;
+`
 
     for (const cmd of commands) {
-      help += `\n  ${cmd.name.padEnd(12)} - ${cmd.purpose}`;
+      help += `\n  ${cmd.name.padEnd(12)} - ${cmd.purpose}`
     }
 
     help += `
@@ -115,23 +115,23 @@ class PouchCLI {
 按照提示即可完成完整的工作流程。
 
 📚 更多信息请访问: https://github.com/yourusername/promptx
-`;
+`
 
-    return help;
+    return help
   }
 
   /**
    * 获取当前状态信息
    * @returns {StateContext} 状态上下文
    */
-  getStatus() {
+  getStatus () {
     return {
       currentState: this.stateMachine.getCurrentState(),
       availableCommands: this.registry.list(),
       availableTransitions: this.stateMachine.getAvailableTransitions(),
       context: this.stateMachine.context,
       initialized: this.initialized
-    };
+    }
   }
 
   /**
@@ -139,62 +139,62 @@ class PouchCLI {
    * @param {string} input - 用户输入
    * @returns {Object} 解析结果
    */
-  parseCommand(input) {
-    const parts = input.trim().split(/\s+/);
-    const command = parts[0];
-    const args = parts.slice(1);
+  parseCommand (input) {
+    const parts = input.trim().split(/\s+/)
+    const command = parts[0]
+    const args = parts.slice(1)
 
     return {
-      command: command,
-      args: args
-    };
+      command,
+      args
+    }
   }
 
   /**
    * 运行交互式CLI
    */
-  async runInteractive() {
-    console.log('🎯 欢迎使用 PromptX 锦囊系统！');
-    console.log('输入 "help" 查看帮助，"exit" 退出\n');
+  async runInteractive () {
+    console.log('🎯 欢迎使用 PromptX 锦囊系统！')
+    console.log('输入 "help" 查看帮助，"exit" 退出\n')
 
-    const readline = require('readline');
+    const readline = require('readline')
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
       prompt: 'promptx> '
-    });
+    })
 
-    rl.prompt();
+    rl.prompt()
 
     rl.on('line', async (line) => {
-      const input = line.trim();
-      
+      const input = line.trim()
+
       if (input === 'exit' || input === 'quit') {
-        console.log('再见！');
-        rl.close();
-        return;
+        console.log('再见！')
+        rl.close()
+        return
       }
 
       if (input === 'help') {
-        console.log(this.getHelp());
+        console.log(this.getHelp())
       } else if (input === 'status') {
-        console.log(JSON.stringify(this.getStatus(), null, 2));
+        console.log(JSON.stringify(this.getStatus(), null, 2))
       } else if (input) {
-        const { command, args } = this.parseCommand(input);
+        const { command, args } = this.parseCommand(input)
         try {
-          await this.execute(command, args);
+          await this.execute(command, args)
         } catch (error) {
-          console.error(error.message);
+          console.error(error.message)
         }
       }
 
-      rl.prompt();
-    });
+      rl.prompt()
+    })
 
     rl.on('close', () => {
-      process.exit(0);
-    });
+      process.exit(0)
+    })
   }
 }
 
-module.exports = PouchCLI; 
+module.exports = PouchCLI

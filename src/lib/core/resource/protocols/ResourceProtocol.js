@@ -8,23 +8,23 @@ class ResourceProtocol {
    * @param {string} name - 协议名称
    * @param {object} options - 配置选项
    */
-  constructor(name, options = {}) {
+  constructor (name, options = {}) {
     if (new.target === ResourceProtocol) {
-      throw new Error('ResourceProtocol是抽象类，不能直接实例化');
+      throw new Error('ResourceProtocol是抽象类，不能直接实例化')
     }
-    
-    this.name = name;
-    this.options = options;
-    this.cache = new Map();
-    this.enableCache = options.enableCache !== false;
+
+    this.name = name
+    this.options = options
+    this.cache = new Map()
+    this.enableCache = options.enableCache !== false
   }
 
   /**
    * 协议信息 - 需要子类实现
    * @returns {object} 协议信息
    */
-  getProtocolInfo() {
-    throw new Error('子类必须实现 getProtocolInfo() 方法');
+  getProtocolInfo () {
+    throw new Error('子类必须实现 getProtocolInfo() 方法')
   }
 
   /**
@@ -33,8 +33,8 @@ class ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 解析后的路径
    */
-  async resolvePath(resourcePath, queryParams) {
-    throw new Error('子类必须实现 resolvePath() 方法');
+  async resolvePath (resourcePath, queryParams) {
+    throw new Error('子类必须实现 resolvePath() 方法')
   }
 
   /**
@@ -43,8 +43,8 @@ class ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 资源内容
    */
-  async loadContent(resolvedPath, queryParams) {
-    throw new Error('子类必须实现 loadContent() 方法');
+  async loadContent (resolvedPath, queryParams) {
+    throw new Error('子类必须实现 loadContent() 方法')
   }
 
   /**
@@ -52,20 +52,20 @@ class ResourceProtocol {
    * @param {string} resourcePath - 资源路径
    * @returns {boolean} 是否有效
    */
-  validatePath(resourcePath) {
-    return typeof resourcePath === 'string' && resourcePath.length > 0;
+  validatePath (resourcePath) {
+    return typeof resourcePath === 'string' && resourcePath.length > 0
   }
 
   /**
    * 支持的查询参数列表 - 可选实现
    * @returns {object} 参数说明
    */
-  getSupportedParams() {
+  getSupportedParams () {
     return {
       line: 'string - 行范围，如 "1-10"',
       format: 'string - 输出格式',
       cache: 'boolean - 是否缓存'
-    };
+    }
   }
 
   /**
@@ -74,35 +74,35 @@ class ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 资源内容
    */
-  async resolve(resourcePath, queryParams) {
+  async resolve (resourcePath, queryParams) {
     // 1. 验证路径格式
     if (!this.validatePath(resourcePath)) {
-      throw new Error(`无效的资源路径: ${resourcePath}`);
+      throw new Error(`无效的资源路径: ${resourcePath}`)
     }
 
     // 2. 生成缓存键
-    const cacheKey = this.generateCacheKey(resourcePath, queryParams);
+    const cacheKey = this.generateCacheKey(resourcePath, queryParams)
 
     // 3. 检查缓存
     if (this.enableCache && this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
+      return this.cache.get(cacheKey)
     }
 
     // 4. 解析路径
-    const resolvedPath = await this.resolvePath(resourcePath, queryParams);
+    const resolvedPath = await this.resolvePath(resourcePath, queryParams)
 
     // 5. 加载内容
-    const content = await this.loadContent(resolvedPath, queryParams);
+    const content = await this.loadContent(resolvedPath, queryParams)
 
     // 6. 应用通用查询参数过滤
-    const filteredContent = this.applyCommonParams(content, queryParams);
+    const filteredContent = this.applyCommonParams(content, queryParams)
 
     // 7. 缓存结果
     if (this.enableCache) {
-      this.cache.set(cacheKey, filteredContent);
+      this.cache.set(cacheKey, filteredContent)
     }
 
-    return filteredContent;
+    return filteredContent
   }
 
   /**
@@ -111,9 +111,9 @@ class ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {string} 缓存键
    */
-  generateCacheKey(resourcePath, queryParams) {
-    const params = queryParams ? queryParams.getAll() : {};
-    return `${this.name}:${resourcePath}:${JSON.stringify(params)}`;
+  generateCacheKey (resourcePath, queryParams) {
+    const params = queryParams ? queryParams.getAll() : {}
+    return `${this.name}:${resourcePath}:${JSON.stringify(params)}`
   }
 
   /**
@@ -122,24 +122,24 @@ class ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {string} 过滤后的内容
    */
-  applyCommonParams(content, queryParams) {
+  applyCommonParams (content, queryParams) {
     if (!queryParams) {
-      return content;
+      return content
     }
 
-    let result = content;
+    let result = content
 
     // 应用行过滤
     if (queryParams.line) {
-      result = this.applyLineFilter(result, queryParams.line);
+      result = this.applyLineFilter(result, queryParams.line)
     }
 
     // 应用格式化（基础实现，子类可以重写）
     if (queryParams.format && queryParams.format !== 'text') {
-      result = this.applyFormat(result, queryParams.format);
+      result = this.applyFormat(result, queryParams.format)
     }
 
-    return result;
+    return result
   }
 
   /**
@@ -148,18 +148,18 @@ class ResourceProtocol {
    * @param {string} lineRange - 行范围，如 "5-10" 或 "5"
    * @returns {string} 过滤后的内容
    */
-  applyLineFilter(content, lineRange) {
-    const lines = content.split('\n');
-    
+  applyLineFilter (content, lineRange) {
+    const lines = content.split('\n')
+
     if (lineRange.includes('-')) {
-      const [start, end] = lineRange.split('-').map(n => parseInt(n.trim(), 10));
-      const startIndex = Math.max(0, start - 1);
-      const endIndex = Math.min(lines.length, end);
-      return lines.slice(startIndex, endIndex).join('\n');
+      const [start, end] = lineRange.split('-').map(n => parseInt(n.trim(), 10))
+      const startIndex = Math.max(0, start - 1)
+      const endIndex = Math.min(lines.length, end)
+      return lines.slice(startIndex, endIndex).join('\n')
     } else {
-      const lineNum = parseInt(lineRange, 10);
-      const lineIndex = lineNum - 1;
-      return lines[lineIndex] || '';
+      const lineNum = parseInt(lineRange, 10)
+      const lineIndex = lineNum - 1
+      return lines[lineIndex] || ''
     }
   }
 
@@ -169,40 +169,40 @@ class ResourceProtocol {
    * @param {string} format - 格式
    * @returns {string} 格式化后的内容
    */
-  applyFormat(content, format) {
+  applyFormat (content, format) {
     // 基础实现，子类可以重写
     switch (format) {
       case 'json':
         try {
-          return JSON.stringify(JSON.parse(content), null, 2);
+          return JSON.stringify(JSON.parse(content), null, 2)
         } catch {
-          return content;
+          return content
         }
       case 'trim':
-        return content.trim();
+        return content.trim()
       default:
-        return content;
+        return content
     }
   }
 
   /**
    * 清除缓存
    */
-  clearCache() {
-    this.cache.clear();
+  clearCache () {
+    this.cache.clear()
   }
 
   /**
    * 获取缓存统计
    * @returns {object} 缓存统计信息
    */
-  getCacheStats() {
+  getCacheStats () {
     return {
       protocol: this.name,
       size: this.cache.size,
       enabled: this.enableCache
-    };
+    }
   }
 }
 
-module.exports = ResourceProtocol; 
+module.exports = ResourceProtocol

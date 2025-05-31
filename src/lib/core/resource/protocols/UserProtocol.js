@@ -1,16 +1,16 @@
-const ResourceProtocol = require('./ResourceProtocol');
-const path = require('path');
-const fs = require('fs').promises;
+const ResourceProtocol = require('./ResourceProtocol')
+const path = require('path')
+const fs = require('fs').promises
 
 // 延迟加载platform-folders以处理可能的原生模块依赖
-let platformFolders = null;
+let platformFolders = null
 const getPlatformFolders = () => {
   if (!platformFolders) {
     try {
-      platformFolders = require('platform-folders');
+      platformFolders = require('platform-folders')
     } catch (error) {
       // 如果platform-folders不可用，回退到os.homedir()
-      const os = require('os');
+      const os = require('os')
       platformFolders = {
         getHomeFolder: () => os.homedir(),
         getDesktopFolder: () => path.join(os.homedir(), 'Desktop'),
@@ -19,49 +19,49 @@ const getPlatformFolders = () => {
         getMusicFolder: () => path.join(os.homedir(), 'Music'),
         getPicturesFolder: () => path.join(os.homedir(), 'Pictures'),
         getVideosFolder: () => path.join(os.homedir(), 'Videos')
-      };
-      console.warn('platform-folders不可用，使用os.homedir()回退方案');
+      }
+      console.warn('platform-folders不可用，使用os.homedir()回退方案')
     }
   }
-  return platformFolders;
-};
+  return platformFolders
+}
 
 /**
  * 用户目录协议实现
  * 实现@user://协议，用于访问用户的标准目录（Documents、Desktop、Downloads等）
  */
 class UserProtocol extends ResourceProtocol {
-  constructor(options = {}) {
-    super('user', options);
-    
+  constructor (options = {}) {
+    super('user', options)
+
     // 支持的用户目录映射
     this.userDirs = {
-      'home': 'getHomeFolder',
-      'desktop': 'getDesktopFolder', 
-      'documents': 'getDocumentsFolder',
-      'downloads': 'getDownloadsFolder',
-      'music': 'getMusicFolder',
-      'pictures': 'getPicturesFolder',
-      'videos': 'getVideosFolder'
-    };
-    
+      home: 'getHomeFolder',
+      desktop: 'getDesktopFolder',
+      documents: 'getDocumentsFolder',
+      downloads: 'getDownloadsFolder',
+      music: 'getMusicFolder',
+      pictures: 'getPicturesFolder',
+      videos: 'getVideosFolder'
+    }
+
     // 目录路径缓存
-    this.dirCache = new Map();
+    this.dirCache = new Map()
   }
 
   /**
    * 设置注册表（保持与其他协议的一致性）
    */
-  setRegistry(registry) {
+  setRegistry (registry) {
     // User协议不使用注册表，但为了一致性提供此方法
-    this.registry = registry || {};
+    this.registry = registry || {}
   }
 
   /**
    * 获取协议信息
    * @returns {object} 协议信息
    */
-  getProtocolInfo() {
+  getProtocolInfo () {
     return {
       name: 'user',
       description: '用户目录协议，提供跨平台的用户标准目录访问',
@@ -74,19 +74,19 @@ class UserProtocol extends ResourceProtocol {
       ],
       supportedDirectories: Object.keys(this.userDirs),
       params: this.getSupportedParams()
-    };
+    }
   }
 
   /**
    * 支持的查询参数
    * @returns {object} 参数说明
    */
-  getSupportedParams() {
+  getSupportedParams () {
     return {
       ...super.getSupportedParams(),
       exists: 'boolean - 仅返回存在的文件/目录',
       type: 'string - 过滤类型 (file|dir|both)'
-    };
+    }
   }
 
   /**
@@ -94,16 +94,16 @@ class UserProtocol extends ResourceProtocol {
    * @param {string} resourcePath - 资源路径
    * @returns {boolean} 是否有效
    */
-  validatePath(resourcePath) {
+  validatePath (resourcePath) {
     if (!super.validatePath(resourcePath)) {
-      return false;
+      return false
     }
 
     // 解析路径的第一部分（目录类型）
-    const parts = resourcePath.split('/');
-    const dirType = parts[0];
-    
-    return this.userDirs.hasOwnProperty(dirType);
+    const parts = resourcePath.split('/')
+    const dirType = parts[0]
+
+    return this.userDirs.hasOwnProperty(dirType)
   }
 
   /**
@@ -112,36 +112,36 @@ class UserProtocol extends ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 解析后的绝对路径
    */
-  async resolvePath(resourcePath, queryParams) {
-    const parts = resourcePath.split('/');
-    const dirType = parts[0];
-    const relativePath = parts.slice(1).join('/');
+  async resolvePath (resourcePath, queryParams) {
+    const parts = resourcePath.split('/')
+    const dirType = parts[0]
+    const relativePath = parts.slice(1).join('/')
 
     // 验证目录类型
     if (!this.userDirs[dirType]) {
-      throw new Error(`不支持的用户目录类型: ${dirType}。支持的类型: ${Object.keys(this.userDirs).join(', ')}`);
+      throw new Error(`不支持的用户目录类型: ${dirType}。支持的类型: ${Object.keys(this.userDirs).join(', ')}`)
     }
 
     // 获取用户目录路径
-    const userDirPath = await this.getUserDirectory(dirType);
-    
+    const userDirPath = await this.getUserDirectory(dirType)
+
     // 如果没有相对路径，返回目录本身
     if (!relativePath) {
-      return userDirPath;
+      return userDirPath
     }
 
     // 拼接完整路径
-    const fullPath = path.join(userDirPath, relativePath);
-    
+    const fullPath = path.join(userDirPath, relativePath)
+
     // 安全检查：确保路径在用户目录内
-    const resolvedPath = path.resolve(fullPath);
-    const resolvedUserDir = path.resolve(userDirPath);
-    
+    const resolvedPath = path.resolve(fullPath)
+    const resolvedUserDir = path.resolve(userDirPath)
+
     if (!resolvedPath.startsWith(resolvedUserDir)) {
-      throw new Error(`安全错误：路径超出用户目录范围: ${resolvedPath}`);
+      throw new Error(`安全错误：路径超出用户目录范围: ${resolvedPath}`)
     }
 
-    return resolvedPath;
+    return resolvedPath
   }
 
   /**
@@ -149,35 +149,35 @@ class UserProtocol extends ResourceProtocol {
    * @param {string} dirType - 目录类型
    * @returns {Promise<string>} 目录路径
    */
-  async getUserDirectory(dirType) {
+  async getUserDirectory (dirType) {
     // 检查缓存
     if (this.dirCache.has(dirType)) {
-      return this.dirCache.get(dirType);
+      return this.dirCache.get(dirType)
     }
 
-    const folders = getPlatformFolders();
-    const methodName = this.userDirs[dirType];
-    
+    const folders = getPlatformFolders()
+    const methodName = this.userDirs[dirType]
+
     if (!folders[methodName]) {
-      throw new Error(`未找到用户目录获取方法: ${methodName}`);
+      throw new Error(`未找到用户目录获取方法: ${methodName}`)
     }
 
     try {
-      let dirPath;
-      
+      let dirPath
+
       // 调用platform-folders方法
       if (typeof folders[methodName] === 'function') {
-        dirPath = await folders[methodName]();
+        dirPath = await folders[methodName]()
       } else {
-        dirPath = folders[methodName];
+        dirPath = folders[methodName]
       }
-      
+
       // 缓存结果
-      this.dirCache.set(dirType, dirPath);
-      
-      return dirPath;
+      this.dirCache.set(dirType, dirPath)
+
+      return dirPath
     } catch (error) {
-      throw new Error(`获取用户目录失败 (${dirType}): ${error.message}`);
+      throw new Error(`获取用户目录失败 (${dirType}): ${error.message}`)
     }
   }
 
@@ -187,27 +187,27 @@ class UserProtocol extends ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 资源内容
    */
-  async loadContent(resolvedPath, queryParams) {
+  async loadContent (resolvedPath, queryParams) {
     try {
       // 检查路径是否存在
-      const stats = await fs.stat(resolvedPath);
-      
+      const stats = await fs.stat(resolvedPath)
+
       if (stats.isDirectory()) {
-        return await this.loadDirectoryContent(resolvedPath, queryParams);
+        return await this.loadDirectoryContent(resolvedPath, queryParams)
       } else if (stats.isFile()) {
-        return await this.loadFileContent(resolvedPath, queryParams);
+        return await this.loadFileContent(resolvedPath, queryParams)
       } else {
-        throw new Error(`不支持的文件类型: ${resolvedPath}`);
+        throw new Error(`不支持的文件类型: ${resolvedPath}`)
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
         // 如果设置了exists参数为false，返回空内容而不是错误
         if (queryParams && queryParams.get('exists') === 'false') {
-          return '';
+          return ''
         }
-        throw new Error(`文件或目录不存在: ${resolvedPath}`);
+        throw new Error(`文件或目录不存在: ${resolvedPath}`)
       }
-      throw error;
+      throw error
     }
   }
 
@@ -217,9 +217,9 @@ class UserProtocol extends ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 文件内容
    */
-  async loadFileContent(filePath, queryParams) {
-    const encoding = queryParams?.get('encoding') || 'utf8';
-    return await fs.readFile(filePath, encoding);
+  async loadFileContent (filePath, queryParams) {
+    const encoding = queryParams?.get('encoding') || 'utf8'
+    return await fs.readFile(filePath, encoding)
   }
 
   /**
@@ -228,27 +228,27 @@ class UserProtocol extends ResourceProtocol {
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 目录内容列表
    */
-  async loadDirectoryContent(dirPath, queryParams) {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    
+  async loadDirectoryContent (dirPath, queryParams) {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true })
+
     // 应用类型过滤
-    const typeFilter = queryParams?.get('type');
-    let filteredEntries = entries;
-    
+    const typeFilter = queryParams?.get('type')
+    let filteredEntries = entries
+
     if (typeFilter) {
       filteredEntries = entries.filter(entry => {
         switch (typeFilter) {
-          case 'file': return entry.isFile();
-          case 'dir': return entry.isDirectory();
-          case 'both': return true;
-          default: return true;
+          case 'file': return entry.isFile()
+          case 'dir': return entry.isDirectory()
+          case 'both': return true
+          default: return true
         }
-      });
+      })
     }
 
     // 格式化输出
-    const format = queryParams?.get('format') || 'list';
-    
+    const format = queryParams?.get('format') || 'list'
+
     switch (format) {
       case 'json':
         return JSON.stringify(
@@ -259,21 +259,21 @@ class UserProtocol extends ResourceProtocol {
           })),
           null,
           2
-        );
-      
+        )
+
       case 'paths':
         return filteredEntries
           .map(entry => path.join(dirPath, entry.name))
-          .join('\n');
-      
+          .join('\n')
+
       case 'list':
       default:
         return filteredEntries
           .map(entry => {
-            const type = entry.isDirectory() ? '[DIR]' : '[FILE]';
-            return `${type} ${entry.name}`;
+            const type = entry.isDirectory() ? '[DIR]' : '[FILE]'
+            return `${type} ${entry.name}`
           })
-          .join('\n');
+          .join('\n')
     }
   }
 
@@ -281,27 +281,27 @@ class UserProtocol extends ResourceProtocol {
    * 列出所有支持的用户目录
    * @returns {Promise<object>} 目录信息
    */
-  async listUserDirectories() {
-    const result = {};
-    
+  async listUserDirectories () {
+    const result = {}
+
     for (const dirType of Object.keys(this.userDirs)) {
       try {
-        result[dirType] = await this.getUserDirectory(dirType);
+        result[dirType] = await this.getUserDirectory(dirType)
       } catch (error) {
-        result[dirType] = { error: error.message };
+        result[dirType] = { error: error.message }
       }
     }
-    
-    return result;
+
+    return result
   }
 
   /**
    * 清除目录缓存
    */
-  clearCache() {
-    super.clearCache();
-    this.dirCache.clear();
+  clearCache () {
+    super.clearCache()
+    this.dirCache.clear()
   }
 }
 
-module.exports = UserProtocol; 
+module.exports = UserProtocol

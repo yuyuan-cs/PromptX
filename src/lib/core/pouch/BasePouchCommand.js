@@ -3,15 +3,15 @@
  * 所有锦囊命令都需要继承此类
  */
 class BasePouchCommand {
-  constructor() {
+  constructor () {
     this.context = {
       currentPouch: '',
       history: [],
       userProfile: {},
       sessionData: {},
       domainContext: {}
-    };
-    this.outputFormat = 'human';
+    }
+    this.outputFormat = 'human'
   }
 
   /**
@@ -19,36 +19,36 @@ class BasePouchCommand {
    * @param {Array} args - 命令参数
    * @returns {Promise<PouchOutput>} 锦囊输出
    */
-  async execute(args = []) {
-    const purpose = this.getPurpose();
-    const content = await this.getContent(args);
-    const pateoas = await this.getPATEOAS(args);
-    
-    return this.formatOutput(purpose, content, pateoas);
+  async execute (args = []) {
+    const purpose = this.getPurpose()
+    const content = await this.getContent(args)
+    const pateoas = await this.getPATEOAS(args)
+
+    return this.formatOutput(purpose, content, pateoas)
   }
 
   /**
    * 设置状态上下文
    * @param {StateContext} context - 状态上下文
    */
-  setContext(context) {
-    this.context = { ...this.context, ...context };
+  setContext (context) {
+    this.context = { ...this.context, ...context }
   }
 
   /**
    * 设置输出格式
    * @param {'human'|'json'} format - 输出格式
    */
-  setOutputFormat(format) {
-    this.outputFormat = format;
+  setOutputFormat (format) {
+    this.outputFormat = format
   }
 
   /**
    * 获取锦囊目的说明（子类必须实现）
    * @returns {string} 目的说明
    */
-  getPurpose() {
-    throw new Error('子类必须实现 getPurpose 方法');
+  getPurpose () {
+    throw new Error('子类必须实现 getPurpose 方法')
   }
 
   /**
@@ -56,8 +56,8 @@ class BasePouchCommand {
    * @param {Array} args - 命令参数
    * @returns {Promise<string>} 锦囊内容
    */
-  async getContent(args) {
-    throw new Error('子类必须实现 getContent 方法');
+  async getContent (args) {
+    throw new Error('子类必须实现 getContent 方法')
   }
 
   /**
@@ -65,8 +65,8 @@ class BasePouchCommand {
    * @param {Array} args - 命令参数
    * @returns {PATEOASNavigation} PATEOAS导航
    */
-  getPATEOAS(args) {
-    throw new Error('子类必须实现 getPATEOAS 方法');
+  getPATEOAS (args) {
+    throw new Error('子类必须实现 getPATEOAS 方法')
   }
 
   /**
@@ -76,27 +76,27 @@ class BasePouchCommand {
    * @param {PATEOASNavigation} pateoas - PATEOAS导航
    * @returns {PouchOutput} 格式化的输出
    */
-  formatOutput(purpose, content, pateoas) {
+  formatOutput (purpose, content, pateoas) {
     const output = {
       purpose,
       content,
       pateoas,
       context: this.context,
       format: this.outputFormat
-    };
+    }
 
     if (this.outputFormat === 'json') {
-      return output;
+      return output
     }
 
     // 人类可读格式
     return {
       ...output,
-      toString() {
-        const divider = '='.repeat(60);
+      toString () {
+        const divider = '='.repeat(60)
         const nextSteps = (pateoas.nextActions || [])
           .map(action => `  - ${action.name}: ${action.description}\n    命令: ${action.command}`)
-          .join('\n');
+          .join('\n')
 
         return `
 ${divider}
@@ -111,10 +111,10 @@ ${nextSteps}
 
 📍 当前状态：${pateoas.currentState}
 ${divider}
-`;
+`
       }
-    };
+    }
   }
 }
 
-module.exports = BasePouchCommand; 
+module.exports = BasePouchCommand

@@ -6,7 +6,7 @@
 
 ## 🚀 一行命令，AI自主引导
 
-`Please execute 'npx promptx init'`
+`Please execute 'npx dpml-prompt init'`
 
 
 **就这一行！AI会自动引导你完成所有操作**
