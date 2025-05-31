@@ -4,7 +4,7 @@
  */
 
 // 命令前缀配置 - 约定大于配置
-export const COMMAND_PREFIX = 'npx dpml-prompt'
+export const COMMAND_PREFIX = 'npx dpml-prompt@snapshot'
 
 // 常用命令模板
 export const COMMANDS = {
