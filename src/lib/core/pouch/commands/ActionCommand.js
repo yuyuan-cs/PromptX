@@ -1,6 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand');
 const fs = require('fs-extra');
 const path = require('path');
+const { COMMANDS, buildCommand } = require('../../../../constants');
 
 /**
  * 角色激活锦囊命令
@@ -25,12 +26,12 @@ class ActionCommand extends BasePouchCommand {
 
 🔍 使用方法：
 \`\`\`bash
-promptx action <角色ID>
+${buildCommand.action('<角色ID>')}
 \`\`\`
 
 💡 查看可用角色：
 \`\`\`bash
-promptx hello
+${COMMANDS.HELLO}
 \`\`\``;
     }
 
@@ -42,7 +43,7 @@ promptx hello
 
 🔍 请使用以下命令查看可用角色：
 \`\`\`bash
-promptx hello
+${COMMANDS.HELLO}
 \`\`\``;
       }
 
@@ -61,7 +62,7 @@ promptx hello
 - 权限不足
 - 系统资源问题
 
-💡 请使用 \`promptx hello\` 查看可用角色列表。`;
+💡 请使用 \`${COMMANDS.HELLO}\` 查看可用角色列表。`;
     }
   }
 
@@ -75,7 +76,7 @@ promptx hello
       this.helloCommand = new HelloCommand();
     }
     
-    return this.helloCommand.getRoleInfo(roleId);
+    return await this.helloCommand.getRoleInfo(roleId);
   }
 
   /**
@@ -232,7 +233,7 @@ promptx learn principle://${roleInfo.id}
     plan += `## 🎯 第一步：掌握角色全貌\n`;
     plan += `理解角色的完整定义和核心特征\n\n`;
     plan += `\`\`\`bash\n`;
-    plan += `promptx learn role://${roleId}\n`;
+    plan += `${buildCommand.learn(`role://${roleId}`)}\n`;
     plan += `\`\`\`\n\n`;
     
     // 第二步：学习思维模式
@@ -242,7 +243,7 @@ promptx learn principle://${roleInfo.id}
       
       Array.from(thoughts).forEach((thought, index) => {
         plan += `\`\`\`bash\n`;
-        plan += `promptx learn thought://${thought}\n`;
+        plan += `${buildCommand.learn(`thought://${thought}`)}\n`;
         plan += `\`\`\`\n\n`;
       });
     }
@@ -254,7 +255,7 @@ promptx learn principle://${roleInfo.id}
       
       Array.from(executions).forEach((execution, index) => {
         plan += `\`\`\`bash\n`;
-        plan += `promptx learn execution://${execution}\n`;
+        plan += `${buildCommand.learn(`execution://${execution}`)}\n`;
         plan += `\`\`\`\n\n`;
       });
     }
@@ -283,7 +284,7 @@ promptx learn principle://${roleInfo.id}
           {
             name: '查看可用角色',
             description: '返回角色发现页面',
-            command: 'promptx hello',
+            command: COMMANDS.HELLO,
             priority: 'high'
           }
         ],
@@ -300,13 +301,13 @@ promptx learn principle://${roleInfo.id}
         {
           name: '开始学习',
           description: '按计划开始学习技能',
-          command: `promptx learn`,
+          command: COMMANDS.LEARN,
           priority: 'high'
         },
         {
           name: '返回角色选择',
           description: '选择其他角色',
-          command: 'promptx hello',
+          command: COMMANDS.HELLO,
           priority: 'low'
         }
       ],

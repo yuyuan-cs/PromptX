@@ -1,6 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand');
 const fs = require('fs-extra');
 const path = require('path');
+const { COMMANDS, buildCommand } = require('../../../../constants');
 
 /**
  * 记忆保存锦囊命令
@@ -28,13 +29,13 @@ class RememberCommand extends BasePouchCommand {
 
 🔍 使用方法：
 \`\`\`bash
-promptx remember <记忆标识> <知识内容>
+${buildCommand.remember('<记忆标识>', '<知识内容>')}
 \`\`\`
 
 📝 示例：
 \`\`\`bash
-promptx remember copywriter-tips "视频文案要有强烈的画面感和节奏感"
-promptx remember scrum-daily "每日站会应该控制在15分钟内，关注昨天、今天、阻碍"
+${buildCommand.remember('copywriter-tips', '"视频文案要有强烈的画面感和节奏感"')}
+${buildCommand.remember('scrum-daily', '"每日站会应该控制在15分钟内，关注昨天、今天、阻碍"')}
 \`\`\``;
     }
 
@@ -194,11 +195,11 @@ ${memoryLine}
 
 ## 🔄 下一步行动：
 - 记忆检索: 验证知识内化效果
-  命令: \`promptx recall ${key}\`
+  命令: \`${buildCommand.recall(key)}\`
 - 能力强化: 学习相关知识增强记忆
-  命令: \`promptx learn <protocol>://<resource-id>\`
+  命令: \`${buildCommand.learn('<protocol>://<resource-id>')}\`
 - 应用实践: 在实际场景中运用记忆
-  命令: \`promptx action <role-id>\`
+  命令: \`${buildCommand.action('<role-id>')}\`
 
 📍 当前状态：memory_saved`;
   }
@@ -211,7 +212,7 @@ ${memoryLine}
 
 ## 📖 基本用法
 \`\`\`bash
-promptx remember <记忆标识> <知识内容>
+${buildCommand.remember('<记忆标识>', '<知识内容>')}
 \`\`\`
 
 ## 💡 记忆内化示例
@@ -219,10 +220,10 @@ promptx remember <记忆标识> <知识内容>
 ### 📝 AI记忆内化
 AI学习和内化各种专业知识
 \`\`\`bash
-promptx remember "deploy-process" "1.构建代码 2.运行测试 3.部署到staging 4.验证功能 5.发布生产"
-promptx remember "debug-case-001" "用户反馈视频加载慢，排查发现是CDN配置问题，修改后加载速度提升60%"
-promptx remember "react-hooks" "React Hooks允许在函数组件中使用state和其他React特性"
-promptx remember "code-review-rules" "每个PR至少需要2个人review，必须包含测试用例"
+${buildCommand.remember('"deploy-process"', '"1.构建代码 2.运行测试 3.部署到staging 4.验证功能 5.发布生产"')}
+${buildCommand.remember('"debug-case-001"', '"用户反馈视频加载慢，排查发现是CDN配置问题，修改后加载速度提升60%"')}
+${buildCommand.remember('"react-hooks"', '"React Hooks允许在函数组件中使用state和其他React特性"')}
+${buildCommand.remember('"code-review-rules"', '"每个PR至少需要2个人review，必须包含测试用例"')}
 \`\`\`
 
 ## 💡 记忆标识规范
@@ -232,15 +233,15 @@ promptx remember "code-review-rules" "每个PR至少需要2个人review，必须
 
 ## 🔍 记忆检索与应用
 \`\`\`bash
-promptx recall <关键词>    # AI主动检索记忆
-promptx action <role-id>   # AI运用记忆激活角色
+${buildCommand.recall('<关键词>')}    # AI主动检索记忆
+${buildCommand.action('<role-id>')}   # AI运用记忆激活角色
 \`\`\`
 
 🔄 下一步行动：
   - 开始记忆: 内化第一条知识
-    命令: promptx remember <key> <content>
+    命令: ${buildCommand.remember('<key>', '<content>')}
   - 学习资源: 学习新知识再内化
-    命令: promptx learn <protocol>://<resource>`;
+    命令: ${buildCommand.learn('<protocol>://<resource>')}`;
   }
 
   /**
@@ -258,13 +259,13 @@ promptx action <role-id>   # AI运用记忆激活角色
           {
             name: '查看角色',
             description: '选择角色获取专业知识',
-            command: 'promptx hello',
+            command: COMMANDS.HELLO,
             priority: 'medium'
           },
           {
             name: '学习资源',
             description: '学习新知识然后保存',
-            command: 'promptx learn <protocol>://<resource>',
+            command: buildCommand.learn('<protocol>://<resource>'),
             priority: 'high'
           }
         ]
@@ -279,7 +280,7 @@ promptx action <role-id>   # AI运用记忆激活角色
           {
             name: '重新输入',
             description: '提供完整的记忆内容',
-            command: `promptx remember ${key} <content>`,
+            command: buildCommand.remember(key, '<content>'),
             priority: 'high'
           }
         ]
@@ -293,25 +294,25 @@ promptx action <role-id>   # AI运用记忆激活角色
         {
           name: '检索记忆',
           description: '测试记忆是否可检索',
-          command: `promptx recall ${key}`,
+          command: buildCommand.recall(key),
           priority: 'high'
         },
         {
           name: '学习强化',
           description: '学习相关知识加强记忆',
-          command: 'promptx learn <protocol>://<resource>',
+          command: buildCommand.learn('<protocol>://<resource>'),
           priority: 'medium'
         },
         {
           name: '应用记忆',
           description: '在实际场景中应用记忆',
-          command: 'promptx action <role-id>',
+          command: buildCommand.action('<role-id>'),
           priority: 'medium'
         },
         {
           name: '继续内化',
           description: 'AI继续内化更多知识',
-          command: 'promptx remember <key> <content>',
+          command: buildCommand.remember('<key>', '<content>'),
           priority: 'low'
         }
       ],

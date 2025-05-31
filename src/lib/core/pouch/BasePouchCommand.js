@@ -22,7 +22,7 @@ class BasePouchCommand {
   async execute(args = []) {
     const purpose = this.getPurpose();
     const content = await this.getContent(args);
-    const pateoas = this.getPATEOAS(args);
+    const pateoas = await this.getPATEOAS(args);
     
     return this.formatOutput(purpose, content, pateoas);
   }
@@ -94,7 +94,7 @@ class BasePouchCommand {
       ...output,
       toString() {
         const divider = '='.repeat(60);
-        const nextSteps = pateoas.nextActions
+        const nextSteps = (pateoas.nextActions || [])
           .map(action => `  - ${action.name}: ${action.description}\n    命令: ${action.command}`)
           .join('\n');
 

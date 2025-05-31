@@ -1,5 +1,6 @@
 const BasePouchCommand = require('../BasePouchCommand');
 const ResourceManager = require('../../resource/resourceManager');
+const { COMMANDS, buildCommand } = require('../../../../constants');
 
 /**
  * 智能学习锦囊命令
@@ -65,11 +66,11 @@ ${content}
 
 ## 🔄 下一步行动：
 - 继续学习: 学习其他相关资源
-  命令: \`promptx learn <protocol>://<resource-id>\`
+  命令: \`${buildCommand.learn('<protocol>://<resource-id>')}\`
 - 应用记忆: 检索相关经验
-  命令: \`promptx recall\`
+  命令: \`${COMMANDS.RECALL}\`
 - 激活角色: 激活完整角色能力
-  命令: \`promptx action <role-id>\`
+  命令: \`${buildCommand.action('<role-id>')}\`
 
 📍 当前状态：learned_${protocol}`;
   }
@@ -93,18 +94,18 @@ ${errorMessage}
 
 🔍 查看可用资源：
 \`\`\`bash
-promptx action <role-id>  # 查看角色的所有依赖
+${buildCommand.action('<role-id>')}  # 查看角色的所有依赖
 \`\`\`
 
 🔄 下一步行动：
   - 继续学习: 学习其他资源
-    命令: promptx learn <protocol>://<resource-id>
+    命令: ${buildCommand.learn('<protocol>://<resource-id>')}
   - 应用记忆: 检索相关经验
-    命令: promptx recall
+    命令: ${COMMANDS.RECALL}
   - 激活角色: 激活完整角色能力
-    命令: promptx action <role-id>
+    命令: ${buildCommand.action('<role-id>')}
   - 查看角色列表: 选择其他角色
-    命令: promptx hello`;
+    命令: ${COMMANDS.HELLO}`;
   }
 
   /**
@@ -133,26 +134,26 @@ promptx learn <protocol>://<resource-id>
 ## 📝 使用示例
 \`\`\`bash
 # 学习执行技能
-promptx learn execution://deal-at-reference
+${buildCommand.learn('execution://deal-at-reference')}
 
 # 学习思维模式  
-promptx learn thought://prompt-developer
+${buildCommand.learn('thought://prompt-developer')}
 
 # 学习角色人格
-promptx learn personality://video-copywriter
+${buildCommand.learn('personality://video-copywriter')}
 \`\`\`
 
 ## 🔍 发现可学习资源
 \`\`\`bash
-promptx action <role-id>  # 查看角色需要的所有资源
-promptx hello            # 查看可用角色列表
+${buildCommand.action('<role-id>')}  # 查看角色需要的所有资源
+${COMMANDS.HELLO}            # 查看可用角色列表
 \`\`\`
 
 🔄 下一步行动：
   - 激活角色: 分析角色依赖
-    命令: promptx action <role-id>
+    命令: ${buildCommand.action('<role-id>')}
   - 查看角色: 选择感兴趣的角色  
-    命令: promptx hello`;
+    命令: ${COMMANDS.HELLO}`;
   }
 
   /**
@@ -169,13 +170,13 @@ promptx hello            # 查看可用角色列表
           {
             name: '查看可用角色',
             description: '返回角色选择页面',
-            command: 'promptx hello',
+            command: COMMANDS.HELLO,
             priority: 'high'
           },
           {
             name: '生成学习计划',
             description: '为特定角色生成学习计划',
-            command: 'promptx action <role-id>',
+            command: buildCommand.action('<role-id>'),
             priority: 'high'
           }
         ]
@@ -189,9 +190,9 @@ promptx hello            # 查看可用角色列表
         availableTransitions: ['hello', 'action'],
         nextActions: [
           {
-            name: '查看使用帮助',
-            description: '重新学习命令使用方法',
-            command: 'promptx learn',
+                      name: '查看使用帮助',
+          description: '重新学习命令使用方法',
+          command: COMMANDS.LEARN,
             priority: 'high'
           }
         ]
@@ -207,25 +208,25 @@ promptx hello            # 查看可用角色列表
         {
           name: '继续学习',
           description: '学习其他资源',
-          command: 'promptx learn <protocol>://<resource-id>',
+          command: buildCommand.learn('<protocol>://<resource-id>'),
           priority: 'medium'
         },
         {
           name: '应用记忆',
           description: '检索相关经验',
-          command: 'promptx recall',
+          command: COMMANDS.RECALL,
           priority: 'medium'
         },
         {
           name: '激活角色',
           description: '激活完整角色能力',
-          command: 'promptx action <role-id>',
+          command: buildCommand.action('<role-id>'),
           priority: 'high'
         },
         {
           name: '查看角色列表',
           description: '选择其他角色',
-          command: 'promptx hello',
+          command: COMMANDS.HELLO,
           priority: 'low'
         }
       ],

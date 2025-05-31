@@ -62,6 +62,9 @@ class ResourceManager {
     const protocolsDir = path.join(__dirname, 'protocols');
     const protocolFiles = await fs.readdir(protocolsDir);
     
+    // 首先创建所有协议处理器实例
+    const handlers = new Map();
+    
     for (const file of protocolFiles) {
       if (file.endsWith('.js') && file !== 'ResourceProtocol.js') {
         // 将文件名映射到协议名：ExecutionProtocol.js -> execution
@@ -75,9 +78,20 @@ class ResourceManager {
           protocolHandler.setRegistry(protocolConfig.registry);
         }
         
-        this.protocolHandlers.set(protocolName, protocolHandler);
+        handlers.set(protocolName, protocolHandler);
       }
     }
+    
+    // 设置协议依赖关系
+    const packageProtocol = handlers.get('package');
+    const promptProtocol = handlers.get('prompt');
+    
+    if (promptProtocol && packageProtocol) {
+      promptProtocol.setPackageProtocol(packageProtocol);
+    }
+    
+    // 将所有处理器注册到管理器
+    this.protocolHandlers = handlers;
   }
 
   /**
@@ -86,19 +100,60 @@ class ResourceManager {
   async resolveResource(resourceUrl) {
     await this.initialize();
 
-    const urlMatch = resourceUrl.match(/^([a-zA-Z]+):\/\/(.+)$/);
-    if (!urlMatch) {
-      throw new Error(`无效的资源URL格式: ${resourceUrl}`);
-    }
+    try {
+      // 支持DPML资源引用语法: @protocol://path, @!protocol://path, @?protocol://path
+      // 同时向后兼容标准URL格式: protocol://path
+      const urlMatch = resourceUrl.match(/^(@[!?]?)?([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$/);
+      if (!urlMatch) {
+        throw new Error(`无效的资源URL格式: ${resourceUrl}。支持格式: @protocol://path, @!protocol://path, @?protocol://path`);
+      }
 
-    const [, protocol, path] = urlMatch;
-    const handler = this.protocolHandlers.get(protocol);
-    
-    if (!handler) {
-      throw new Error(`未注册的协议: ${protocol}`);
-    }
+      const [, loadingSemantic, protocol, resourcePath] = urlMatch;
+      const handler = this.protocolHandlers.get(protocol);
+      
+      if (!handler) {
+        throw new Error(`未注册的协议: ${protocol}`);
+      }
 
-    return await handler.resolve(path);
+      // 解析查询参数（如果有的话）
+      const { QueryParams, ResourceResult } = require('./types');
+      let path = resourcePath;
+      let queryParams = new QueryParams();
+      
+      if (resourcePath.includes('?')) {
+        const [pathPart, queryString] = resourcePath.split('?', 2);
+        path = pathPart;
+        
+        // 解析查询字符串
+        const params = new URLSearchParams(queryString);
+        for (const [key, value] of params) {
+          queryParams.set(key, value);
+        }
+      }
+      
+      // 将加载语义信息添加到查询参数中（如果有的话）
+      if (loadingSemantic) {
+        queryParams.set('loadingSemantic', loadingSemantic);
+      }
+      
+      const content = await handler.resolve(path, queryParams);
+      
+      // 返回ResourceResult格式
+      return ResourceResult.success(content, {
+        protocol,
+        path,
+        loadingSemantic,
+        loadTime: Date.now()
+      });
+      
+    } catch (error) {
+      // 返回错误结果
+      const { ResourceResult } = require('./types');
+      return ResourceResult.error(error, {
+        resourceUrl,
+        loadTime: Date.now()
+      });
+    }
   }
 
   /**

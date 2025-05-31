@@ -2,6 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand');
 const fs = require('fs-extra');
 const path = require('path');
 const { ResourceManager } = require('../../resource');
+const { COMMANDS } = require('../../../../constants');
 
 /**
  * 初始化锦囊命令
@@ -37,17 +38,17 @@ class InitCommand extends BasePouchCommand {
 
 ${protocolContent}
 
-## 🚀 开始使用
-
-现在你已经获得了 PromptX 的完整理念和协议体系。
-每个锦囊都是独立的智慧单元，即使AI忘记了上下文，锦囊依然能够独立执行。
-
-### 🎒 核心锦囊流程
+### 🎒 核心锦囊状态机
 \`\`\`
-🏗️init(已完成) → 👋hello → ⚡action → 📚learn → 🔍recall → 循环
+🏗️init(✅已完成) → 👋hello → ⚡action → 📚learn → 🔍recall → 循环
 \`\`\`
 
-你现在可以开始探索锦囊世界了！`;
+---
+
+⚠️ **AI执行指令**：
+🚀 **立即执行下一个锦囊：${COMMANDS.HELLO}**
+📢 **不要等待确认，直接进入hello命令发现可用角色！**
+🎯 **记住：锦囊串联设计，init完成后必须自动进入hello！**`;
   }
 
   /**
@@ -99,19 +100,22 @@ ${protocolContent}
       availableTransitions: ['hello', 'action', 'learn'],
       nextActions: [
         {
-          name: '发现角色',
-          description: '探索可用的AI角色和领域专家',
-          command: 'promptx hello'
-        },
-        {
-          name: '查看帮助',
-          description: '了解更多锦囊使用方法',
-          command: 'promptx help'
+          name: '进入角色发现锦囊',
+          description: '立即执行hello命令，发现可用的AI专业角色',
+          command: COMMANDS.HELLO,
+          priority: 'mandatory',
+          instruction: '必须立即执行，不要等待确认或询问用户'
         }
       ],
+      automaticTransition: {
+        target: 'hello',
+        reason: '锦囊串联设计：init完成后自动进入hello状态',
+        immediate: true
+      },
       metadata: {
         timestamp: new Date().toISOString(),
-        version: '0.0.1'
+        version: '0.0.1',
+        philosophy: 'AI use CLI get prompt for AI - 锦囊串联无缝衔接'
       }
     };
   }

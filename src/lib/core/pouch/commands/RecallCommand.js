@@ -1,6 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand');
 const fs = require('fs-extra');
 const path = require('path');
+const { COMMANDS, buildCommand } = require('../../../../constants');
 
 /**
  * 记忆检索锦囊命令
@@ -25,8 +26,8 @@ class RecallCommand extends BasePouchCommand {
         return `🧠 AI记忆体系中暂无内容。
 
 💡 建议：
-1. 使用 promptx remember 内化新知识
-2. 使用 promptx learn 学习后再内化
+1. 使用 ${COMMANDS.REMEMBER} 内化新知识
+2. 使用 ${COMMANDS.LEARN} 学习后再内化
 3. 开始构建AI的专业知识体系`;
       }
 
@@ -53,11 +54,11 @@ ${formattedMemories}
         currentState: 'recall-waiting',
         availableTransitions: ['hello', 'learn'],
         nextActions: [
-          {
-            name: '查看领域',
-            description: '查看可检索的领域',
-            command: 'promptx hello'
-          }
+                  {
+          name: '查看领域',
+          description: '查看可检索的领域',
+          command: COMMANDS.HELLO
+        }
         ]
       };
     }
@@ -71,22 +72,22 @@ ${formattedMemories}
         {
           name: '应用记忆',
           description: `使用检索到的${query}知识`,
-          command: `promptx action ${query}`
+          command: buildCommand.action(query)
         },
         {
           name: '深入学习',
           description: `学习更多${domain}知识`,
-          command: `promptx learn ${domain}`
+          command: buildCommand.learn(domain)
         },
         {
           name: '增强记忆',
           description: 'AI内化新的知识增强记忆',
-          command: `promptx remember ${query}-update`
+          command: buildCommand.remember(`${query}-update`)
         },
         {
           name: '相关检索',
           description: '检索相关领域知识',
-          command: `promptx recall ${this.getRelatedQuery(query)}`
+          command: buildCommand.recall(this.getRelatedQuery(query))
         }
       ],
       metadata: {

@@ -37,7 +37,18 @@ class PromptProtocol extends ResourceProtocol {
    * 设置注册表
    */
   setRegistry(registry) {
-    this.registry = registry || {};
+    if (!registry) {
+      this.registry = new Map();
+      return;
+    }
+    
+    // 如果传入的是普通对象，转换为Map
+    if (registry instanceof Map) {
+      this.registry = registry;
+    } else {
+      // 从普通对象创建Map
+      this.registry = new Map(Object.entries(registry));
+    }
   }
 
   /**

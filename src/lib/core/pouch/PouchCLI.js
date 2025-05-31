@@ -57,7 +57,7 @@ class PouchCLI {
 
     // 验证命令是否存在
     if (!this.registry.validate(commandName)) {
-      throw new Error(`未知命令: ${commandName}\n使用 'promptx help' 查看可用命令`);
+      throw new Error(`未知命令: ${commandName}\n使用 'npx promptx help' 查看可用命令`);
     }
 
     try {
@@ -104,11 +104,11 @@ class PouchCLI {
     help += `
 
 💡 使用示例:
-  promptx init              # 初始化工作环境
-  promptx hello             # 发现可用角色
-  promptx action copywriter # 激活文案专家
-  promptx learn scrum       # 学习敏捷知识
-  promptx recall frontend   # 检索前端记忆
+          npx promptx init              # 初始化工作环境
+        npx promptx hello             # 发现可用角色
+        npx promptx action copywriter # 激活文案专家
+        npx promptx learn scrum       # 学习敏捷知识
+        npx promptx recall frontend   # 检索前端记忆
 
 🔄 PATEOAS 导航:
 每个命令执行后都会提供下一步的建议操作，

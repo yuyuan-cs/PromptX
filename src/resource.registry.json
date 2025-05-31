@@ -1,6 +1,6 @@
 {
   "description": "PromptX 统一资源协议注册表",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "protocols": {
     "thought": {
       "description": "思维模式资源协议",
@@ -10,8 +10,9 @@
         "cache": "boolean - 是否缓存"
       },
       "registry": {
-        "prompt-developer": "@package://prompt/domain/prompt/thought/prompt-developer.thought.md",
-        "product-owner": "@package://prompt/domain/scrum/thought/product-owner.thought.md"
+        "assistant": "@package://prompt/domain/assistant/thought/assistant.thought.md",
+        "remember": "@package://prompt/core/thought/remember.thought.md",
+        "recall": "@package://prompt/core/thought/recall.thought.md"
       }
     },
     "execution": {
@@ -22,27 +23,10 @@
         "cache": "boolean - 是否缓存"
       },
       "registry": {
+        "assistant": "@package://prompt/domain/assistant/execution/assistant.execution.md",
         "deal-at-reference": "@package://prompt/core/execution/deal-at-reference.execution.md",
-        "prompt-developer": "@package://prompt/domain/prompt/execution/prompt-developer.execution.md",
         "memory-trigger": "@package://prompt/core/execution/memory-trigger.execution.md",
-        "deal-memory": "@package://prompt/core/execution/deal-memory.execution.md",
-        "memory-tool-usage": "@package://prompt/core/execution/memory-tool-usage.execution.md",
-        "thought-best-practice": "@package://prompt/domain/prompt/execution/thought-best-practice.execution.md",
-        "execution-best-practice": "@package://prompt/domain/prompt/execution/execution-best-practice.execution.md",
-        "memory-best-practice": "@package://prompt/domain/prompt/execution/memory-best-practice.execution.md",
-        "role-best-practice": "@package://prompt/domain/prompt/execution/role-best-practice.execution.md",
-        "resource-best-practice": "@package://prompt/domain/prompt/execution/resource-best-practice.execution.md",
-        "terminology-best-practice": "@package://prompt/domain/prompt/execution/terminology-best-practice.execution.md",
-        "product-owner": "@package://prompt/domain/scrum/execution/product-owner.execution.md",
-        "epic-best-practice": "@package://prompt/domain/scrum/execution/epic-best-practice.execution.md",
-        "workitem-title-best-practice": "@package://prompt/domain/scrum/execution/workitem-title-best-practice.execution.md",
-        "feature-best-practice": "@package://prompt/domain/scrum/execution/feature-best-practice.execution.md",
-        "story-best-practice": "@package://prompt/domain/scrum/execution/story-best-practice.execution.md",
-        "testcase-best-practice": "@package://prompt/domain/scrum/execution/testcase-best-practice.execution.md",
-        "task-best-practice": "@package://prompt/domain/scrum/execution/task-best-practice.execution.md",
-        "sprint-best-practice": "@package://prompt/domain/scrum/execution/sprint-best-practice.execution.md",
-        "milestone-best-practice": "@package://prompt/domain/scrum/execution/milestone-best-practice.execution.md",
-        "scrum-best-practice": "@package://prompt/domain/scrum/execution/scrum-best-practice.execution.md"
+        "deal-memory": "@package://prompt/core/execution/deal-memory.execution.md"
       }
     },
     "memory": {
@@ -67,11 +51,11 @@
         "cache": "boolean - 是否缓存"
       },
       "registry": {
-        "video-copywriter": "@package://prompt/domain/copywriter/video-copywriter.role.md",
-        "product-owner": "@package://prompt/domain/scrum/role/product-owner.role.md",
-        "prompt-developer": "@package://prompt/domain/prompt/prompt-developer.role.md",
-        "test-assistant": "@package://prompt/domain/test/test-assistant.role.md",
-        "assistant": "@package://prompt/domain/assistant/assistant.role.md"
+        "assistant": {
+          "file": "@package://prompt/domain/assistant/assistant.role.md",
+          "name": "🙋 智能助手",
+          "description": "通用助理角色，提供基础的助理服务和记忆支持"
+        }
       }
     },
     "prompt": {
