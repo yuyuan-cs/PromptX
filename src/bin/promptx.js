@@ -53,10 +53,10 @@ program
   })
 
 program
-  .command('remember <key> [value...]')
+  .command('remember [content...]')
   .description('🧠 remember锦囊 - AI主动内化知识和经验到记忆体系')
-  .action(async (key, value, options) => {
-    const args = [key, ...(value || [])]
+  .action(async (content, options) => {
+    const args = content || []
     await cli.execute('remember', args)
   })
 
@@ -99,8 +99,8 @@ ${chalk.cyan('示例:')}
   promptx recall
   
   ${chalk.gray('# 6️⃣ AI内化专业知识')}
-  promptx remember "scrum-tips" "每日站会控制在15分钟内"
-  promptx remember "deploy-flow" "测试→预发布→生产"
+  promptx remember "每日站会控制在15分钟内"
+  promptx remember "测试→预发布→生产"
 
 ${chalk.cyan('🔄 PATEOAS状态机:')}
   每个锦囊输出都包含 PATEOAS 导航，引导 AI 发现下一步操作

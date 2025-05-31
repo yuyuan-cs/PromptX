@@ -22,7 +22,7 @@ export const buildCommand = {
   action: (roleId) => `${COMMAND_PREFIX} action ${roleId}`,
   learn: (resource) => `${COMMAND_PREFIX} learn ${resource}`,
   recall: (query = '') => `${COMMAND_PREFIX} recall${query ? ' ' + query : ''}`,
-  remember: (key, content = '<content>') => `${COMMAND_PREFIX} remember ${key}${content !== '<content>' ? ' "' + content + '"' : ' <content>'}`
+  remember: (content = '<content>') => `${COMMAND_PREFIX} remember${content !== '<content>' ? ' "' + content + '"' : ' <content>'}`
 }
 
 // 系统路径配置

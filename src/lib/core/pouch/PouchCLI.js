@@ -1,6 +1,7 @@
 const PouchStateMachine = require('./state/PouchStateMachine')
 const PouchRegistry = require('./PouchRegistry')
 const commands = require('./commands')
+const { COMMANDS } = require('../../../constants')
 
 /**
  * 锦囊CLI主入口
@@ -57,7 +58,7 @@ class PouchCLI {
 
     // 验证命令是否存在
     if (!this.registry.validate(commandName)) {
-      throw new Error(`未知命令: ${commandName}\n使用 'npx promptx help' 查看可用命令`)
+      throw new Error(`未知命令: ${commandName}\n使用 '${COMMANDS.HELP}' 查看可用命令`)
     }
 
     try {
@@ -104,11 +105,11 @@ class PouchCLI {
     help += `
 
 💡 使用示例:
-          npx promptx init              # 初始化工作环境
-        npx promptx hello             # 发现可用角色
-        npx promptx action copywriter # 激活文案专家
-        npx promptx learn scrum       # 学习敏捷知识
-        npx promptx recall frontend   # 检索前端记忆
+        ${COMMANDS.INIT}              # 初始化工作环境
+        ${COMMANDS.HELLO}             # 发现可用角色
+        ${COMMANDS.ACTION} copywriter # 激活文案专家
+        ${COMMANDS.LEARN} scrum       # 学习敏捷知识
+        ${COMMANDS.RECALL} frontend   # 检索前端记忆
 
 🔄 PATEOAS 导航:
 每个命令执行后都会提供下一步的建议操作，

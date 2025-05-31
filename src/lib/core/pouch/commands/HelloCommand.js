@@ -88,7 +88,7 @@ class HelloCommand extends BasePouchCommand {
       content += `### ${index + 1}. ${role.name} 
 **角色ID**: \`${role.id}\`  
 **专业能力**: ${role.description}  
-**激活命令**: \`npx promptx action ${role.id}\`
+**激活命令**: \`${buildCommand.action(role.id)}\`
 
 ---
 
@@ -101,12 +101,12 @@ class HelloCommand extends BasePouchCommand {
 ### 🔧 激活步骤
 1. **选择角色**: 从上述列表中选择需要的专业角色
 2. **使用角色ID**: 复制对应的角色ID（如：\`${allRoles[0]?.id || 'assistant'}\`）
-3. **执行命令**: 运行 \`npx promptx action <角色ID>\`
+3. **执行命令**: 运行 \`${buildCommand.action('<角色ID>')}\`
 
 ### 📝 激活示例
 \`\`\`bash
 # 激活智能助手角色
-npx promptx action ${allRoles[0]?.id || 'assistant'}
+${buildCommand.action(allRoles[0]?.id || 'assistant')}
 \`\`\`
 
 ### ⚡ 激活后效果
@@ -118,7 +118,7 @@ npx promptx action ${allRoles[0]?.id || 'assistant'}
 
 ⚠️ **AI执行指令**：
 📢 **向主人汇报角色选项，明确说明使用方法："请选择角色ID，然后我将执行对应的action命令"**
-🎯 **等待主人指定具体的角色ID后，立即执行 \`npx promptx action <角色ID>\`**
+🎯 **等待主人指定具体的角色ID后，立即执行 \`${buildCommand.action('<角色ID>')}\`**
 💡 **强调：action命令需要具体的角色ID，不是角色名称**
 `
 

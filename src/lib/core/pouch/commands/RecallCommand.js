@@ -135,20 +135,18 @@ ${formattedMemories}
    * 解析记忆行（紧凑格式）
    */
   parseMemoryLine (line) {
-    // 格式：- 2025/05/31 14:30 内容 #key #tag1 #tag2 #评分:8 #有效期:长期
-    const match = line.match(/^- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}) (.*?) (#\w+.*?)$/)
+    // 格式：- 2025/05/31 14:30 内容 #tag1 #tag2 #评分:8 #有效期:长期
+    const match = line.match(/^- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}) (.*?) (#.*?)$/)
     if (!match) return null
 
     const [, timestamp, content, tagsStr] = match
     const tags = tagsStr.split(' ').filter(t => t.startsWith('#'))
-    const keyTag = tags.find(t => !t.includes(':') && !['#敏捷开发', '#测试', '#部署', '#前端开发', '#后端开发', '#AI', '#最佳实践', '#流程管理', '#工具使用', '#其他'].includes(t))
 
     return {
       timestamp,
       content,
-      key: keyTag ? keyTag.substring(1) : 'unknown',
       tags,
-      source: keyTag ? keyTag.substring(1) : 'unknown'
+      source: 'memory'
     }
   }
 
@@ -158,7 +156,6 @@ ${formattedMemories}
   matchesMemory (memory, query) {
     const lowerQuery = query.toLowerCase()
     return memory.content.toLowerCase().includes(lowerQuery) ||
-           memory.key.toLowerCase().includes(lowerQuery) ||
            memory.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
   }
 
@@ -179,7 +176,7 @@ ${formattedMemories}
         ? memory.content.substring(0, 120) + '...'
         : memory.content
 
-      return `📝 ${index + 1}. **${memory.key}** (${memory.timestamp})
+      return `📝 ${index + 1}. **记忆** (${memory.timestamp})
 
 ${content}
 
