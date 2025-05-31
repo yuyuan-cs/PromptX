@@ -1,149 +1,143 @@
 # PromptX
 
-> **TL;DR:** PromptX是一个系统性的， 工程化的提示词管理框架，它提供了结构化、模块化的方式来构建和管理AI提示词。
+> **革命性AI提示词框架** - 基于DPML协议的自驱动AI提示词系统，让AI拥有记忆、人格和原则
 
 **中文** | [English](README_EN.md) | [Issues](https://github.com/Deepractice/PromptX/issues)
 
-## 快速开始
+## 🚀 一行命令，AI自主引导
 
-### 安装
-
-#### 前置条件
-
-- Node.js (建议版本 >= 14.0.0)
+`Please execute 'npx promptx init'`
 
 
-PromptX是一个提示词框架，可以通过以下方式集成到您的项目中：
+**就这一行！AI会自动引导你完成所有操作**
 
-#### 将提示词项目整个拷贝到要集成的项目下
+## 🧠 核心设计理念
 
-```bash
-# 下载或克隆PromptX
-git clone https://github.com/Deepractice/PromptX.git
-
-# 将PromptX目录拷贝到您的项目中
-cp -r PromptX /path/to/your/project/
+### **PATEOAS协议** - Prompt as the Engine of Application State
+```
+AI状态转换完全由Prompt驱动，每个输出都包含下一步操作指引
+解决AI上下文遗忘问题 → 即使AI忘记对话，仍可独立执行
 ```
 
+### **DPML协议** - Deepractice Prompt Markup Language  
+```xml
+<role domain="expertise">
+  <personality>思维模式定义</personality>
+  <principle>行为原则约束</principle>
+  <knowledge>专业知识体系</knowledge>
+</role>
+```
+**标准化提示词标记语言，让AI角色定义规范化、可复用**
 
-### 基本使用
+### **@Reference引用系统**
+```
+@role://video-copywriter     # 引用角色定义
+@thought://creative-thinking # 引用思维模式  
+@execution://best-practice   # 引用执行框架
+@memory://project-experience # 引用记忆系统
+```
+**统一资源定位，模块化组装AI能力**
 
-PromptX的基本使用流程：
+### **三层架构设计**
 
-#### 步骤1：打开bootstrap.md文件
-```bash
-# 查看角色引导文件
-cat PromptX/bootstrap.md
+#### **🎭 Role Layer (角色层)**
+- 定义AI的专业身份和领域expertise
+- 每个角色包含完整的知识体系和行为模式
+- 支持角色组合和能力叠加
+
+#### **🧠 Thought Layer (思维层)**  
+- 探索性思维：发散性思考，多角度分析
+- 系统性思维：结构化分解，逻辑性推理
+- 批判性思维：质疑假设，识别盲点
+
+#### **⚡ Execution Layer (执行层)**
+- 标准化执行流程和最佳实践
+- 质量检查和边界约束
+- 持续改进和反馈循环
+
+## 🔬 技术创新
+
+### **锦囊串联架构**
+```
+每个命令都是自包含的"锦囊"
+锦囊可以独立执行，也可以串联使用
+解决AI注意力分散和任务中断问题
 ```
 
-#### 步骤2：修改代入角色
-在bootstrap.md中修改角色引用，例如：
-```markdown
-@file://PromptX/domain/scrum/role/product-owner.role.md
+### **AI-First设计**
+```
+不是"人用CLI"，而是"AI用CLI"
+AI通过CLI获取专业提示词能力
+实现AI自我增强和能力扩展
 ```
 
-#### 步骤3：将bootstrap.md作为系统提示词
-将修改后的bootstrap.md内容复制到您的AI系统的系统提示词中。
-
-您可以使用类似于 Cursor Rules 等默认规则文件加载提示词，也可以直接把启动提示词复制粘贴到对话框。
-
-<img src="assets/demo2.jpg" alt="系统提示词设置演示" width="500">
-
-#### 步骤4：发出Action指令
-向AI发送指令：
+### **记忆持久化**
 ```
-Action
+声明性记忆：事实和知识
+程序性记忆：技能和流程  
+情景记忆：项目和经验
+语义记忆：概念和关系
 ```
 
-AI将自动按照PromptX协议加载角色、思维模式、执行框架和记忆系统。
+## 📐 架构优势
 
-### 演示视频
+### **🔄 状态无关性**
+- 每个锦囊包含完整执行信息
+- AI忘记上下文也能继续工作
+- 支持断点续传和状态恢复
 
-观看PromptX使用演示：
+### **🎯 专注力管理** 
+- 每个锦囊专注单一任务
+- 避免AI注意力分散和偏题
+- 分阶段完成复杂任务
 
-<img src="assets/demo.gif" alt="PromptX使用演示" width="600">
+### **⚡ 即时专家化**
+- 5秒内AI变身领域专家
+- 无需冗长的角色设定
+- 支持多角色快速切换
 
-[📺 观看完整演示视频](https://www.bilibili.com/video/BV14eJHzMEGz)
+### **🧠 认知增强**
+- 长期记忆系统
+- 跨会话知识保持
+- 自主学习和优化
 
-## 提示词增强
+## 🎨 应用场景
 
-使用PromptX可以让您的 AI 助手更加智能，更加贴心，PromptX 将从以下几个维度强化 AI：
+- **🏢 企业级AI助手**：标准化AI服务交付
+- **🎬 内容创作工具**：专业文案和创意支持
+- **💻 开发者工具**：代码审查和架构设计
+- **📚 知识管理**：团队经验沉淀和传承
+- **🔬 AI研究**：提示词工程和认知建模
 
-### 思维模式 (Thought)
+## 🧪 设计哲学
 
-为AI提供结构化思考能力：
+> **"让AI成为AI的老师"**
 
-- **多角度分析** - 从探索、推理、计划、挑战四个维度全面思考问题
-- **逻辑严谨性** - 建立清晰的因果关系和推理链条  
-- **决策支持** - 制定可行的行动方案和执行路径
-- **风险识别** - 主动发现潜在问题和改进空间
+PromptX不仅仅是工具，更是一套AI认知架构：
+- **自我觉知**：AI了解自己的能力边界
+- **自主学习**：AI主动获取和内化知识  
+- **自我进化**：AI基于经验持续优化
+- **自我引导**：AI指导用户如何更好地使用AI
 
-### 行为模式 (Execution)
+## 🔗 生态系统
 
-赋予AI规范化的行为能力：
+- **[DPML规范](https://github.com/Deepractice/dpml)** - 提示词标记语言标准
+- **[深度实践](https://www.deepracticex.com/)** - AI工程化实践社区
+- **角色库** - 持续增长的专业AI角色库
+- **最佳实践** - 提示词工程经验分享
 
-- **标准化执行** - 按照明确的流程和步骤完成任务
-- **质量保证** - 遵循行业最佳实践和质量标准
-- **边界意识** - 明确能做什么、不能做什么
-- **持续改进** - 基于反馈优化执行效果
+## 🤝 参与共建
 
-### 记忆模式 (Memory)
+PromptX是开源项目，欢迎贡献：
+- 🎭 **角色贡献**：设计新的专业AI角色
+- 🧠 **思维模式**：创建新的思考框架
+- ⚡ **执行模式**：优化AI行为模式
+- 📚 **知识库**：丰富领域知识体系
 
-让AI具备学习和记忆能力：
+扫码加入技术交流群：
 
-- **智能记忆** - 自动识别和保存重要信息
-- **上下文感知** - 根据历史交互提供个性化服务
-- **知识积累** - 持续学习和完善知识体系
-- **经验传承** - 将成功经验应用到新场景中
+<img src="assets/qrcode.jpg" alt="技术交流群" width="200">
 
-提示词系统内置了简单的记忆模式，含有记忆评估（AI 自主评估哪些内容值得记忆），记忆存储（默认存储造项目根目录.memory下的文件），回忆（AI 启动时自主回忆已经存在的记忆内容）。
+## 📄 许可证
 
-在使用过程中用户可要求 ai 记忆某些信息， 例如"记住这个经验，下次我们还会用。"。同时 AI 也会根据自主意识去评估哪些内容值得记忆。
-
-<img src="assets/demo3.jpg" alt="AI 记忆示例" width="600">
-
-
-
-## 内置可使用角色
-
-PromptX框架内置了多种专业角色，您可以直接使用：
-
-| 角色类别 | 角色名称 | 文件路径 | 主要能力 |
-|---------|---------|----------|----------|
-| 基础角色 | 简单助手 (Assistant) | `@file://PromptX/domain/assistant/assistant.role.md` | 基础思考和记忆能力，适合一般对话和信息处理任务 |
-| Scrum敏捷 | 产品负责人 (Product Owner) | `@file://PromptX/domain/scrum/role/product-owner.role.md` | 产品规划、需求管理、优先级决策、用户导向思维、数据驱动决策 |
-| DPML开发 | 提示词开发者 (Prompt Developer) | `@file://PromptX/domain/prompt/prompt-developer.role.md` | 探索性、系统性和批判性思维，DPML开发规范，各类提示词最佳实践 |
-| 文案创作 | 视频文案写作专家 (Video Copywriter) | `@file://PromptX/domain/copywriter/video-copywriter.role.md` | 创意性、故事性和营销性思维，视频内容创作，文案写作规范，传播效果优化 |
-
-## 自定义角色
-您可以使用PromptX轻松创建自定义角色：
-
-1. 在bootstrap.md中引用提示词开发者角色：
-   ```
-   @file://PromptX/domain/prompt/prompt-developer.role.md
-   ```
-2. 向提示词开发者AI发出新角色的需求描述
-3. AI将自动生成完整的角色定义文件
-4. 将生成的角色文件保存并在bootstrap.md中引用
-
-这种方式使得提示词开发也可以让 AI 代劳！ 
-
-
-## **想要自己行业相关的角色，但是不会开发？ 添加下方作者微信，直接问他要！**
-
-
-## 更多资源
-
-- [深度实践官网](https://www.deepracticex.com/) - 深度实践 Deepractice
-- [DPML项目](https://github.com/Deepractice/dpml) - Deepractice Prompt Markup Language
-
-### AI 学习社区交流群
-
-扫码添加作者微信，备注【加群】：
-
-<img src="assets/qrcode.jpg" alt="作者微信" width="200">
-
-
-## 许可证
-
-MIT 
+MIT License - 让AI触手可及

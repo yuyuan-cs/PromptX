@@ -50,6 +50,14 @@ class UserProtocol extends ResourceProtocol {
   }
 
   /**
+   * 设置注册表（保持与其他协议的一致性）
+   */
+  setRegistry(registry) {
+    // User协议不使用注册表，但为了一致性提供此方法
+    this.registry = registry || {};
+  }
+
+  /**
    * 获取协议信息
    * @returns {object} 协议信息
    */

@@ -4,12 +4,8 @@ const { Command } = require('commander');
 const chalk = require('chalk');
 const packageJson = require('../../package.json');
 
-// 导入命令模块
-const helloCommand = require('../lib/commands/hello');
-const initCommand = require('../lib/commands/init');
-const learnCommand = require('../lib/commands/learn');
-const recallCommand = require('../lib/commands/recall');
-const rememberCommand = require('../lib/commands/remember');
+// 导入锦囊框架
+const { cli } = require('../lib/core/pouch');
 
 // 创建主程序
 const program = new Command();
@@ -20,38 +16,49 @@ program
   .description(packageJson.description)
   .version(packageJson.version, '-v, --version', 'display version number');
 
-// 添加五大核心命令
+// 五大核心锦囊命令
 program
-  .command('init')
-  .description('🏗️  项目集成 - 在当前项目中初始化PromptX集成')
-  .option('-f, --force', '强制重新初始化(覆盖已存在的配置)')
-  .action(initCommand);
+  .command('init [workspacePath]')
+  .description('🏗️ init锦囊 - 初始化工作环境，传达系统基本诺记')
+  .action(async (workspacePath, options) => {
+    await cli.execute('init', workspacePath ? [workspacePath] : []);
+  });
 
 program
   .command('hello')
-  .description('🎯 系统入口 - AI助手接待用户并展示可用角色')
-  .action(helloCommand);
+  .description('👋 hello锦囊 - 发现并展示所有可用的AI角色和领域专家')
+  .action(async (options) => {
+    await cli.execute('hello', []);
+  });
 
 program
-  .command('learn <resource>')
-  .description('📚 学习命令 - AI获取和理解提示词内容')
-  .option('-f, --format <type>', '输出格式 (text|json)', 'text')
-  .action(learnCommand);
+  .command('action <role>')
+  .description('⚡ action锦囊 - 激活特定AI角色，获取专业提示词')
+  .action(async (role, options) => {
+    await cli.execute('action', [role]);
+  });
 
 program
-  .command('recall')
-  .description('🔍 记忆检索 - AI回忆和检索记忆内容')
-  .option('-r, --recent', '显示最近的记忆')
-  .option('-i, --important', '显示重要记忆 (评分≥7)')
-  .option('-l, --limit <number>', '限制返回数量', '10')
-  .action(recallCommand);
+  .command('learn [resourceUrl]')
+  .description('📚 learn锦囊 - 学习指定协议的资源内容(thought://、execution://等)')
+  .action(async (resourceUrl, options) => {
+    await cli.execute('learn', resourceUrl ? [resourceUrl] : []);
+  });
 
 program
-  .command('remember <content>')
-  .description('🧠 记忆保存 - AI保存重要信息和经验')
-  .option('-s, --score <number>', '重要性评分 (1-10)', '5')
-  .option('-d, --duration <time>', '有效期 (短期|中期|长期)', '短期')
-  .action(rememberCommand);
+  .command('recall [query]')
+  .description('🔍 recall锦囊 - AI主动从记忆中检索相关的专业知识')
+  .action(async (query, options) => {
+    await cli.execute('recall', query ? [query] : []);
+  });
+
+program
+  .command('remember <key> [value...]')
+  .description('🧠 remember锦囊 - AI主动内化知识和经验到记忆体系')
+  .action(async (key, value, options) => {
+    const args = [key, ...(value || [])];
+    await cli.execute('remember', args);
+  });
 
 // 全局错误处理
 program.configureHelp({
@@ -62,35 +69,52 @@ program.configureHelp({
 // 添加示例说明
 program.addHelpText('after', `
 
-${chalk.cyan('示例:')}
-  ${chalk.gray('# 项目集成，初始化PromptX')}
-  promptx init
-  promptx init --force
+${chalk.cyan('💡 PromptX 锦囊框架 - AI use CLI get prompt for AI')}
 
-  ${chalk.gray('# 系统入口，展示可用角色')}
+${chalk.cyan('🎒 五大锦囊命令:')}
+  🏗️ ${chalk.cyan('init')}   → 初始化环境，传达系统协议
+  👋 ${chalk.yellow('hello')}  → 发现可用角色和领域专家  
+  ⚡ ${chalk.red('action')} → 激活特定角色，获取专业能力
+  📚 ${chalk.blue('learn')}  → 深入学习领域知识体系
+  🔍 ${chalk.green('recall')} → AI主动检索应用记忆
+  🧠 ${chalk.magenta('remember')} → AI主动内化知识增强记忆
+
+${chalk.cyan('示例:')}
+  ${chalk.gray('# 1️⃣ 初始化锦囊系统')}
+  promptx init
+
+  ${chalk.gray('# 2️⃣ 发现可用角色')}
   promptx hello
 
-  ${chalk.gray('# 学习协议和核心内容')}
-  promptx learn protocols
-  promptx learn core
+  ${chalk.gray('# 3️⃣ 激活专业角色')}
+  promptx action copywriter
+  promptx action scrum-master
 
-  ${chalk.gray('# 学习特定角色')}
-  promptx learn prompt/domain/scrum/role/product-owner.role.md
+  ${chalk.gray('# 4️⃣ 学习领域知识')}
+  promptx learn scrum
+  promptx learn copywriter
 
-  ${chalk.gray('# 检索记忆')}
-  promptx recall --recent
-  promptx recall --important
+  ${chalk.gray('# 5️⃣ 检索相关经验')}
+  promptx recall agile
+  promptx recall
+  
+  ${chalk.gray('# 6️⃣ AI内化专业知识')}
+  promptx remember "scrum-tips" "每日站会控制在15分钟内"
+  promptx remember "deploy-flow" "测试→预发布→生产"
 
-  ${chalk.gray('# 保存记忆')}
-  promptx remember "重要发现" --score 8
-  promptx remember "用户反馈" --score 7 --duration 长期
+${chalk.cyan('🔄 PATEOAS状态机:')}
+  每个锦囊输出都包含 PATEOAS 导航，引导 AI 发现下一步操作
+  即使 AI 忘记上文，仍可通过锦囊独立执行
 
-${chalk.cyan('AI认知循环:')}
-  🏗️ ${chalk.cyan('init')} → 👋 ${chalk.yellow('hello')} → 📚 ${chalk.blue('learn')} → 🔍 ${chalk.green('recall')} → 🧠 ${chalk.magenta('remember')} → 循环
+${chalk.cyan('💭 核心理念:')}
+  • 锦囊自包含：每个命令包含完整执行信息
+  • 串联无依赖：AI忘记上文也能继续执行
+  • 分阶段专注：每个锦囊专注单一任务
+  • Prompt驱动：输出引导AI发现下一步
 
 ${chalk.cyan('更多信息:')}
   GitHub: ${chalk.underline('https://github.com/Deepractice/PromptX')}
-  文档:   ${chalk.underline('https://deepractice.ai')}
+  组织:   ${chalk.underline('https://github.com/Deepractice')}
 `);
 
 // 处理未知命令

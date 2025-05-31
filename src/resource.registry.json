@@ -1,0 +1,145 @@
+{
+  "description": "PromptX 统一资源协议注册表",
+  "version": "1.0.0",
+  "protocols": {
+    "thought": {
+      "description": "思维模式资源协议",
+      "location": "thought://{thought_id}",
+      "params": {
+        "format": "string - 输出格式",
+        "cache": "boolean - 是否缓存"
+      },
+      "registry": {
+        "prompt-developer": "@package://prompt/domain/prompt/thought/prompt-developer.thought.md",
+        "product-owner": "@package://prompt/domain/scrum/thought/product-owner.thought.md"
+      }
+    },
+    "execution": {
+      "description": "执行模式资源协议", 
+      "location": "execution://{execution_id}",
+      "params": {
+        "format": "string - 输出格式",
+        "cache": "boolean - 是否缓存"
+      },
+      "registry": {
+        "deal-at-reference": "@package://prompt/core/execution/deal-at-reference.execution.md",
+        "prompt-developer": "@package://prompt/domain/prompt/execution/prompt-developer.execution.md",
+        "memory-trigger": "@package://prompt/core/execution/memory-trigger.execution.md",
+        "deal-memory": "@package://prompt/core/execution/deal-memory.execution.md",
+        "memory-tool-usage": "@package://prompt/core/execution/memory-tool-usage.execution.md",
+        "thought-best-practice": "@package://prompt/domain/prompt/execution/thought-best-practice.execution.md",
+        "execution-best-practice": "@package://prompt/domain/prompt/execution/execution-best-practice.execution.md",
+        "memory-best-practice": "@package://prompt/domain/prompt/execution/memory-best-practice.execution.md",
+        "role-best-practice": "@package://prompt/domain/prompt/execution/role-best-practice.execution.md",
+        "resource-best-practice": "@package://prompt/domain/prompt/execution/resource-best-practice.execution.md",
+        "terminology-best-practice": "@package://prompt/domain/prompt/execution/terminology-best-practice.execution.md",
+        "product-owner": "@package://prompt/domain/scrum/execution/product-owner.execution.md",
+        "epic-best-practice": "@package://prompt/domain/scrum/execution/epic-best-practice.execution.md",
+        "workitem-title-best-practice": "@package://prompt/domain/scrum/execution/workitem-title-best-practice.execution.md",
+        "feature-best-practice": "@package://prompt/domain/scrum/execution/feature-best-practice.execution.md",
+        "story-best-practice": "@package://prompt/domain/scrum/execution/story-best-practice.execution.md",
+        "testcase-best-practice": "@package://prompt/domain/scrum/execution/testcase-best-practice.execution.md",
+        "task-best-practice": "@package://prompt/domain/scrum/execution/task-best-practice.execution.md",
+        "sprint-best-practice": "@package://prompt/domain/scrum/execution/sprint-best-practice.execution.md",
+        "milestone-best-practice": "@package://prompt/domain/scrum/execution/milestone-best-practice.execution.md",
+        "scrum-best-practice": "@package://prompt/domain/scrum/execution/scrum-best-practice.execution.md"
+      }
+    },
+    "memory": {
+      "description": "项目记忆系统协议",
+      "location": "memory://{resource_id}",
+      "params": {
+        "format": "string - 输出格式", 
+        "cache": "boolean - 是否缓存"
+      },
+      "registry": {
+        "declarative": "@project://.promptx/memory/declarative.md",
+        "procedural": "@project://.promptx/memory/procedural.md",
+        "episodic": "@project://.promptx/memory/episodic.md",
+        "semantic": "@project://.promptx/memory/semantic.md"
+      }
+    },
+    "role": {
+      "description": "AI角色资源协议",
+      "location": "role://{role_id}",
+      "params": {
+        "format": "string - 输出格式",
+        "cache": "boolean - 是否缓存"
+      },
+      "registry": {
+        "video-copywriter": "@package://prompt/domain/copywriter/video-copywriter.role.md",
+        "product-owner": "@package://prompt/domain/scrum/role/product-owner.role.md",
+        "prompt-developer": "@package://prompt/domain/prompt/prompt-developer.role.md",
+        "test-assistant": "@package://prompt/domain/test/test-assistant.role.md",
+        "assistant": "@package://prompt/domain/assistant/assistant.role.md"
+      }
+    },
+    "prompt": {
+      "description": "PromptX内置提示词资源协议",
+      "location": "prompt://{resource_id}",
+      "params": {
+        "merge": "boolean - 是否合并多个文件内容",
+        "separator": "string - 文件间分隔符",
+        "include_filename": "boolean - 是否包含文件名标题"
+      },
+      "registry": {
+        "protocols": "@package://prompt/protocol/**/*.md",
+        "core": "@package://prompt/core/**/*.md", 
+        "domain": "@package://prompt/domain/**/*.md",
+        "resource": "@package://prompt/resource/**/*.md",
+        "bootstrap": "@package://bootstrap.md"
+      }
+    },
+    "file": {
+      "description": "文件系统资源协议",
+      "location": "file://{absolute_or_relative_path}",
+      "params": {
+        "line": "string - 行范围，如 \"1-10\"",
+        "encoding": "string - 文件编码，默认 utf8"
+      }
+    },
+    "package": {
+      "description": "包协议 - 智能访问NPM包资源",
+      "location": "package://{path}",
+      "params": {
+        "encoding": "string - 文件编码，默认 utf8"
+      }
+    },
+    "project": {
+      "description": "项目协议 - 访问项目根目录资源", 
+      "location": "project://{path}",
+      "params": {
+        "from": "string - 指定搜索起始目录",
+        "create": "boolean - 如果目录不存在是否创建",
+        "exists": "boolean - 仅返回存在的文件/目录",
+        "type": "string - 过滤类型 (file|dir|both)"
+      }
+    },
+    "user": {
+      "description": "用户协议 - 访问用户目录资源",
+      "location": "user://{path}", 
+      "params": {
+        "exists": "boolean - 仅返回存在的文件/目录",
+        "type": "string - 过滤类型 (file|dir|both)"
+      }
+    },
+    "http": {
+      "description": "HTTP网络资源协议",
+      "location": "http://{url}",
+      "params": {
+        "format": "string - 响应格式，如 json, text",
+        "timeout": "number - 超时时间（毫秒）",
+        "cache": "boolean - 是否缓存响应"
+      }
+    },
+    "https": {
+      "description": "HTTPS网络资源协议", 
+      "location": "https://{url}",
+      "params": {
+        "format": "string - 响应格式，如 json, text",
+        "timeout": "number - 超时时间（毫秒）",
+        "cache": "boolean - 是否缓存响应"
+      }
+    }
+  }
+} 
