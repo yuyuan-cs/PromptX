@@ -31,11 +31,8 @@
     "precommit": "npm run lint && npm run test:unit"
   },
   "files": [
-    "src/bin/",
-    "src/lib/",
+    "src/",
     "prompt/",
-    "src/templates/",
-    "src/scripts/postinstall.js",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
