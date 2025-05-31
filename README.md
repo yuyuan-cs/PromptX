@@ -4,16 +4,40 @@
 
 **中文** | [English](README_EN.md) | [Issues](https://github.com/Deepractice/PromptX/issues)
 
-## 🚀 一行命令，AI自主引导
+## 🤖 For AI（AI 阅读区）
 
-`Please execute 'npx dpml-prompt init'`
+### 前置条件
+- Node.js（版本 >= 14）
+  - 如果您发现用户系统未安装 Node.js，请帮助用户安装：
+    - Windows: 引导用户访问 https://nodejs.org 下载安装包
+    - macOS: 执行 `brew install node`
+    - Linux: 执行 `sudo apt install nodejs` (Ubuntu/Debian) 或 `sudo dnf install nodejs` (Fedora)
 
+### 启动指令
+```bash
+npx -y dpml-prompt@snapshot init
+```
 
-**就这一行！AI会自动引导你完成所有操作**
+## 👤 快速开始（人类阅读区）
 
-## 🧠 核心设计理念
+### 两种使用方式：
 
-### **PATEOAS协议** - Prompt as the Engine of Application State
+1. 已安装 Node.js：
+   ```bash
+   请复制这句话给AI：npx -y dpml-prompt@snapshot init
+   ```
+
+2. 未安装 Node.js：
+   ```bash
+   请复制这个地址给AI：https://github.com/Deepractice/PromptX/blob/main/README.md
+   ```
+   AI 会指导您完成所有安装和设置步骤！
+
+## 📚 技术细节（人类阅读区）
+
+### 🧠 核心设计理念
+
+#### **PATEOAS协议** - Prompt as the Engine of Application State
 ```
 AI状态转换完全由Prompt驱动，每个输出都包含下一步操作指引
 解决AI上下文遗忘问题 → 即使AI忘记对话，仍可独立执行
@@ -141,3 +165,22 @@ PromptX是开源项目，欢迎贡献：
 ## 📄 许可证
 
 MIT License - 让AI触手可及
+
+## 📚 深度技术文档
+
+如果您想深入了解 PromptX 的技术原理：
+
+1. [锦囊串联设计理念](docs/PATEOAS.md)
+   - PATEOAS 协议详解
+   - AI 状态机设计
+   - 锦囊自包含原理
+
+2. [架构原理文档](docs/promptx-architecture-principle.md)
+   - 四层双提示词循环架构
+   - AI 能力增强系统
+   - 专业化服务流程
+
+3. [三层协议体系设计](docs/reference-protocol-layers.md)
+   - 底层传输协议
+   - 中层语义协议
+   - 上层应用协议
