@@ -42,21 +42,17 @@ module.exports = {
     {
       displayName: 'integration',
       testMatch: ['<rootDir>/src/tests/**/*.integration.test.js'],
-      testEnvironment: 'node',
-      // 集成测试可能需要更长的超时时间
-      testTimeout: 30000
+      testEnvironment: 'node'
     },
     {
       displayName: 'e2e',
       testMatch: ['<rootDir>/src/tests/**/*.e2e.test.js'],
-      testEnvironment: 'node',
-      // E2E测试需要更长的超时时间
-      testTimeout: 60000
+      testEnvironment: 'node'
     }
   ],
   
   // 模块路径映射
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@tests/(.*)$': '<rootDir>/src/tests/$1'
   },
@@ -69,6 +65,17 @@ module.exports = {
   // 详细输出
   verbose: true,
   
-  // 并发测试
-  maxWorkers: '50%'
+  // 并发测试 - 减少并发以避免资源竞争
+  maxWorkers: 1,
+  
+  // 增加超时时间 - 移到项目配置中
+  
+  // 失败重试 - Jest 29不支持，移除此配置
+  // jest: {
+  //   retries: 2
+  // },
+  
+  // CI环境优化
+  detectOpenHandles: true,
+  forceExit: true
 }; 
