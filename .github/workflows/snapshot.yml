@@ -34,9 +34,6 @@ jobs:
       - name: Run tests
         run: pnpm run test:ci
 
-      - name: Build package
-        run: pnpm run build
-
       - name: Release snapshot version
         run: |
           # 确保在正确的分支
