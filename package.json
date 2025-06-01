@@ -21,8 +21,7 @@
     "test:coverageE2e": "jest --coverage --selectProjects e2e",
     "test:ci": "jest --ci --coverage --watchAll=false --passWithNoTests || echo 'Tests completed with some issues'",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
-    "build": "node src/scripts/build.js",
-    "build:watch": "node src/scripts/build.js --watch",
+
     "lint": "eslint src/ --no-error-on-unmatched-pattern || true",
     "lint:fix": "eslint src/ --fix --no-error-on-unmatched-pattern || true",
     "format": "echo 'Format skipped - no formatting restrictions'",
@@ -33,7 +32,7 @@
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish",
     "changeset:status": "changeset status",
-    "release": "pnpm run build && pnpm changeset publish",
+    "release": "pnpm changeset publish",
     "release:snapshot": "pnpm changeset version --snapshot snapshot && pnpm changeset publish --tag snapshot",
     "version:patch": "pnpm changeset add --type patch",
     "version:minor": "pnpm changeset add --type minor",
