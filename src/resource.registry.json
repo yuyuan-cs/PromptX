@@ -12,11 +12,13 @@
       "registry": {
         "assistant": "@package://prompt/domain/assistant/thought/assistant.thought.md",
         "remember": "@package://prompt/core/thought/remember.thought.md",
-        "recall": "@package://prompt/core/thought/recall.thought.md"
+        "recall": "@package://prompt/core/thought/recall.thought.md",
+        "product-manager": "@package://prompt/domain/product-manager/thought/product-manager.thought.md",
+        "java-backend-developer": "@package://prompt/domain/java-backend-developer/thought/java-backend-developer.thought.md"
       }
     },
     "execution": {
-      "description": "执行模式资源协议", 
+      "description": "执行模式资源协议",
       "location": "execution://{execution_id}",
       "params": {
         "format": "string - 输出格式",
@@ -24,16 +26,21 @@
       },
       "registry": {
         "assistant": "@package://prompt/domain/assistant/execution/assistant.execution.md",
-        "deal-at-reference": "@package://prompt/core/execution/deal-at-reference.execution.md",
-        "memory-trigger": "@package://prompt/core/execution/memory-trigger.execution.md",
-        "deal-memory": "@package://prompt/core/execution/deal-memory.execution.md"
+        "product-manager": "@package://prompt/domain/product-manager/execution/product-manager.execution.md",
+        "market-analysis": "@package://prompt/domain/product-manager/execution/market-analysis.execution.md",
+        "user-research": "@package://prompt/domain/product-manager/execution/user-research.execution.md",
+        "java-backend-developer": "@package://prompt/domain/java-backend-developer/execution/java-backend-developer.execution.md",
+        "system-architecture": "@package://prompt/domain/java-backend-developer/execution/system-architecture.execution.md",
+        "spring-ecosystem": "@package://prompt/domain/java-backend-developer/execution/spring-ecosystem.execution.md",
+        "code-quality": "@package://prompt/domain/java-backend-developer/execution/code-quality.execution.md",
+        "database-design": "@package://prompt/domain/java-backend-developer/execution/database-design.execution.md"
       }
     },
     "memory": {
       "description": "项目记忆系统协议",
       "location": "memory://{resource_id}",
       "params": {
-        "format": "string - 输出格式", 
+        "format": "string - 输出格式",
         "cache": "boolean - 是否缓存"
       },
       "registry": {
@@ -55,6 +62,26 @@
           "file": "@package://prompt/domain/assistant/assistant.role.md",
           "name": "🙋 智能助手",
           "description": "通用助理角色，提供基础的助理服务和记忆支持"
+        },
+        "role-designer": {
+          "file": "@package://prompt/domain/role-designer/role-designer.role.md",
+          "name": "🎭 角色设计师",
+          "description": "专业角色设计专家，基于DPML协议创建和优化新的AI角色"
+        },
+        "product-manager": {
+          "file": "@package://prompt/domain/product-manager/product-manager.role.md",
+          "name": "📊 产品经理",
+          "description": "专业产品管理专家，负责产品策略、用户研究、市场分析和团队协作"
+        },
+        "java-backend-developer": {
+          "file": "@package://prompt/domain/java-backend-developer/java-backend-developer.role.md",
+          "name": "☕ Java后端开发者",
+          "description": "专业Java后端开发专家，精通Spring生态系统、微服务架构和系统设计"
+        },
+        "test-role": {
+          "file": "@package://prompt/domain/test-role/test-role.role.md",
+          "name": "🧪 测试角色",
+          "description": "这是一个用于测试动态发现和注册功能的示例角色"
         }
       }
     },
@@ -68,7 +95,7 @@
       },
       "registry": {
         "protocols": "@package://prompt/protocol/**/*.md",
-        "core": "@package://prompt/core/**/*.md", 
+        "core": "@package://prompt/core/**/*.md",
         "domain": "@package://prompt/domain/**/*.md",
         "resource": "@package://prompt/resource/**/*.md",
         "bootstrap": "@package://bootstrap.md"
@@ -90,7 +117,7 @@
       }
     },
     "project": {
-      "description": "项目协议 - 访问项目根目录资源", 
+      "description": "项目协议 - 访问项目根目录资源",
       "location": "project://{path}",
       "params": {
         "from": "string - 指定搜索起始目录",
@@ -101,7 +128,7 @@
     },
     "user": {
       "description": "用户协议 - 访问用户目录资源",
-      "location": "user://{path}", 
+      "location": "user://{path}",
       "params": {
         "exists": "boolean - 仅返回存在的文件/目录",
         "type": "string - 过滤类型 (file|dir|both)"
@@ -117,7 +144,7 @@
       }
     },
     "https": {
-      "description": "HTTPS网络资源协议", 
+      "description": "HTTPS网络资源协议",
       "location": "https://{url}",
       "params": {
         "format": "string - 响应格式，如 json, text",
@@ -126,4 +153,4 @@
       }
     }
   }
-} 
+}

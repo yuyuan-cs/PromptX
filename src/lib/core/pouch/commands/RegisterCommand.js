@@ -1,0 +1,232 @@
+const BasePouchCommand = require('../BasePouchCommand')
+const fs = require('fs-extra')
+const path = require('path')
+const PackageProtocol = require('../../resource/protocols/PackageProtocol')
+const { buildCommand } = require('../../../../constants')
+
+/**
+ * 角色注册锦囊命令
+ * 负责将新创建的角色注册到系统中
+ */
+class RegisterCommand extends BasePouchCommand {
+  constructor () {
+    super()
+    this.packageProtocol = new PackageProtocol()
+  }
+
+  getPurpose () {
+    return '注册新创建的角色到系统中，使其可以被发现和激活'
+  }
+
+  async getContent (args) {
+    const [roleId] = args
+
+    if (!roleId) {
+      return `❌ 请指定要注册的角色ID
+
+🔍 使用方法：
+\`\`\`bash
+${buildCommand.register('<角色ID>')}
+\`\`\`
+
+💡 例如：
+\`\`\`bash
+${buildCommand.register('my-custom-role')}
+\`\`\``
+    }
+
+    try {
+      // 1. 检查角色文件是否存在
+      const roleExists = await this.checkRoleExists(roleId)
+      if (!roleExists) {
+        return `❌ 角色文件不存在！
+
+请确保以下文件存在：
+- prompt/domain/${roleId}/${roleId}.role.md
+- prompt/domain/${roleId}/thought/${roleId}.thought.md
+- prompt/domain/${roleId}/execution/${roleId}.execution.md
+
+💡 您可以使用角色设计师来创建完整的角色套件：
+\`\`\`bash
+${buildCommand.action('role-designer')}
+\`\`\``
+      }
+
+      // 2. 提取角色元数据
+      const roleMetadata = await this.extractRoleMetadata(roleId)
+
+      // 3. 注册角色到系统
+      const registrationResult = await this.registerRole(roleId, roleMetadata)
+
+      if (registrationResult.success) {
+        return `✅ 角色 "${roleId}" 注册成功！
+
+📋 **注册信息**：
+- 名称：${roleMetadata.name}
+- 描述：${roleMetadata.description}
+- 文件路径：${roleMetadata.filePath}
+
+🎯 **下一步操作**：
+\`\`\`bash
+${buildCommand.action(roleId)}
+\`\`\`
+
+💡 现在您可以激活这个角色了！`
+      } else {
+        return `❌ 角色注册失败：${registrationResult.error}
+
+🔍 请检查：
+- 角色文件格式是否正确
+- 是否有写入权限
+- 注册表文件是否可访问`
+      }
+    } catch (error) {
+      console.error('Register command error:', error)
+      return `❌ 注册角色 "${roleId}" 时发生错误：${error.message}
+
+💡 请确保角色文件存在且格式正确。`
+    }
+  }
+
+  /**
+   * 检查角色文件是否存在
+   */
+  async checkRoleExists (roleId) {
+    try {
+      const packageRoot = await this.packageProtocol.getPackageRoot()
+      const roleFile = path.join(packageRoot, 'prompt', 'domain', roleId, `${roleId}.role.md`)
+      
+      return await fs.pathExists(roleFile)
+    } catch (error) {
+      return false
+    }
+  }
+
+  /**
+   * 提取角色元数据
+   */
+  async extractRoleMetadata (roleId) {
+    const packageRoot = await this.packageProtocol.getPackageRoot()
+    const roleFile = path.join(packageRoot, 'prompt', 'domain', roleId, `${roleId}.role.md`)
+    
+    const content = await fs.readFile(roleFile, 'utf-8')
+    const relativePath = path.relative(packageRoot, roleFile)
+    
+    // 提取元数据
+    let name = `🎭 ${roleId}`
+    let description = '用户自定义角色'
+    
+    // 从注释中提取元数据（支持多行）
+    const nameMatch = content.match(/name:\s*(.+?)(?:\n|$)/i)
+    if (nameMatch) {
+      name = nameMatch[1].trim()
+    }
+    
+    const descMatch = content.match(/description:\s*(.+?)(?:\n|$)/i)
+    if (descMatch) {
+      description = descMatch[1].trim()
+    }
+    
+    // 如果没有找到注释，尝试从文件内容推断
+    if (name === `🎭 ${roleId}` && description === '用户自定义角色') {
+      // 可以根据角色内容进行更智能的推断
+      if (content.includes('产品')) {
+        name = `📊 ${roleId}`
+      } else if (content.includes('开发') || content.includes('代码')) {
+        name = `💻 ${roleId}`
+      } else if (content.includes('设计')) {
+        name = `🎨 ${roleId}`
+      }
+    }
+    
+    return {
+      name,
+      description,
+      filePath: `@package://${relativePath}`
+    }
+  }
+
+  /**
+   * 注册角色到系统
+   */
+  async registerRole (roleId, metadata) {
+    try {
+      const packageRoot = await this.packageProtocol.getPackageRoot()
+      const registryPath = path.join(packageRoot, 'src', 'resource.registry.json')
+      
+      // 读取当前注册表
+      const registry = await fs.readJson(registryPath)
+      
+      // 添加新角色
+      if (!registry.protocols.role.registry) {
+        registry.protocols.role.registry = {}
+      }
+      
+      registry.protocols.role.registry[roleId] = {
+        file: metadata.filePath,
+        name: metadata.name,
+        description: metadata.description
+      }
+      
+      // 写回注册表
+      await fs.writeJson(registryPath, registry, { spaces: 2 })
+      
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
+  }
+
+  getPATEOAS (args) {
+    const [roleId] = args
+
+    if (!roleId) {
+      return {
+        currentState: 'register_awaiting_role',
+        availableTransitions: ['hello', 'action'],
+        nextActions: [
+          {
+            name: '查看可用角色',
+            description: '查看已注册的角色',
+            command: buildCommand.hello(),
+            priority: 'medium'
+          },
+          {
+            name: '创建新角色',
+            description: '使用角色设计师创建新角色',
+            command: buildCommand.action('role-designer'),
+            priority: 'high'
+          }
+        ],
+        metadata: {
+          message: '需要指定角色ID'
+        }
+      }
+    }
+
+    return {
+      currentState: 'register_completed',
+      availableTransitions: ['action', 'hello'],
+      nextActions: [
+        {
+          name: '激活角色',
+          description: '激活刚注册的角色',
+          command: buildCommand.action(roleId),
+          priority: 'high'
+        },
+        {
+          name: '查看所有角色',
+          description: '查看角色列表',
+          command: buildCommand.hello(),
+          priority: 'medium'
+        }
+      ],
+      metadata: {
+        registeredRole: roleId,
+        systemVersion: '锦囊串联状态机 v1.0'
+      }
+    }
+  }
+}
+
+module.exports = RegisterCommand 
