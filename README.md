@@ -158,6 +158,30 @@ PromptX是开源项目，欢迎贡献：
 - ⚡ **执行模式**：优化AI行为模式
 - 📚 **知识库**：丰富领域知识体系
 
+### 贡献指南
+
+- 📋 [贡献流程](CONTRIBUTING.md) - 详细的贡献指南
+- 🌿 [分支策略](docs/BRANCHING.md) - 分支管理和发布流程
+- 🚀 [发布流程](docs/RELEASE.md) - 版本管理和发布文档
+
+### 快速开始贡献
+
+```bash
+# 1. Fork并克隆项目
+git clone https://github.com/YOUR_USERNAME/PromptX.git
+
+# 2. 切换到develop分支
+git checkout develop
+
+# 3. 创建功能分支
+git checkout -b feature/your-feature
+
+# 4. 开发功能并添加changeset
+pnpm changeset
+
+# 5. 提交PR到develop分支
+```
+
 扫码加入技术交流群：
 
 <img src="assets/qrcode.jpg" alt="技术交流群" width="200">

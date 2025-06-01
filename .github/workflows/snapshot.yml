@@ -1,0 +1,88 @@
+name: Snapshot Release
+
+on:
+  push:
+    branches:
+      - develop
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  snapshot:
+    name: Snapshot Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm run test:ci
+
+      - name: Build package
+        run: pnpm run build
+
+      - name: Release snapshot version
+        run: |
+          # 确保在正确的分支
+          git checkout develop
+          
+          # 创建snapshot版本
+          pnpm changeset version --snapshot snapshot
+          
+          # 发布snapshot版本到npm
+          pnpm changeset publish --tag snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Comment on related PRs
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            
+            // 获取当前版本号
+            const packageJson = require('./package.json');
+            const version = packageJson.version;
+            
+            // 查找相关的PR
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base: 'develop'
+            });
+            
+            const comment = `🚀 **Snapshot版本已发布!**
+            
+            📦 版本号: \`${version}\`
+            🔗 安装命令: \`npm install -g dpml-prompt@snapshot\`
+            
+            你可以使用这个snapshot版本测试最新功能。`;
+            
+            // 为每个相关PR添加评论
+            for (const pr of prs) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: comment
+              });
+            } 

@@ -28,7 +28,16 @@
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
     "validate": "npm run lint && npm run test:ci",
-    "precommit": "npm run lint && npm run test:unit"
+    "precommit": "npm run lint && npm run test:unit",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "changeset:status": "changeset status",
+    "release": "pnpm run build && pnpm changeset publish",
+    "release:snapshot": "pnpm changeset version --snapshot snapshot && pnpm changeset publish --tag snapshot",
+    "version:patch": "pnpm changeset add --type patch",
+    "version:minor": "pnpm changeset add --type minor",
+    "version:major": "pnpm changeset add --type major"
   },
   "files": [
     "src/",
@@ -58,6 +67,8 @@
     "yaml": "^2.3.0"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.4",
     "@types/jest": "^29.5.0",
     "eslint": "^8.42.0",
     "eslint-config-standard": "^17.1.0",
