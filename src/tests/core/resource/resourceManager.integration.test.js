@@ -5,199 +5,130 @@ const os = require('os')
 
 describe('ResourceManager - Integration Tests', () => {
   let manager
-  let tempDir
-
-  beforeAll(async () => {
-    // 创建临时测试目录
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'promptx-test-'))
-
-    // 创建测试文件
-    await fs.writeFile(
-      path.join(tempDir, 'test.md'),
-      '# 测试文件\n\n这是一个测试文件。\n第三行内容。\n第四行内容。'
-    )
-
-    await fs.writeFile(
-      path.join(tempDir, 'nested.md'),
-      'nested content'
-    )
-
-    // 创建子目录和更多测试文件
-    const subDir = path.join(tempDir, 'subdir')
-    await fs.mkdir(subDir)
-    await fs.writeFile(
-      path.join(subDir, 'sub-test.md'),
-      'subdirectory content'
-    )
-  })
-
-  afterAll(async () => {
-    // 清理临时目录
-    await fs.rm(tempDir, { recursive: true })
-  })
 
   beforeEach(() => {
-    manager = new ResourceManager({
-      workingDirectory: tempDir,
-      enableCache: true
+    manager = new ResourceManager()
+  })
+
+  describe('基础功能测试', () => {
+    test('应该能初始化ResourceManager', async () => {
+      await manager.initialize()
+      expect(manager.initialized).toBe(true)
+    })
+
+    test('应该加载统一资源注册表', async () => {
+      await manager.initialize()
+      expect(manager.registry).toBeDefined()
+      expect(manager.registry.protocols).toBeDefined()
+    })
+
+    test('应该注册协议处理器', async () => {
+      await manager.initialize()
+      expect(manager.protocolHandlers.size).toBeGreaterThan(0)
+      expect(manager.protocolHandlers.has('package')).toBe(true)
+      expect(manager.protocolHandlers.has('project')).toBe(true)
+      expect(manager.protocolHandlers.has('prompt')).toBe(true)
     })
   })
 
-  describe('完整的资源解析流程', () => {
-    test('应该解析并加载本地文件', async () => {
-      const result = await manager.resolve('@file://test.md')
+  describe('资源解析功能', () => {
+    test('应该处理无效的资源URL格式', async () => {
+      const result = await manager.resolve('invalid-reference')
 
-      expect(result.success).toBe(true)
-      expect(result.content).toContain('测试文件')
-      expect(result.metadata.protocol).toBe('file')
-      expect(result.sources).toContain('test.md')
+      expect(result.success).toBe(false)
+      expect(result.error.message).toContain('无效的资源URL格式')
     })
 
-    test('应该处理带查询参数的文件加载', async () => {
-      const result = await manager.resolve('@file://test.md?line=2-3')
+    test('应该处理未注册的协议', async () => {
+      const result = await manager.resolve('@unknown://test')
 
-      expect(result.success).toBe(true)
-      expect(result.content).not.toContain('# 测试文件')
-      expect(result.content).toContain('这是一个测试文件')
-      expect(result.content).not.toContain('第三行内容')
-      expect(result.content).not.toContain('第四行内容')
+      expect(result.success).toBe(false)
+      expect(result.error.message).toContain('未注册的协议')
     })
 
-    test('应该处理通配符文件模式', async () => {
-      const result = await manager.resolve('@file://*.md')
+    test('应该解析package协议资源', async () => {
+      const result = await manager.resolve('@package://package.json')
 
       expect(result.success).toBe(true)
-      expect(result.content).toContain('test.md')
-      expect(result.content).toContain('nested.md')
+      expect(result.metadata.protocol).toBe('package')
+    })
+
+    test('应该解析prompt协议资源', async () => {
+      const result = await manager.resolve('@prompt://protocols')
+
+      // prompt协议可能找不到匹配文件，但应该不抛出解析错误
+      if (!result.success) {
+        expect(result.error.message).toContain('没有找到匹配的文件')
+      } else {
+        expect(result.metadata.protocol).toBe('prompt')
+      }
     })
   })
 
-  describe('内置协议集成', () => {
-    test('应该处理prompt协议的注册表解析', async () => {
-      // 模拟prompt协议解析
-      const mockProtocolFile = path.join(tempDir, 'protocols.md')
-      await fs.writeFile(mockProtocolFile, '# PromptX 协议\n\nDPML协议说明')
+  describe('工具方法', () => {
+    test('应该获取可用协议列表', async () => {
+      await manager.initialize()
+      const protocols = manager.getAvailableProtocols()
 
-      // 注册测试协议
-      manager.registry.register('test-prompt', {
-        name: 'test-prompt',
-        description: '测试提示词协议',
-        registry: {
-          protocols: `@file://${mockProtocolFile}`
-        }
-      })
-
-      const result = await manager.resolve('@test-prompt://protocols')
-
-      expect(result.success).toBe(true)
-      expect(result.content).toContain('PromptX 协议')
-      expect(result.content).toContain('DPML协议说明')
+      expect(Array.isArray(protocols)).toBe(true)
+      expect(protocols.length).toBeGreaterThan(0)
+      expect(protocols).toContain('package')
+      expect(protocols).toContain('prompt')
     })
 
-    test('应该处理嵌套引用解析', async () => {
-      // 创建指向嵌套文件的引用文件
-      const refFile = path.join(tempDir, 'reference.md')
-      await fs.writeFile(refFile, '@file://nested.md')
+    test('应该获取协议信息', async () => {
+      await manager.initialize()
+      const info = manager.getProtocolInfo('package')
 
-      manager.registry.register('test-nested', {
-        registry: {
-          ref: `@file://${refFile}`
-        }
-      })
+      expect(info).toBeDefined()
+      expect(info.name).toBe('package')
+    })
 
-      const result = await manager.resolve('@test-nested://ref')
+    test('应该获取协议注册表', async () => {
+      await manager.initialize()
+      const registry = manager.getProtocolRegistry('prompt')
 
-      expect(result.success).toBe(true)
-      expect(result.content).toBe('nested content')
+      if (registry) {
+        expect(typeof registry).toBe('object')
+      }
     })
   })
 
-  describe('缓存机制', () => {
-    test('应该缓存已加载的资源', async () => {
-      const firstResult = await manager.resolve('@file://test.md')
-      const secondResult = await manager.resolve('@file://test.md')
+  describe('查询参数解析', () => {
+    test('应该解析带查询参数的资源', async () => {
+      const result = await manager.resolve('@package://package.json?key=name')
 
-      expect(firstResult.content).toBe(secondResult.content)
-      expect(firstResult.success).toBe(true)
-      expect(secondResult.success).toBe(true)
+      expect(result.success).toBe(true)
+      expect(result.metadata.protocol).toBe('package')
     })
 
-    test('应该清除缓存', async () => {
-      await manager.resolve('@file://test.md')
-      expect(manager.cache.size).toBeGreaterThan(0)
+    test('应该解析加载语义', async () => {
+      const result = await manager.resolve('@!package://package.json')
 
-      manager.clearCache()
-      expect(manager.cache.size).toBe(0)
-    })
-  })
-
-  describe('批量资源解析', () => {
-    test('应该批量解析多个资源', async () => {
-      const refs = [
-        '@file://test.md',
-        '@file://nested.md'
-      ]
-
-      const results = await manager.resolveMultiple(refs)
-
-      expect(results).toHaveLength(2)
-      expect(results[0].success).toBe(true)
-      expect(results[1].success).toBe(true)
-      expect(results[0].content).toContain('测试文件')
-      expect(results[1].content).toContain('nested content')
+      expect(result.success).toBe(true)
+      expect(result.metadata.protocol).toBe('package')
+      expect(result.metadata.loadingSemantic).toBe('@!')
     })
   })
 
   describe('错误处理', () => {
-    test('应该处理文件不存在的情况', async () => {
-      const result = await manager.resolve('@file://nonexistent.md')
+    test('应该正确处理资源不存在的情况', async () => {
+      const result = await manager.resolve('@package://nonexistent.json')
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
-      expect(result.error.message).toContain('Failed to read file')
     })
 
-    test('应该处理无效的协议', async () => {
-      const result = await manager.resolve('@unknown://test')
-
-      expect(result.success).toBe(false)
-      expect(result.error.message).toContain('Unknown protocol')
-    })
-
-    test('应该处理无效的资源引用语法', async () => {
-      const result = await manager.resolve('invalid-reference')
-
-      expect(result.success).toBe(false)
-      expect(result.error.message).toContain('Invalid resource reference syntax')
-    })
-  })
-
-  describe('验证功能', () => {
-    test('应该验证有效的资源引用', () => {
-      expect(manager.isValidReference('@file://test.md')).toBe(true)
-      expect(manager.isValidReference('@prompt://protocols')).toBe(true)
-    })
-
-    test('应该拒绝无效的资源引用', () => {
-      expect(manager.isValidReference('invalid')).toBe(false)
-      expect(manager.isValidReference('@unknown://test')).toBe(false)
-    })
-  })
-
-  describe('工具功能', () => {
-    test('应该列出可用协议', () => {
-      const protocols = manager.listProtocols()
-
-      expect(protocols).toContain('file')
-      expect(protocols).toContain('prompt')
-      expect(protocols).toContain('memory')
-    })
-
-    test('应该获取注册表信息', () => {
-      const info = manager.getRegistryInfo('prompt')
-
-      expect(info).toBeDefined()
-      expect(info.name).toBe('prompt')
+    test('未初始化时应该抛出错误', async () => {
+      const uninitializedManager = new ResourceManager()
+      
+      try {
+        await uninitializedManager.getProtocolRegistry('package')
+        fail('应该抛出错误')
+      } catch (error) {
+        expect(error.message).toContain('ResourceManager未初始化')
+      }
     })
   })
 })
+

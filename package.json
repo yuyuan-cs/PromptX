@@ -33,6 +33,7 @@
   "files": [
     "src/",
     "prompt/",
+    "package.json",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

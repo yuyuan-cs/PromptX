@@ -25,13 +25,21 @@ class LearnCommand extends BasePouchCommand {
 
     try {
       // 直接使用ResourceManager解析资源
-      const content = await this.resourceManager.resolve(resourceUrl)
+      const result = await this.resourceManager.resolve(resourceUrl)
+
+      if (!result.success) {
+        return this.formatErrorResponse(resourceUrl, result.error.message)
+      }
 
       // 解析协议信息
-      const urlMatch = resourceUrl.match(/^([a-zA-Z]+):\/\/(.+)$/)
-      const [, protocol, resourceId] = urlMatch
+      const urlMatch = resourceUrl.match(/^(@[!?]?)?([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$/)
+      if (!urlMatch) {
+        return this.formatErrorResponse(resourceUrl, '无效的资源URL格式')
+      }
+      
+      const [, loadingSemantic, protocol, resourceId] = urlMatch
 
-      return this.formatSuccessResponse(protocol, resourceId, content)
+      return this.formatSuccessResponse(protocol, resourceId, result.content)
     } catch (error) {
       return this.formatErrorResponse(resourceUrl, error.message)
     }

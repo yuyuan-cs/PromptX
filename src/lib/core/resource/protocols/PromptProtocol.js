@@ -153,7 +153,8 @@ class PromptProtocol extends ResourceProtocol {
 
       // 使用 glob 查找匹配的文件
       const files = await glob(searchPattern, {
-        ignore: ['**/node_modules/**', '**/.git/**']
+        ignore: ['**/node_modules/**', '**/.git/**'],
+        absolute: true
       })
 
       if (files.length === 0) {
@@ -224,7 +225,9 @@ class PromptProtocol extends ResourceProtocol {
         const packageRoot = await this.packageProtocol.getPackageRoot()
         const cleanPath = packagePath.replace('@package://', '')
         const searchPattern = path.join(packageRoot, cleanPath)
-        const files = await glob(searchPattern)
+        const files = await glob(searchPattern, {
+          ignore: ['**/node_modules/**', '**/.git/**']
+        })
         return files.length > 0
       } else {
         // 单个文件：检查文件是否存在

@@ -189,7 +189,20 @@ class ResourceManager {
       throw new Error('ResourceManager未初始化')
     }
 
-    return this.registry.protocols[protocol]
+    const handler = this.protocolHandlers.get(protocol)
+    if (handler && typeof handler.getProtocolInfo === 'function') {
+      return handler.getProtocolInfo()
+    }
+
+    const protocolConfig = this.registry.protocols[protocol]
+    if (protocolConfig) {
+      return {
+        name: protocol,
+        ...protocolConfig
+      }
+    }
+
+    return null
   }
 }
 

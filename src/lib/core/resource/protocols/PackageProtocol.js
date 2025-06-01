@@ -347,6 +347,14 @@ class PackageProtocol extends ResourceProtocol {
    * @returns {Promise<string>} 解析后的绝对路径
    */
   async resolvePath (relativePath, params = null) {
+    // 生成缓存键
+    const cacheKey = `resolve:${relativePath}:${params ? params.toString() : ''}`
+    
+    // 检查缓存
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey)
+    }
+
     // 获取包根目录
     const packageRoot = await this.getPackageRoot()
 
@@ -359,8 +367,11 @@ class PackageProtocol extends ResourceProtocol {
 
     // 安全检查：确保路径在包根目录内
     if (!fullPath.startsWith(packageRoot)) {
-      throw new Error(`Path traversal detected: ${relativePath}`)
+      throw new Error(`路径安全检查失败: ${relativePath}`)
     }
+
+    // 存储到缓存
+    this.cache.set(cacheKey, fullPath)
 
     return fullPath
   }
@@ -452,9 +463,7 @@ class PackageProtocol extends ResourceProtocol {
   /**
    * 加载资源内容
    */
-  async loadContent (resourcePath, queryParams) {
-    const resolvedPath = await this.resolvePath(resourcePath, queryParams)
-
+  async loadContent (resolvedPath, queryParams) {
     try {
       await fsPromises.access(resolvedPath)
       const content = await fsPromises.readFile(resolvedPath, 'utf8')
@@ -469,12 +478,12 @@ class PackageProtocol extends ResourceProtocol {
           size: content.length,
           lastModified: stats.mtime,
           absolutePath: resolvedPath,
-          relativePath: resourcePath
+          relativePath: path.relative(await this.getPackageRoot(), resolvedPath)
         }
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error(`包资源不存在: ${resourcePath} (解析为: ${resolvedPath})`)
+        throw new Error(`包资源不存在: ${resolvedPath}`)
       }
       throw new Error(`加载包资源失败: ${error.message}`)
     }

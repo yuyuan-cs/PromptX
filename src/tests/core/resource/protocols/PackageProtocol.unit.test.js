@@ -218,7 +218,8 @@ describe('PackageProtocol', () => {
 
   describe('内容加载', () => {
     test('应该能加载package.json内容', async () => {
-      const result = await packageProtocol.loadContent('package.json')
+      const resolvedPath = await packageProtocol.resolvePath('package.json')
+      const result = await packageProtocol.loadContent(resolvedPath)
 
       expect(result).toHaveProperty('content')
       expect(result).toHaveProperty('path')
@@ -236,13 +237,15 @@ describe('PackageProtocol', () => {
     })
 
     test('加载不存在的文件应该抛出错误', async () => {
+      const resolvedPath = await packageProtocol.resolvePath('nonexistent.txt')
       await expect(
-        packageProtocol.loadContent('nonexistent.txt')
+        packageProtocol.loadContent(resolvedPath)
       ).rejects.toThrow('包资源不存在')
     })
 
     test('返回的metadata应该包含正确信息', async () => {
-      const result = await packageProtocol.loadContent('package.json')
+      const resolvedPath = await packageProtocol.resolvePath('package.json')
+      const result = await packageProtocol.loadContent(resolvedPath)
 
       expect(result.metadata.size).toBe(result.content.length)
       expect(result.metadata.lastModified.constructor.name).toBe('Date')
