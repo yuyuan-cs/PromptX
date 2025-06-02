@@ -15,7 +15,7 @@
 
 ### 启动指令
 ```bash
-npx -y dpml-prompt@snapshot init
+npx -y dpml-prompt init
 ```
 
 ## 👤 快速开始（人类阅读区）

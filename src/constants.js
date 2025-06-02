@@ -53,9 +53,9 @@ function detectCommandPrefix() {
   // 3. npm环境变量检测
   if (process.env.npm_execpath?.includes('npx') || 
       process.env.npm_config_user_agent?.includes('npx')) {
-    _cachedPrefix = 'npx dpml-prompt@snapshot'
+    _cachedPrefix = 'npx -y dpml-prompt'
   } else {
-    _cachedPrefix = 'npx dpml-prompt@snapshot' // 默认值保持安全
+    _cachedPrefix = 'npx -y dpml-prompt' // 默认值保持安全
   }
 
   return _cachedPrefix
@@ -88,7 +88,7 @@ function reconstructCommandPrefix() {
     
     // 如果找不到 init 或解析失败，使用环境变量判断
     if (process.env.npm_execpath && process.env.npm_execpath.includes('npx')) {
-      return 'npx dpml-prompt@snapshot'
+      return 'npx -y dpml-prompt'
     }
     
     return 'dpml-prompt'
