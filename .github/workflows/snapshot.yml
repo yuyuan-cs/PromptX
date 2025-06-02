@@ -27,6 +27,7 @@ jobs:
         with:
           node-version: '20.x'
           cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org/'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -38,9 +39,6 @@ jobs:
         run: |
           # 确保在正确的分支
           git checkout develop
-          
-          # 配置npm认证
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
           
           # 获取当前时间戳和短commit hash
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
@@ -57,14 +55,15 @@ jobs:
           # 直接设置版本号
           npm version $SNAPSHOT_VERSION --no-git-tag-version
           
-          # 发布snapshot版本
-          npm publish --tag snapshot
+          # 使用pnpm发布snapshot版本（与DPML项目保持一致）
+          pnpm publish --tag snapshot --no-git-checks
           
           # 输出版本信息供后续步骤使用
           echo "SNAPSHOT_VERSION=$SNAPSHOT_VERSION" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Comment on related PRs
         if: success()
