@@ -27,7 +27,15 @@ npm error need auth You need to authorize this machine using `npm adduser`
 #### 步骤1：访问仓库设置
 访问：https://github.com/Deepractice/PromptX/settings/secrets/actions
 
-#### 步骤2：添加NPM_TOKEN
+#### 步骤2：添加ORG_NPM_TOKEN（组织级）
+1. 访问组织设置：https://github.com/organizations/Deepractice/settings/secrets/actions
+2. 点击 "New organization secret"
+3. Name: `ORG_NPM_TOKEN`
+4. Secret: 粘贴上一步获取的npm token
+5. Repository access: 选择适当的访问权限
+6. 点击 "Add secret"
+
+或者添加仓库级的NPM_TOKEN：
 1. 点击 "New repository secret"
 2. Name: `NPM_TOKEN`
 3. Secret: 粘贴上一步获取的npm token
@@ -111,6 +119,10 @@ DPML项目（https://github.com/Deepractice/dpml）也使用类似的发布流�
 - ✅ 使用pnpm发布（与DPML项目一致）
 - ✅ 移除了手动.npmrc配置（使用actions/setup-node自动配置）
 
+已更新配置：
+- ✅ 使用组织级ORG_NPM_TOKEN
+- ✅ CI配置已更新为使用组织token
+
 待验证：
-- 🔍 GitHub Secrets中的NPM_TOKEN配置
-- 🔍 npm账户的包发布权限 # 测试CI npm认证配置
+- 🔍 组织token的访问权限设置
+- 🔍 npm账户的包发布权限
