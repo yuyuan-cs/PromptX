@@ -44,7 +44,7 @@ describe('命令前缀动态检测 E2E', () => {
   describe('init命令保存命令前缀', () => {
     test('npx方式调用时应保存npx前缀', async () => {
       // 模拟npx调用init命令
-      process.argv = ['node', 'npx_cache/dpml-prompt@snapshot/dist/bin/promptx.js', 'init']
+      process.argv = ['node', 'npx', 'dpml-prompt@snapshot', 'init']
       process.env.npm_execpath = '/usr/local/lib/node_modules/npm/bin/npx-cli.js'
       
       // 导入并执行init命令
@@ -71,7 +71,7 @@ describe('命令前缀动态检测 E2E', () => {
     })
 
     test('指定版本号时应正确保存', async () => {
-      process.argv = ['node', 'npx_cache/dpml-prompt@latest/dist/bin/promptx.js', 'init']
+      process.argv = ['node', 'npx', 'dpml-prompt@latest', 'init']
       process.env.npm_execpath = '/usr/local/lib/node_modules/npm/bin/npx-cli.js'
       
       const cli = new PouchCLI()
@@ -79,7 +79,7 @@ describe('命令前缀动态检测 E2E', () => {
       await cli.execute('init', [])
       
       const savedPrefix = await config.readText('command-prefix')
-      expect(savedPrefix).toBe('npx dpml-prompt@snapshot') // 简化逻辑只会返回默认snapshot版本
+      expect(savedPrefix).toBe('npx dpml-prompt@latest')
     })
   })
 
@@ -130,25 +130,25 @@ describe('命令前缀动态检测 E2E', () => {
     const testCases = [
       {
         name: 'npx最新版本',
-        argv: ['node', '/tmp/.npm/_npx/1234/lib/node_modules/dpml-prompt/src/bin/promptx.js', 'init'],
+        argv: ['node', 'npx', 'dpml-prompt', 'init'],
         hasNpxEnv: true,
-        expected: 'npx dpml-prompt@snapshot'
+        expected: 'npx dpml-prompt'
       },
       {
         name: 'npx指定版本', 
-        argv: ['node', '/tmp/.npm/_npx/1234/lib/node_modules/dpml-prompt@0.1.0/src/bin/promptx.js', 'init'],
+        argv: ['node', 'npx', 'dpml-prompt@0.1.0', 'init'],
         hasNpxEnv: true,
-        expected: 'npx dpml-prompt@snapshot'
+        expected: 'npx dpml-prompt@0.1.0'
       },
       {
         name: 'npx snapshot版本',
-        argv: ['node', '/tmp/.npm/_npx/1234/lib/node_modules/dpml-prompt@snapshot/src/bin/promptx.js', 'init'],
+        argv: ['node', 'npx', 'dpml-prompt@snapshot', 'init'],
         hasNpxEnv: true,
         expected: 'npx dpml-prompt@snapshot'
       },
       {
         name: '全局安装',
-        argv: ['node', '/usr/local/bin/dpml-prompt', 'init'],
+        argv: ['node', 'dpml-prompt', 'init'],
         hasNpxEnv: false,
         expected: 'dpml-prompt'
       },
@@ -157,6 +157,30 @@ describe('命令前缀动态检测 E2E', () => {
         argv: ['node', '/Users/dev/PromptX/src/bin/promptx.js', 'init'],
         hasNpxEnv: false,
         expected: 'dpml-prompt'
+      },
+      {
+        name: 'npx -y 参数',
+        argv: ['node', 'npx', '-y', 'dpml-prompt', 'init'],
+        hasNpxEnv: true,
+        expected: 'npx -y dpml-prompt'
+      },
+      {
+        name: 'npx 复杂参数',
+        argv: ['node', 'npx', '--yes', '--registry=https://registry.npm.taobao.org', 'dpml-prompt@latest', 'init'],
+        hasNpxEnv: true,
+        expected: 'npx --yes --registry=https://registry.npm.taobao.org dpml-prompt@latest'
+      },
+      {
+        name: 'pnpm dlx',
+        argv: ['node', 'pnpm', 'dlx', 'dpml-prompt@snapshot', 'init'],
+        hasNpxEnv: false,
+        expected: 'pnpm dlx dpml-prompt@snapshot'
+      },
+      {
+        name: 'yarn dlx',
+        argv: ['node', 'yarn', 'dlx', 'dpml-prompt', 'init'],
+        hasNpxEnv: false,
+        expected: 'yarn dlx dpml-prompt'
       }
     ]
 

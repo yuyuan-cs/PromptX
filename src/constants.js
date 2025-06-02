@@ -63,16 +63,39 @@ function detectCommandPrefix() {
 
 /**
  * 智能推测用户使用的命令前缀
- * 基于环境变量和执行路径的启发式判断
+ * 从 process.argv 中提取 init 之前的所有部分作为命令前缀
  */
 function reconstructCommandPrefix() {
-  // 最简单最直接的判断：如果有 npm_execpath 且包含 npx，就是 npx 调用
-  if (process.env.npm_execpath && process.env.npm_execpath.includes('npx')) {
-    return 'npx dpml-prompt@snapshot' // 默认 snapshot 版本
+  try {
+    // 从 process.argv 中找到 init 命令的位置
+    const initIndex = process.argv.findIndex(arg => arg === 'init')
+    
+    if (initIndex > 0) {
+      // 提取 init 之前的所有参数，跳过 node 可执行文件路径
+      const prefixParts = process.argv.slice(1, initIndex)
+      
+      if (prefixParts.length > 0) {
+        // 如果第一部分是脚本路径，简化为包名
+        const firstPart = prefixParts[0]
+        if (firstPart.includes('cli.js') || firstPart.includes('bin')) {
+          // 开发模式，替换为包名
+          prefixParts[0] = 'dpml-prompt'
+        }
+        
+        return prefixParts.join(' ')
+      }
+    }
+    
+    // 如果找不到 init 或解析失败，使用环境变量判断
+    if (process.env.npm_execpath && process.env.npm_execpath.includes('npx')) {
+      return 'npx dpml-prompt@snapshot'
+    }
+    
+    return 'dpml-prompt'
+  } catch (error) {
+    // 解析失败时的回退逻辑
+    return 'dpml-prompt'
   }
-  
-  // 其他情况默认是全局安装
-  return 'dpml-prompt'
 }
 
 /**
