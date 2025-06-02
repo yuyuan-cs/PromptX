@@ -94,12 +94,10 @@ jobs:
             \`\`\`bash
             npx dpml-prompt@${version} hello
             npx dpml-prompt@${version} init
+            npx dpml-prompt@${version} action <roleId>
             \`\`\`
             
-            你可以使用这个snapshot版本测试最新功能。包含以下改进：
-            - ✅ 修复了Windows平台platform-folders兼容性问题
-            - ✅ 解决了协议路径警告问题
-            - 🔧 使用env-paths替代platform-folders，提升跨平台兼容性`;
+            💡 你可以使用这个snapshot版本测试最新的develop分支功能。`;
             
             // 为每个相关PR添加评论
             for (const pr of prs) {
