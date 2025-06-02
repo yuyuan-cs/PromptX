@@ -2,7 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { ResourceManager } = require('../../resource')
-const { COMMANDS } = require('../../../../constants')
+const { COMMANDS, saveCommandPrefix } = require('../../../../constants')
 
 /**
  * 初始化锦囊命令
@@ -24,7 +24,10 @@ class InitCommand extends BasePouchCommand {
     // 1. 技术初始化
     await this.initializeWorkspace(workspacePath)
 
-    // 2. 加载协议体系
+    // 2. 保存命令前缀配置
+    const savedPrefix = await saveCommandPrefix()
+
+    // 3. 加载协议体系
     const protocolContent = await this.loadProtocolSystem()
 
     return `🎯 PromptX 系统初始化完成！
@@ -32,6 +35,7 @@ class InitCommand extends BasePouchCommand {
 ## 🏗️ 技术环境准备
 ✅ 创建了项目目录结构
 ✅ 配置了 .promptx/pouch.json 锦囊状态文件
+✅ 保存了命令前缀配置：${savedPrefix || '默认前缀'}
 ✅ 准备了锦囊状态机框架
 
 ## 📋 系统基本诺记 (协议体系)
