@@ -4,7 +4,7 @@
  */
 
 // 固定命令前缀 - 使用 -y -f 确保总是获取最新版本
-const COMMAND_PREFIX = 'npx -y -f dpml-prompt'
+const COMMAND_PREFIX = 'npx -y -f dpml-prompt@latest'
 
 // 静态命令常量
 const COMMANDS = {
