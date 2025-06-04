@@ -38,14 +38,7 @@ function detectCommandPrefix() {
     return _cachedPrefix
   }
 
-  // 2. npm环境变量检测（实时检测，优先级提高）
-  if (process.env.npm_execpath?.includes('npx') || 
-      process.env.npm_config_user_agent?.includes('npx')) {
-    _cachedPrefix = 'npx -y dpml-prompt'
-    return _cachedPrefix
-  }
-
-  // 3. 如果不是 init 过程，尝试读取配置文件
+  // 2. 如果不是 init 过程，优先尝试读取配置文件
   if (!isInitProcess) {
     try {
       const config = getConfig()
@@ -63,8 +56,15 @@ function detectCommandPrefix() {
     }
   }
 
+  // 3. npm环境变量检测
+  if (process.env.npm_execpath?.includes('npx') || 
+      process.env.npm_config_user_agent?.includes('npx')) {
+    _cachedPrefix = 'npx -y dpml-prompt'
+    return _cachedPrefix
+  }
+
   // 4. 默认值
-  _cachedPrefix = 'npx -y dpml-prompt'
+  _cachedPrefix = 'dpml-prompt'
   return _cachedPrefix
 }
 
@@ -74,12 +74,6 @@ function detectCommandPrefix() {
  */
 function reconstructCommandPrefix() {
   try {
-    // 优先检查环境变量，因为通过 npx 执行时环境变量是最可靠的
-    if (process.env.npm_execpath?.includes('npx') || 
-        process.env.npm_config_user_agent?.includes('npx')) {
-      return 'npx -y dpml-prompt'
-    }
-    
     // 从 process.argv 中找到 init 命令的位置
     const initIndex = process.argv.findIndex(arg => arg === 'init')
     
@@ -93,8 +87,10 @@ function reconstructCommandPrefix() {
         if (firstPart.includes('promptx.js') || 
             firstPart.includes('cli.js') || 
             firstPart.includes('bin/') ||
-            firstPart.includes('src/bin/')) {
-          // 开发模式，使用包名
+            firstPart.includes('src/bin/') ||
+            firstPart.includes('/usr/local/bin/dpml-prompt') ||
+            firstPart.endsWith('dpml-prompt')) {
+          // 开发模式或全局安装，使用包名
           return 'dpml-prompt'
         }
         
@@ -124,8 +120,8 @@ async function saveCommandPrefix() {
     // 先清除缓存，确保使用最新的检测结果
     _cachedPrefix = null
     
-    // 直接使用检测到的前缀，不再通过 reconstructCommandPrefix
-    const actualPrefix = detectCommandPrefix()
+    // 使用reconstructCommandPrefix来获取用户实际使用的命令
+    const actualPrefix = reconstructCommandPrefix()
     const config = getConfig()
     await config.writeText('command-prefix', actualPrefix)
     

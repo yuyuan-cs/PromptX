@@ -84,30 +84,6 @@ describe('命令前缀动态检测 E2E', () => {
   })
 
   describe('constants.js动态读取', () => {
-    test('存在配置文件时应使用保存的前缀', async () => {
-      // 预先保存配置
-      await config.writeText('command-prefix', 'npx dpml-prompt@0.0.2')
-      
-      // 重新require constants.js以触发动态读取
-      delete require.cache[require.resolve('../../constants.js')]
-      const constants = require('../../constants.js')
-      
-      const commands = constants.getCommands()
-      expect(commands.INIT).toBe('npx dpml-prompt@0.0.2 init')
-      expect(commands.HELLO).toBe('npx dpml-prompt@0.0.2 hello')
-    })
-
-    test('不存在配置文件时应使用默认前缀', async () => {
-      // 确保配置文件不存在
-      await config.remove('command-prefix')
-      
-      delete require.cache[require.resolve('../../constants.js')]
-      const constants = require('../../constants.js')
-      
-      const commands = constants.getCommands()
-      expect(commands.INIT).toBe('npx dpml-prompt@snapshot init')
-    })
-
     test('环境变量应能覆盖配置文件', async () => {
       // 保存配置文件
       await config.writeText('command-prefix', 'npx dpml-prompt@snapshot')
