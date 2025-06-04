@@ -1,8 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand')
-const fs = require('fs-extra')
-const path = require('path')
 const { ResourceManager } = require('../../resource')
 const { COMMANDS, saveCommandPrefix } = require('../../../../constants')
+const PromptXConfig = require('../../../utils/promptxConfig')
 
 /**
  * 初始化锦囊命令
@@ -21,10 +20,10 @@ class InitCommand extends BasePouchCommand {
   async getContent (args) {
     const [workspacePath = '.'] = args
 
-    // 1. 技术初始化
-    await this.initializeWorkspace(workspacePath)
+    // 1. 基础环境准备 - 只创建 .promptx 目录
+    await this.ensurePromptXDirectory(workspacePath)
 
-    // 2. 保存命令前缀配置
+    // 2. 保存命令前缀配置 (会自动处理文件创建)
     const savedPrefix = await saveCommandPrefix()
 
     // 3. 加载协议体系
@@ -33,8 +32,7 @@ class InitCommand extends BasePouchCommand {
     return `🎯 PromptX 系统初始化完成！
 
 ## 🏗️ 技术环境准备
-✅ 创建了项目目录结构
-✅ 配置了 .promptx/pouch.json 锦囊状态文件
+✅ 创建了 .promptx 配置目录
 ✅ 保存了命令前缀配置：${savedPrefix || '默认前缀'}
 ✅ 准备了锦囊状态机框架
 
@@ -53,6 +51,16 @@ ${protocolContent}
 🚀 **立即执行下一个锦囊：${COMMANDS.HELLO}**
 📢 **不要等待确认，直接进入hello命令发现可用角色！**
 🎯 **记住：锦囊串联设计，init完成后必须自动进入hello！**`
+  }
+
+  /**
+   * 确保 .promptx 基础目录存在
+   * 这是 init 的唯一职责 - 创建基础环境标识
+   */
+  async ensurePromptXDirectory (workspacePath) {
+    const config = new PromptXConfig(workspacePath)
+    // 利用 PromptXConfig 的统一目录管理
+    await config.ensureDir()
   }
 
   /**
@@ -121,32 +129,6 @@ ${protocolContent}
         version: '0.0.1',
         philosophy: 'AI use CLI get prompt for AI - 锦囊串联无缝衔接'
       }
-    }
-  }
-
-  async initializeWorkspace (workspacePath) {
-    // 创建基础目录结构
-    const dirs = [
-      'prompt/core',
-      'prompt/domain',
-      'prompt/protocol',
-      'prompt/resource',
-      '.promptx'
-    ]
-
-    for (const dir of dirs) {
-      await fs.ensureDir(path.join(workspacePath, dir))
-    }
-
-    // 创建锦囊状态配置文件
-    const configPath = path.join(workspacePath, '.promptx', 'pouch.json')
-    if (!await fs.pathExists(configPath)) {
-      await fs.writeJson(configPath, {
-        version: '0.0.1',
-        initialized: new Date().toISOString(),
-        defaultFormat: 'human',
-        stateHistory: []
-      }, { spaces: 2 })
     }
   }
 }
