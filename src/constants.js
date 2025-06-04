@@ -21,11 +21,14 @@ function getConfig() {
 
 /**
  * 动态检测命令前缀
- * 优先级：环境变量 > 配置文件 > npm环境变量检测 > 默认值
+ * 优先级：环境变量 > npm环境变量检测 > 配置文件 > 默认值
  */
 function detectCommandPrefix() {
-  // 返回缓存的结果
-  if (_cachedPrefix) {
+  // 在 init 过程中，优先使用实时检测而不是缓存
+  const isInitProcess = process.argv.includes('init')
+  
+  // 如果不是 init 过程且有缓存，返回缓存结果
+  if (!isInitProcess && _cachedPrefix) {
     return _cachedPrefix
   }
 
@@ -35,29 +38,33 @@ function detectCommandPrefix() {
     return _cachedPrefix
   }
 
-  // 2. 尝试读取配置文件（同步方式，避免异步复杂性）
-  try {
-    const config = getConfig()
-    const configPath = config.getPath('command-prefix')
-    const fs = require('fs')
-    if (fs.existsSync(configPath)) {
-      _cachedPrefix = fs.readFileSync(configPath, 'utf8').trim()
-      if (_cachedPrefix) {
-        return _cachedPrefix
-      }
-    }
-  } catch (error) {
-    // 忽略读取错误，继续下一步检测
-  }
-
-  // 3. npm环境变量检测
+  // 2. npm环境变量检测（实时检测，优先级提高）
   if (process.env.npm_execpath?.includes('npx') || 
       process.env.npm_config_user_agent?.includes('npx')) {
     _cachedPrefix = 'npx -y dpml-prompt'
-  } else {
-    _cachedPrefix = 'npx -y dpml-prompt' // 默认值保持安全
+    return _cachedPrefix
   }
 
+  // 3. 如果不是 init 过程，尝试读取配置文件
+  if (!isInitProcess) {
+    try {
+      const config = getConfig()
+      const configPath = config.getPath('command-prefix')
+      const fs = require('fs')
+      if (fs.existsSync(configPath)) {
+        const savedPrefix = fs.readFileSync(configPath, 'utf8').trim()
+        if (savedPrefix) {
+          _cachedPrefix = savedPrefix
+          return _cachedPrefix
+        }
+      }
+    } catch (error) {
+      // 忽略读取错误，继续下一步检测
+    }
+  }
+
+  // 4. 默认值
+  _cachedPrefix = 'npx -y dpml-prompt'
   return _cachedPrefix
 }
 
@@ -67,6 +74,12 @@ function detectCommandPrefix() {
  */
 function reconstructCommandPrefix() {
   try {
+    // 优先检查环境变量，因为通过 npx 执行时环境变量是最可靠的
+    if (process.env.npm_execpath?.includes('npx') || 
+        process.env.npm_config_user_agent?.includes('npx')) {
+      return 'npx -y dpml-prompt'
+    }
+    
     // 从 process.argv 中找到 init 命令的位置
     const initIndex = process.argv.findIndex(arg => arg === 'init')
     
@@ -75,13 +88,17 @@ function reconstructCommandPrefix() {
       const prefixParts = process.argv.slice(1, initIndex)
       
       if (prefixParts.length > 0) {
-        // 如果第一部分是脚本路径，简化为包名
+        // 检查脚本路径是否包含典型的开发模式特征
         const firstPart = prefixParts[0]
-        if (firstPart.includes('cli.js') || firstPart.includes('bin')) {
-          // 开发模式，替换为包名
-          prefixParts[0] = 'dpml-prompt'
+        if (firstPart.includes('promptx.js') || 
+            firstPart.includes('cli.js') || 
+            firstPart.includes('bin/') ||
+            firstPart.includes('src/bin/')) {
+          // 开发模式，使用包名
+          return 'dpml-prompt'
         }
         
+        // 直接使用检测到的前缀
         return prefixParts.join(' ')
       }
     }
@@ -104,11 +121,15 @@ function reconstructCommandPrefix() {
  */
 async function saveCommandPrefix() {
   try {
-    const actualPrefix = reconstructCommandPrefix()
+    // 先清除缓存，确保使用最新的检测结果
+    _cachedPrefix = null
+    
+    // 直接使用检测到的前缀，不再通过 reconstructCommandPrefix
+    const actualPrefix = detectCommandPrefix()
     const config = getConfig()
     await config.writeText('command-prefix', actualPrefix)
     
-    // 更新缓存
+    // 保存后更新缓存
     _cachedPrefix = actualPrefix
     
     return actualPrefix
