@@ -3,8 +3,18 @@
  * 统一管理命令格式、路径等配置信息
  */
 
-// 固定命令前缀 - 使用 -y -f 确保总是获取最新版本
-const COMMAND_PREFIX = 'npx dpml-prompt@snapshot'
+// 根据环境变量决定命令前缀
+function getCommandPrefix() {
+  const env = process.env.PROMPTX_ENV
+  
+  if (env === 'development') {
+    return 'pnpm start'
+  } else {
+    return 'npx dpml-prompt@snapshot'
+  }
+}
+
+const COMMAND_PREFIX = getCommandPrefix()
 
 // 静态命令常量
 const COMMANDS = {

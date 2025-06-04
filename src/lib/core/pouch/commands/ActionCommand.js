@@ -2,6 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { COMMANDS, buildCommand } = require('../../../../constants')
+const ResourceManager = require('../../resource/resourceManager')
 
 /**
  * 角色激活锦囊命令
@@ -12,6 +13,7 @@ class ActionCommand extends BasePouchCommand {
     super()
     // 获取HelloCommand的角色注册表
     this.helloCommand = null
+    this.resourceManager = new ResourceManager()
   }
 
   getPurpose () {
@@ -50,8 +52,8 @@ ${COMMANDS.HELLO}
       // 2. 分析角色文件，提取依赖
       const dependencies = await this.analyzeRoleDependencies(roleInfo)
 
-      // 3. 生成学习计划 (新版本：以role://开头)
-      return this.generateLearningPlan(roleInfo.id, dependencies)
+      // 3. 生成学习计划并直接加载所有内容
+      return await this.generateLearningPlan(roleInfo.id, dependencies)
     } catch (error) {
       console.error('Action command error:', error)
       return `❌ 激活角色 "${roleId}" 时发生错误。
@@ -220,55 +222,109 @@ promptx learn principle://${roleInfo.id}
   }
 
   /**
-   * 生成学习计划
+   * 加载学习内容（复用LearnCommand逻辑）
    */
-  generateLearningPlan (roleId, dependencies) {
+  async loadLearnContent (resourceUrl) {
+    try {
+      const result = await this.resourceManager.resolve(resourceUrl)
+      
+      if (!result.success) {
+        return `❌ 无法加载 ${resourceUrl}: ${result.error.message}\n\n`
+      }
+
+      // 解析协议信息
+      const urlMatch = resourceUrl.match(/^(@[!?]?)?([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$/)
+      if (!urlMatch) {
+        return `❌ 无效的资源URL格式: ${resourceUrl}\n\n`
+      }
+      
+      const [, loadingSemantic, protocol, resourceId] = urlMatch
+
+      const protocolLabels = {
+        thought: '🧠 思维模式',
+        execution: '⚡ 执行模式',
+        memory: '💾 记忆模式',
+        personality: '👤 角色人格',
+        principle: '⚖️ 行为原则',
+        knowledge: '📚 专业知识'
+      }
+
+      const label = protocolLabels[protocol] || `📄 ${protocol}`
+
+      return `## ✅ ${label}：${resourceId}
+${result.content}
+---
+`
+    } catch (error) {
+      return `❌ 加载 ${resourceUrl} 时发生错误: ${error.message}\n\n`
+    }
+  }
+
+  /**
+   * 生成学习计划并直接加载所有内容
+   */
+  async generateLearningPlan (roleId, dependencies) {
     const { thoughts, executions } = dependencies
 
-    let plan = `🎭 **准备激活角色：${roleId}**\n\n`
+    let content = `🎭 **角色激活完成：${roleId}** - 所有技能已自动加载\n`
 
-    // 第一步：学习完整角色
-    plan += '## 🎯 第一步：掌握角色全貌\n'
-    plan += '理解角色的完整定义和核心特征\n\n'
-    plan += '```bash\n'
-    plan += `${buildCommand.learn(`role://${roleId}`)}\n`
-    plan += '```\n\n'
-
-    // 第二步：学习思维模式
+    // 加载思维模式
     if (thoughts.size > 0) {
-      plan += '## 🧠 第二步：掌握思维模式\n'
-      plan += '学习角色特定的思考方式和认知框架\n\n'
-
-      Array.from(thoughts).forEach((thought, index) => {
-        plan += '```bash\n'
-        plan += `${buildCommand.learn(`thought://${thought}`)}\n`
-        plan += '```\n\n'
-      })
+      content += `# 🧠 思维模式技能 (${thoughts.size}个)\n`
+      
+      for (const thought of Array.from(thoughts)) {
+        content += await this.loadLearnContent(`thought://${thought}`)
+      }
     }
 
-    // 第三步：掌握执行技能
+    // 加载执行技能
     if (executions.size > 0) {
-      plan += `## ⚡ 第${thoughts.size > 0 ? '三' : '二'}步：掌握执行技能\n`
-      plan += '学习角色的行为模式和操作技能\n\n'
-
-      Array.from(executions).forEach((execution, index) => {
-        plan += '```bash\n'
-        plan += `${buildCommand.learn(`execution://${execution}`)}\n`
-        plan += '```\n\n'
-      })
+      content += `# ⚡ 执行技能 (${executions.size}个)\n`
+      
+      for (const execution of Array.from(executions)) {
+        content += await this.loadLearnContent(`execution://${execution}`)
+      }
     }
 
-    // 激活确认
-    const stepCount = thoughts.size > 0 ? (executions.size > 0 ? '四' : '三') : (executions.size > 0 ? '三' : '二')
-    plan += `## 🎪 第${stepCount}步：完成角色激活\n`
-    plan += '确认角色能力已完全激活\n\n'
-    plan += '✅ **角色激活检查清单**：\n'
-    plan += '- [x] 已学习完整角色定义\n'
-    if (thoughts.size > 0) plan += `- [x] 已掌握 ${thoughts.size} 个思维模式\n`
-    if (executions.size > 0) plan += `- [x] 已掌握 ${executions.size} 个执行技能\n`
-    plan += `- [x] 可以开始以${roleId}身份工作\n\n`
+    // 激活总结
+    content += `# 🎯 角色激活总结\n`
+    content += `✅ **${roleId} 角色已完全激活！**\n`
+    content += `📋 **已获得能力**：\n`
+    if (thoughts.size > 0) content += `- 🧠 思维模式：${Array.from(thoughts).join(', ')}\n`
+    if (executions.size > 0) content += `- ⚡ 执行技能：${Array.from(executions).join(', ')}\n`
+    content += `💡 **现在可以立即开始以 ${roleId} 身份提供专业服务！**\n`
 
-    return plan
+    // 自动执行 recall 命令
+    content += await this.executeRecall(roleId)
+
+    return content
+  }
+
+  /**
+   * 自动执行 recall 命令
+   */
+  async executeRecall (roleId) {
+    try {
+      // 懒加载 RecallCommand
+      const RecallCommand = require('./RecallCommand')
+      const recallCommand = new RecallCommand()
+      
+      // 执行 recall，获取所有记忆（不传入查询参数）
+      const recallContent = await recallCommand.getContent([])
+      
+      return `---
+## 🧠 自动记忆检索结果
+${recallContent}
+⚠️ **重要**: recall已自动执行完成，以上记忆将作为角色工作的重要参考依据
+`
+    } catch (error) {
+      console.error('Auto recall error:', error)
+      return `---
+## 🧠 自动记忆检索结果
+⚠️ **记忆检索出现问题**: ${error.message}
+💡 **建议**: 可手动执行 \`${buildCommand.recall()}\` 来检索相关记忆
+`
+    }
   }
 
   getPATEOAS (args) {
@@ -293,29 +349,42 @@ promptx learn principle://${roleInfo.id}
     }
 
     return {
-      currentState: 'action_plan_generated',
-      availableTransitions: ['learn', 'recall', 'hello'],
+      currentState: 'role_activated_with_memory',
+      availableTransitions: ['hello', 'remember', 'learn'],
       nextActions: [
         {
-          name: '开始学习',
-          description: '按计划开始学习技能',
-          command: COMMANDS.LEARN,
+          name: '开始专业服务',
+          description: '角色已激活并完成记忆检索，可直接提供专业服务',
+          command: '开始对话',
           priority: 'high'
         },
         {
           name: '返回角色选择',
           description: '选择其他角色',
           command: COMMANDS.HELLO,
+          priority: 'medium'
+        },
+        {
+          name: '记忆新知识',
+          description: '内化更多专业知识',
+          command: buildCommand.remember('<新知识>'),
+          priority: 'low'
+        },
+        {
+          name: '学习新资源',
+          description: '学习相关专业资源',
+          command: buildCommand.learn('<protocol>://<resource>'),
           priority: 'low'
         }
       ],
       metadata: {
         targetRole: roleId,
-        planGenerated: true,
+        roleActivated: true,
+        memoryRecalled: true,
         architecture: 'DPML协议组合',
-        approach: '分析-提取-编排',
-        systemVersion: '锦囊串联状态机 v1.0',
-        designPhilosophy: 'AI use CLI get prompt for AI'
+        approach: '直接激活-自动记忆-立即可用',
+        systemVersion: '锦囊串联状态机 v2.1',
+        designPhilosophy: 'AI use CLI get prompt for AI - 一键专家化，自动记忆'
       }
     }
   }

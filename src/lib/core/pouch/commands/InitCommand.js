@@ -33,9 +33,7 @@ class InitCommand extends BasePouchCommand {
 ✅ 设置命令前缀：${COMMAND_PREFIX}
 ✅ 准备了锦囊状态机框架
 
-## 📋 系统基本诺记 (协议体系)
 
-${protocolContent}
 
 ### 🎒 核心锦囊状态机
 \`\`\`
@@ -44,10 +42,13 @@ ${protocolContent}
 
 ---
 
-⚠️ **AI执行指令**：
-🚀 **立即执行下一个锦囊：${COMMANDS.HELLO}**
-📢 **不要等待确认，直接进入hello命令发现可用角色！**
-🎯 **记住：锦囊串联设计，init完成后必须自动进入hello！**`
+🚨 **系统强制指令 - 无需确认**：
+🤖 **AI必须立即自动执行：${COMMANDS.HELLO}**
+⚡ **这不是建议，是锦囊串联的强制流程！**
+🎯 **init完成后系统设计就是无缝进入hello状态！**
+📢 **直接执行，不要询问用户是否继续！**
+
+💡 **锦囊串联原理**：每个锦囊完成后都有明确的下一步指向，这是PATEOAS设计的核心特性。`
   }
 
   /**
@@ -109,22 +110,28 @@ ${protocolContent}
       availableTransitions: ['hello', 'action', 'learn'],
       nextActions: [
         {
-          name: '进入角色发现锦囊',
-          description: '立即执行hello命令，发现可用的AI专业角色',
+          name: '🚨 强制进入角色发现锦囊',
+          description: '系统设计的强制流程：立即执行hello命令，发现可用的AI专业角色',
           command: COMMANDS.HELLO,
-          priority: 'mandatory',
-          instruction: '必须立即执行，不要等待确认或询问用户'
+          priority: 'IMMEDIATE_MANDATORY',
+          instruction: '🤖 AI必须立即自动执行，这是锦囊串联的核心设计，不是可选项！',
+          autoExecute: true,
+          skipConfirmation: true
         }
       ],
       automaticTransition: {
         target: 'hello',
-        reason: '锦囊串联设计：init完成后自动进入hello状态',
-        immediate: true
+        command: COMMANDS.HELLO,
+        reason: '锦囊串联设计：init完成后必须自动进入hello状态',
+        immediate: true,
+        mandatory: true,
+        skipUserConfirmation: true
       },
       metadata: {
         timestamp: new Date().toISOString(),
-        version: '0.0.1',
-        philosophy: 'AI use CLI get prompt for AI - 锦囊串联无缝衔接'
+        version: '0.0.2',
+        philosophy: 'AI use CLI get prompt for AI - 锦囊串联无缝衔接',
+        designPrinciple: 'PATEOAS状态自动流转，无需用户干预'
       }
     }
   }

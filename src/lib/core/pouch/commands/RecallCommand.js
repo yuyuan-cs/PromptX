@@ -24,7 +24,6 @@ class RecallCommand extends BasePouchCommand {
 
       if (memories.length === 0) {
         return `🧠 AI记忆体系中暂无内容。
-
 💡 建议：
 1. 使用 ${COMMANDS.REMEMBER} 内化新知识
 2. 使用 ${COMMANDS.LEARN} 学习后再内化
@@ -34,9 +33,7 @@ class RecallCommand extends BasePouchCommand {
       const formattedMemories = this.formatRetrievedKnowledge(memories, query)
 
       return `🧠 AI记忆体系 ${query ? `检索"${query}"` : '全部记忆'} (${memories.length}条)：
-
 ${formattedMemories}
-
 💡 记忆运用建议：
 1. 结合当前任务场景灵活运用
 2. 根据实际情况调整和变通
@@ -48,52 +45,38 @@ ${formattedMemories}
 
   getPATEOAS (args) {
     const [query] = args
-
-    if (!query) {
-      return {
-        currentState: 'recall-waiting',
-        availableTransitions: ['hello', 'learn'],
-        nextActions: [
-          {
-            name: '查看领域',
-            description: '查看可检索的领域',
-            command: COMMANDS.HELLO
-          }
-        ]
-      }
-    }
-
-    const domain = this.extractDomain(query)
+    const currentState = query ? `recalled-${query}` : 'recall-waiting'
 
     return {
-      currentState: `recalled-${query}`,
-      availableTransitions: ['action', 'learn', 'remember'],
+      currentState,
+      availableTransitions: ['hello', 'remember', 'learn', 'recall'],
       nextActions: [
         {
-          name: '应用记忆',
-          description: `使用检索到的${query}知识`,
-          command: buildCommand.action(query)
+          name: '选择角色',
+          description: '选择专业角色来应用检索到的知识',
+          command: COMMANDS.HELLO
         },
         {
-          name: '深入学习',
-          description: `学习更多${domain}知识`,
-          command: buildCommand.learn(domain)
+          name: '记忆新知识',
+          description: '继续内化更多专业知识',
+          command: COMMANDS.REMEMBER + ' "<新的知识内容>"'
         },
         {
-          name: '增强记忆',
-          description: 'AI内化新的知识增强记忆',
-          command: buildCommand.remember(`${query}-update`)
+          name: '学习资源',
+          description: '学习相关专业资源',
+          command: COMMANDS.LEARN + ' <protocol>://<resource>'
         },
         {
-          name: '相关检索',
-          description: '检索相关领域知识',
-          command: buildCommand.recall(this.getRelatedQuery(query))
+          name: '继续检索',
+          description: '检索其他相关记忆',
+          command: COMMANDS.RECALL + ' <关键词>'
         }
       ],
       metadata: {
-        query,
+        query: query || null,
         resultCount: this.lastSearchCount || 0,
-        searchTime: new Date().toISOString()
+        searchTime: new Date().toISOString(),
+        hasResults: (this.lastSearchCount || 0) > 0
       }
     }
   }
@@ -177,13 +160,10 @@ ${formattedMemories}
         : memory.content
 
       return `📝 ${index + 1}. **记忆** (${memory.timestamp})
-
 ${content}
-
 ${memory.tags.slice(0, 5).join(' ')}
-
 ---`
-    }).join('\n\n')
+    }).join('\n')
   }
 
   extractDomain (query) {
