@@ -1,6 +1,6 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { ResourceManager } = require('../../resource')
-const { COMMANDS, saveCommandPrefix } = require('../../../../constants')
+const { COMMANDS, COMMAND_PREFIX } = require('../../../../constants')
 const PromptXConfig = require('../../../utils/promptxConfig')
 
 /**
@@ -23,17 +23,14 @@ class InitCommand extends BasePouchCommand {
     // 1. 基础环境准备 - 只创建 .promptx 目录
     await this.ensurePromptXDirectory(workspacePath)
 
-    // 2. 保存命令前缀配置 (会自动处理文件创建)
-    const savedPrefix = await saveCommandPrefix()
-
-    // 3. 加载协议体系
+    // 2. 加载协议体系
     const protocolContent = await this.loadProtocolSystem()
 
     return `🎯 PromptX 系统初始化完成！
 
 ## 🏗️ 技术环境准备
 ✅ 创建了 .promptx 配置目录
-✅ 保存了命令前缀配置：${savedPrefix || '默认前缀'}
+✅ 设置命令前缀：${COMMAND_PREFIX}
 ✅ 准备了锦囊状态机框架
 
 ## 📋 系统基本诺记 (协议体系)
