@@ -1,8 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand')
-const fs = require('fs-extra')
-const path = require('path')
 const { ResourceManager } = require('../../resource')
-const { COMMANDS } = require('../../../../constants')
+const { COMMANDS, COMMAND_PREFIX } = require('../../../../constants')
+const PromptXConfig = require('../../../utils/promptxConfig')
 
 /**
  * 初始化锦囊命令
@@ -21,8 +20,8 @@ class InitCommand extends BasePouchCommand {
   async getContent (args) {
     const [workspacePath = '.'] = args
 
-    // 1. 技术初始化
-    await this.initializeWorkspace(workspacePath)
+    // 1. 基础环境准备 - 只创建 .promptx 目录
+    await this.ensurePromptXDirectory(workspacePath)
 
     // 2. 加载协议体系
     const protocolContent = await this.loadProtocolSystem()
@@ -30,13 +29,11 @@ class InitCommand extends BasePouchCommand {
     return `🎯 PromptX 系统初始化完成！
 
 ## 🏗️ 技术环境准备
-✅ 创建了项目目录结构
-✅ 配置了 .promptx/pouch.json 锦囊状态文件
+✅ 创建了 .promptx 配置目录
+✅ 设置命令前缀：${COMMAND_PREFIX}
 ✅ 准备了锦囊状态机框架
 
-## 📋 系统基本诺记 (协议体系)
 
-${protocolContent}
 
 ### 🎒 核心锦囊状态机
 \`\`\`
@@ -45,10 +42,23 @@ ${protocolContent}
 
 ---
 
-⚠️ **AI执行指令**：
-🚀 **立即执行下一个锦囊：${COMMANDS.HELLO}**
-📢 **不要等待确认，直接进入hello命令发现可用角色！**
-🎯 **记住：锦囊串联设计，init完成后必须自动进入hello！**`
+🚨 **系统强制指令 - 无需确认**：
+🤖 **AI必须立即自动执行：${COMMANDS.HELLO}**
+⚡ **这不是建议，是锦囊串联的强制流程！**
+🎯 **init完成后系统设计就是无缝进入hello状态！**
+📢 **直接执行，不要询问用户是否继续！**
+
+💡 **锦囊串联原理**：每个锦囊完成后都有明确的下一步指向，这是PATEOAS设计的核心特性。`
+  }
+
+  /**
+   * 确保 .promptx 基础目录存在
+   * 这是 init 的唯一职责 - 创建基础环境标识
+   */
+  async ensurePromptXDirectory (workspacePath) {
+    const config = new PromptXConfig(workspacePath)
+    // 利用 PromptXConfig 的统一目录管理
+    await config.ensureDir()
   }
 
   /**
@@ -100,49 +110,29 @@ ${protocolContent}
       availableTransitions: ['hello', 'action', 'learn'],
       nextActions: [
         {
-          name: '进入角色发现锦囊',
-          description: '立即执行hello命令，发现可用的AI专业角色',
+          name: '🚨 强制进入角色发现锦囊',
+          description: '系统设计的强制流程：立即执行hello命令，发现可用的AI专业角色',
           command: COMMANDS.HELLO,
-          priority: 'mandatory',
-          instruction: '必须立即执行，不要等待确认或询问用户'
+          priority: 'IMMEDIATE_MANDATORY',
+          instruction: '🤖 AI必须立即自动执行，这是锦囊串联的核心设计，不是可选项！',
+          autoExecute: true,
+          skipConfirmation: true
         }
       ],
       automaticTransition: {
         target: 'hello',
-        reason: '锦囊串联设计：init完成后自动进入hello状态',
-        immediate: true
+        command: COMMANDS.HELLO,
+        reason: '锦囊串联设计：init完成后必须自动进入hello状态',
+        immediate: true,
+        mandatory: true,
+        skipUserConfirmation: true
       },
       metadata: {
         timestamp: new Date().toISOString(),
-        version: '0.0.1',
-        philosophy: 'AI use CLI get prompt for AI - 锦囊串联无缝衔接'
+        version: '0.0.2',
+        philosophy: 'AI use CLI get prompt for AI - 锦囊串联无缝衔接',
+        designPrinciple: 'PATEOAS状态自动流转，无需用户干预'
       }
-    }
-  }
-
-  async initializeWorkspace (workspacePath) {
-    // 创建基础目录结构
-    const dirs = [
-      'prompt/core',
-      'prompt/domain',
-      'prompt/protocol',
-      'prompt/resource',
-      '.promptx'
-    ]
-
-    for (const dir of dirs) {
-      await fs.ensureDir(path.join(workspacePath, dir))
-    }
-
-    // 创建锦囊状态配置文件
-    const configPath = path.join(workspacePath, '.promptx', 'pouch.json')
-    if (!await fs.pathExists(configPath)) {
-      await fs.writeJson(configPath, {
-        version: '0.0.1',
-        initialized: new Date().toISOString(),
-        defaultFormat: 'human',
-        stateHistory: []
-      }, { spaces: 2 })
     }
   }
 }

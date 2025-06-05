@@ -2,28 +2,32 @@ const ResourceProtocol = require('./ResourceProtocol')
 const path = require('path')
 const fs = require('fs').promises
 
-// 延迟加载platform-folders以处理可能的原生模块依赖
-let platformFolders = null
-const getPlatformFolders = () => {
-  if (!platformFolders) {
-    try {
-      platformFolders = require('platform-folders')
-    } catch (error) {
-      // 如果platform-folders不可用，回退到os.homedir()
-      const os = require('os')
-      platformFolders = {
-        getHomeFolder: () => os.homedir(),
-        getDesktopFolder: () => path.join(os.homedir(), 'Desktop'),
-        getDocumentsFolder: () => path.join(os.homedir(), 'Documents'),
-        getDownloadsFolder: () => path.join(os.homedir(), 'Downloads'),
-        getMusicFolder: () => path.join(os.homedir(), 'Music'),
-        getPicturesFolder: () => path.join(os.homedir(), 'Pictures'),
-        getVideosFolder: () => path.join(os.homedir(), 'Videos')
-      }
-      console.warn('platform-folders不可用，使用os.homedir()回退方案')
-    }
+// 使用env-paths提供跨平台用户目录支持
+const envPaths = require('env-paths')
+const os = require('os')
+
+/**
+ * 获取跨平台用户目录路径
+ * 使用env-paths替代platform-folders，提供更好的跨平台兼容性
+ */
+const getUserDirectories = () => {
+  const promptxPaths = envPaths('promptx')
+  
+  return {
+    getHomeFolder: () => os.homedir(),
+    getDesktopFolder: () => path.join(os.homedir(), 'Desktop'),
+    getDocumentsFolder: () => path.join(os.homedir(), 'Documents'),
+    getDownloadsFolder: () => path.join(os.homedir(), 'Downloads'),
+    getMusicFolder: () => path.join(os.homedir(), 'Music'),
+    getPicturesFolder: () => path.join(os.homedir(), 'Pictures'),
+    getVideosFolder: () => path.join(os.homedir(), 'Videos'),
+    // 新增：env-paths标准目录
+    getDataFolder: () => promptxPaths.data,
+    getConfigFolder: () => promptxPaths.config,
+    getCacheFolder: () => promptxPaths.cache,
+    getLogFolder: () => promptxPaths.log,
+    getTempFolder: () => promptxPaths.temp
   }
-  return platformFolders
 }
 
 /**
@@ -42,7 +46,13 @@ class UserProtocol extends ResourceProtocol {
       downloads: 'getDownloadsFolder',
       music: 'getMusicFolder',
       pictures: 'getPicturesFolder',
-      videos: 'getVideosFolder'
+      videos: 'getVideosFolder',
+      // 新增：env-paths标准目录
+      data: 'getDataFolder',
+      config: 'getConfigFolder',
+      cache: 'getCacheFolder',
+      log: 'getLogFolder',
+      temp: 'getTempFolder'
     }
 
     // 目录路径缓存
@@ -70,7 +80,10 @@ class UserProtocol extends ResourceProtocol {
         'user://documents/notes.txt',
         'user://desktop/readme.md',
         'user://downloads/',
-        'user://home/.bashrc'
+        'user://home/.bashrc',
+        'user://config/promptx.json',
+        'user://data/memories.json',
+        'user://cache/temp-data.json'
       ],
       supportedDirectories: Object.keys(this.userDirs),
       params: this.getSupportedParams()
@@ -155,21 +168,21 @@ class UserProtocol extends ResourceProtocol {
       return this.dirCache.get(dirType)
     }
 
-    const folders = getPlatformFolders()
+    const userDirectories = getUserDirectories()
     const methodName = this.userDirs[dirType]
 
-    if (!folders[methodName]) {
+    if (!userDirectories[methodName]) {
       throw new Error(`未找到用户目录获取方法: ${methodName}`)
     }
 
     try {
       let dirPath
 
-      // 调用platform-folders方法
-      if (typeof folders[methodName] === 'function') {
-        dirPath = await folders[methodName]()
+      // 调用用户目录获取方法
+      if (typeof userDirectories[methodName] === 'function') {
+        dirPath = userDirectories[methodName]()
       } else {
-        dirPath = folders[methodName]
+        dirPath = userDirectories[methodName]
       }
 
       // 缓存结果

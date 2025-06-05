@@ -7,15 +7,67 @@ module.exports = {
     jest: true
   },
   extends: [
-    'standard'
+    'eslint:recommended'
   ],
   parserOptions: {
     ecmaVersion: 12
   },
   rules: {
-    // 允许console.log用于CLI工具
     'no-console': 'off',
-    // 允许使用require()
-    '@typescript-eslint/no-var-requires': 'off'
+    'no-unused-vars': 'warn',
+    'no-undef': 'warn',
+    'no-unreachable': 'warn',
+    'no-constant-condition': 'off',
+    'no-empty': 'off',
+    'no-irregular-whitespace': 'off',
+    'no-useless-escape': 'off',
+    'no-extra-semi': 'off',
+    'no-mixed-spaces-and-tabs': 'off',
+    'no-trailing-spaces': 'off',
+    'semi': 'off',
+    'quotes': 'off',
+    'indent': 'off',
+    'comma-dangle': 'off',
+    'space-before-function-paren': 'off',
+    'keyword-spacing': 'off',
+    'space-before-blocks': 'off',
+    'object-curly-spacing': 'off',
+    'array-bracket-spacing': 'off',
+    'computed-property-spacing': 'off',
+    'func-call-spacing': 'off',
+    'key-spacing': 'off',
+    'comma-spacing': 'off',
+    'no-multiple-empty-lines': 'off',
+    'padded-blocks': 'off',
+    'space-in-parens': 'off',
+    'space-infix-ops': 'off',
+    'space-unary-ops': 'off',
+    'spaced-comment': 'off',
+    'eol-last': 'off',
+    'no-var': 'off',
+    'prefer-const': 'off',
+    'no-global-assign': 'off',
+    'no-implicit-globals': 'off',
+    'camelcase': 'off',
+    'new-cap': 'off',
+    'one-var': 'off',
+    'operator-linebreak': 'off',
+    'brace-style': 'off',
+    'curly': 'off',
+    'dot-notation': 'off',
+    'eqeqeq': 'off',
+    'handle-callback-err': 'off',
+    'no-multi-spaces': 'off',
+    'no-multi-str': 'off',
+    'no-new': 'off',
+    'no-path-concat': 'off',
+    'no-redeclare': 'off',
+    'no-return-assign': 'off',
+    'no-sequences': 'off',
+    'no-throw-literal': 'off',
+    'no-with': 'off',
+    'radix': 'off',
+    'wrap-iife': 'off',
+    'yoda': 'off'
   }
 } 

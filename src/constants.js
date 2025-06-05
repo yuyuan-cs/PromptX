@@ -3,11 +3,21 @@
  * 统一管理命令格式、路径等配置信息
  */
 
-// 命令前缀配置 - 约定大于配置
-export const COMMAND_PREFIX = 'npx dpml-prompt@snapshot'
+// 根据环境变量决定命令前缀
+function getCommandPrefix() {
+  const env = process.env.PROMPTX_ENV
+  
+  if (env === 'development') {
+    return 'pnpm start'
+  } else {
+    return 'npx dpml-prompt@snapshot'
+  }
+}
 
-// 常用命令模板
-export const COMMANDS = {
+const COMMAND_PREFIX = getCommandPrefix()
+
+// 静态命令常量
+const COMMANDS = {
   INIT: `${COMMAND_PREFIX} init`,
   HELLO: `${COMMAND_PREFIX} hello`,
   ACTION: `${COMMAND_PREFIX} action`,
@@ -18,15 +28,30 @@ export const COMMANDS = {
 }
 
 // 带参数的命令构建函数
-export const buildCommand = {
+const buildCommand = {
   action: (roleId) => `${COMMAND_PREFIX} action ${roleId}`,
   learn: (resource) => `${COMMAND_PREFIX} learn ${resource}`,
   recall: (query = '') => `${COMMAND_PREFIX} recall${query ? ' ' + query : ''}`,
   remember: (content = '<content>') => `${COMMAND_PREFIX} remember${content !== '<content>' ? ' "' + content + '"' : ' <content>'}`
 }
 
-// 系统路径配置
-export const PATHS = {
+// 为了向后兼容，保留函数式API
+function getCommands() {
+  return COMMANDS
+}
+
+function getBuildCommand() {
+  return buildCommand
+}
+
+function detectCommandPrefix() {
+  return COMMAND_PREFIX
+}
+
+
+
+// 系统路径配置（静态）
+const PATHS = {
   POUCH_DIR: '.promptx',
   MEMORY_DIR: '.promptx/memory',
   STATE_FILE: '.promptx/pouch.json',
@@ -34,14 +59,34 @@ export const PATHS = {
 }
 
 // 版本信息
-export const VERSION = '0.0.1'
+const VERSION = '0.0.1'
 
 // 系统状态
-export const STATES = {
+const STATES = {
   INITIALIZED: 'initialized',
   ROLE_DISCOVERY: 'role_discovery',
   ACTION_PLAN_GENERATED: 'action_plan_generated',
   LEARNED_ROLE: 'learned_role',
   MEMORY_SAVED: 'memory_saved',
   RECALL_WAITING: 'recall-waiting'
+}
+
+// 导出
+module.exports = {
+  // 固定命令前缀
+  COMMAND_PREFIX,
+  
+  // 命令常量
+  COMMANDS,
+  buildCommand,
+  
+  // 向后兼容的函数式API
+  getCommands,
+  getBuildCommand,
+  detectCommandPrefix,
+  
+  // 其他静态常量
+  PATHS,
+  VERSION,
+  STATES
 }
