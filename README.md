@@ -111,6 +111,9 @@
 
 > **✨ 配置提示**：完成MCP配置后，您的AI应用将获得上述所有专业功能。无需额外学习，按照界面提示即可享受专业化AI服务。
 
+## ⭐ Star增长趋势
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
 
 ### **贡献指南**
 - 📋 **[贡献流程](CONTRIBUTING.md)** - 详细的贡献指南和代码规范
