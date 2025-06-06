@@ -106,6 +106,10 @@ For custom configurations:
 
 > **✨ Configuration Note**: After completing MCP configuration, your AI application will have all the above professional features. No additional learning required - just follow the interface prompts to enjoy professional AI services.
 
+## ⭐ Star Growth Trend
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
+
 ### **Contributing Guidelines**
 - 📋 **[Contributing Process](CONTRIBUTING.md)** - Detailed contribution guide and code standards
 - 🌿 **[Branching Strategy](docs/BRANCHING.md)** - Branch management and release process  
