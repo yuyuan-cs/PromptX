@@ -1,166 +1,126 @@
 # PromptX
 
-> **TL;DR:** PromptX is a systematic, enterprise-grade prompt engineering framework that provides structured and modular approaches for building and managing AI prompts.
+> **AI-native professional capability enhancement system** - Provides specialized roles, memory management, and knowledge systems for AI applications through MCP protocol
 
-[Chinese](README.md) | **English** | [Issues](https://github.com/Deepractice/PromptX/issues)
+[中文](README.md) | **English** | [Issues](https://github.com/Deepractice/PromptX/issues)
 
-## 🚀 Why PromptX?
+## 🚀 Quick Start - Direct AI Application Integration
 
-### The Challenge
-- **Scattered Prompt Management**: Prompts spread across different projects without standardization
-- **Lack of Engineering Practices**: No systematic approach to prompt development and optimization  
-- **Limited Reusability**: Difficulty in sharing and reusing prompt components across teams
-- **No Memory & Learning**: AI assistants can't learn from previous interactions
+### 🔌 **MCP Standardized Integration**
 
-### The Solution
-PromptX introduces **DPML (Deepractice Prompt Markup Language)** - a structured framework for prompt engineering with:
+# Configure MCP connection in AI applications (minimal setup)
 
-- 🧠 **Cognitive Patterns**: Multi-dimensional thinking capabilities (exploration, reasoning, planning, challenge)
-- ⚡ **Execution Framework**: Standardized workflows and quality assurance
-- 💾 **Memory System**: Intelligent context retention and learning capabilities  
-- 🎭 **Role-based Architecture**: Pre-built professional roles with specialized expertise
-- 🔧 **Modular Design**: Reusable components for rapid development
+#### **⚡ Zero-Configuration Integration (Recommended)**
+Add to your AI application's MCP configuration file:
 
-## 📦 Quick Start
-
-### Prerequisites
-
-- Node.js (>= 14.0.0)
-
-### Installation
-
-PromptX is a prompt framework that can be integrated into your project in the following way:
-
-#### Clone and Copy to Your Project
-
-```bash
-# Clone PromptX repository
-git clone https://github.com/Deepractice/PromptX.git
-
-# Copy PromptX directory to your project
-cp -r PromptX /path/to/your/project/
+```json
+{
+  "mcpServers": {
+    "promptx": {
+      "command": "npx",
+      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"]
+    }
+  }
+}
 ```
 
-### Basic Usage
+**🎯 That's it!** PromptX automatically:
+- ✅ **Intelligent workspace detection** - Automatically finds suitable workspace
+- ✅ **Auto environment initialization** - No manual folder/config creation needed
+- ✅ **Dynamic project adaptation** - Works seamlessly across different projects
 
-Follow these steps to get started with PromptX:
+#### **🔧 Advanced Configuration (Optional)**
+For custom configurations:
 
-#### Step 1: Open bootstrap.md File
-```bash
-# View the role bootstrap file
-cat PromptX/bootstrap.md
+```json
+{
+  "mcpServers": {
+    "promptx": {
+      "command": "npx",
+      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"],
+      "env": {
+        "PROMPTX_WORKSPACE": "/your/custom/workspace/path"
+      }
+    }
+  }
+}
 ```
 
-#### Step 2: Configure Role Reference
-Modify the role reference in bootstrap.md, for example:
-```markdown
-@file://PromptX/domain/scrum/role/product-owner.role.md
-```
+### New to MCP? [Watch MCP Tutorial on BiliBili](https://www.bilibili.com/video/BV1HFd6YhErb)
 
-#### Step 3: Set as System Prompt
-Copy the modified bootstrap.md content to your AI system's system prompt.
+##### 🔧 Advanced Options:
+- `PROMPTX_WORKSPACE`: Custom workspace path (optional, auto-detected by default)
 
-You can use it with tools like Cursor Rules or directly paste the bootstrap content into your AI chat interface.
+##### 📂 Custom Workspace Path Formats
 
-<img src="assets/demo2.jpg" alt="System Prompt Configuration Demo" width="500">
+- **Windows**: `"D:\\username\\path\\your\\project"` (use double backslashes)
+- **macOS/Linux**: `"/Users/username/path/your/project"`
 
-*Note: Screenshots show Chinese interface*
+#### **Supported AI Applications**
 
-#### Step 4: Send Action Command
-Send the following command to your AI:
-```
-Action
-```
+| Application | Status | Configuration | Notes |
+|-------------|--------|---------------|-------|
+| **Claude Desktop** | ✅ Official | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` | Anthropic's official client with native MCP support |
+| **Cursor** | ✅ Supported | MCP settings panel | Developer-friendly code editor |
+| **Windsurf** | ✅ Supported | IDE MCP panel | Codeium's AI-native IDE |
+| **Cline** | ✅ Supported | VS Code plugin config | Powerful AI programming assistant |
+| **Augment** | ✅ Supported | Desktop app config | AI-native code editor |
+| **Trae** | ✅ Supported | IDE plugin config | AI-driven code generation tool |
+| **通义灵码** | 🟡 Planned | Alibaba Cloud IDE plugin | Alibaba's AI programming assistant |
+| **Zed** | ✅ Supported | Config: `~/.config/zed/settings.json` | High-performance code editor |
+| **Continue** | ✅ Supported | VS Code plugin config | VS Code AI assistant plugin |
+| **Replit Agent** | 🟡 Experimental | Built into Replit platform | Online programming environment |
+| **Jan** | 🟡 In Development | Local AI client | Privacy-first local AI assistant |
+| **Ollama WebUI** | 🟡 Community | Third-party MCP adapter | Local model interface |
+| **Open WebUI** | 🟡 Community | Plugin system | Open source AI interface |
+| **百度 Comate** | 🟡 Planned | Baidu IDE plugin | Baidu's AI programming assistant |
+| **腾讯 CodeWhisperer** | 🟡 Planned | Tencent Cloud IDE | Tencent's AI programming tool |
 
-The AI will automatically load roles, cognitive patterns, execution frameworks, and memory systems according to the PromptX protocol.
+> **Legend**:
+> - ✅ **Official Support**: Native MCP protocol support
+> - 🟡 **Experimental/Community Support**: Support through plugins or experimental features
+> - More AI applications are integrating MCP protocol...
 
-### Demo
+**🎯 After configuration, your AI application gains 6 professional tools:**
+- `promptx_init` - 🏗️ System initialization
+- `promptx_hello` - 👋 Role discovery  
+- `promptx_action` - ⚡ Role activation
+- `promptx_learn` - 📚 Knowledge learning
+- `promptx_recall` - 🔍 Memory retrieval
+- `promptx_remember` - 💾 Experience saving
 
-<img src="assets/demo.gif" alt="PromptX Usage Demo" width="600">
+📖 **[Complete MCP Integration Guide](docs/mcp-integration-guide.md)**
 
-*Note: Demo shows Chinese interface*
+### **📸 Usage Effects After Configuration**
 
-## 🧠 AI Enhancement Capabilities
+#### **🎭 Role Discovery and Activation**
+![Role Discovery](assets/role-discovery.png)
+*Step 1: Use `promptx_hello` to discover all available professional roles*
 
-PromptX enhances your AI assistant across multiple dimensions:
+![Role Selection](assets/role-select.png)
+*Step 2: Use `promptx_action` to activate professional roles with complete capabilities*
 
-### Cognitive Patterns (Thought)
+#### **💭 Intelligent Memory Management**
+![Memory Feature](assets/remember.png)
+*Step 3: Use `promptx_remember` to save important information for intelligent recall*
 
-Provides structured thinking capabilities for AI:
+> **✨ Configuration Note**: After completing MCP configuration, your AI application will have all the above professional features. No additional learning required - just follow the interface prompts to enjoy professional AI services.
 
-- **Multi-perspective Analysis** - Comprehensive problem analysis from exploration, reasoning, planning, and challenge dimensions
-- **Logical Rigor** - Establishes clear causal relationships and reasoning chains
-- **Decision Support** - Develops actionable plans and execution paths  
-- **Risk Identification** - Proactively identifies potential issues and improvement opportunities
+### **Contributing Guidelines**
+- 📋 **[Contributing Process](CONTRIBUTING.md)** - Detailed contribution guide and code standards
+- 🌿 **[Branching Strategy](docs/BRANCHING.md)** - Branch management and release process  
+- 🚀 **[Release Process](docs/RELEASE.md)** - Version management and release documentation
 
-### Execution Framework (Execution)
+Join our technical community:
 
-Empowers AI with standardized behavioral capabilities:
-
-- **Standardized Execution** - Completes tasks following clear processes and procedures
-- **Quality Assurance** - Adheres to industry best practices and quality standards
-- **Boundary Awareness** - Clear understanding of capabilities and limitations
-- **Continuous Improvement** - Optimizes execution based on feedback
-
-### Memory System (Memory)
-
-Enables AI learning and memory capabilities:
-
-- **Intelligent Memory** - Automatically identifies and saves important information
-- **Context Awareness** - Provides personalized services based on historical interactions
-- **Knowledge Accumulation** - Continuously learns and improves knowledge base
-- **Experience Transfer** - Applies successful experiences to new scenarios
-
-The prompt system includes a built-in memory mode with memory evaluation (AI autonomously assesses what content is worth remembering), memory storage (stored by default in .memory files in the project root directory), and recall (AI automatically recalls existing memory content at startup).
-
-During usage, users can ask AI to remember certain information, such as "Remember this experience, we'll use it next time." AI will also autonomously evaluate what content is worth remembering.
-
-<img src="assets/demo3.jpg" alt="AI Memory Example" width="600">
-
-*Note: Screenshot shows Chinese interface*
-
-## 🎭 Built-in Roles
-
-PromptX framework includes multiple professional roles ready to use:
-
-| Category | Role Name | File Path | Key Capabilities |
-|----------|-----------|-----------|------------------|
-| Basic | Assistant | `@file://PromptX/domain/assistant/assistant.role.md` | Basic thinking and memory capabilities, suitable for general conversation and information processing |
-| Scrum Agile | Product Owner | `@file://PromptX/domain/scrum/role/product-owner.role.md` | Product planning, requirement management, priority decision-making, user-oriented thinking, data-driven decisions |
-| DPML Development | Prompt Developer | `@file://PromptX/domain/prompt/prompt-developer.role.md` | Exploratory, systematic and critical thinking, DPML development standards, prompt engineering best practices |
-| Content Creation | Video Copywriter | `@file://PromptX/domain/copywriter/video-copywriter.role.md` | Creative, narrative and marketing thinking, video content creation, copywriting standards, communication optimization |
-
-## 🛠️ Custom Roles
-
-You can easily create custom roles using PromptX:
-
-1. Reference the prompt developer role in bootstrap.md:
-   ```
-   @file://PromptX/domain/prompt/prompt-developer.role.md
-   ```
-2. Describe your new role requirements to the prompt developer AI
-3. AI will automatically generate a complete role definition file
-4. Save the generated role file and reference it in bootstrap.md
-
-This approach makes prompt development AI-assisted!
-
-## 🌐 Resources
-
-- [Deepractice Official Website](https://www.deepracticex.com/) - Deepractice
-- [DPML Project](https://github.com/Deepractice/dpml) - Deepractice Prompt Markup Language
-
-### Community & Support
-
-- 🐛 [Report Issues](https://github.com/Deepractice/PromptX/issues)
-- 💬 [Join Discussions](https://github.com/Deepractice/PromptX/discussions)
-- ⭐ [Star this Project](https://github.com/Deepractice/PromptX)
+<img src="assets/qrcode.jpg" alt="Technical Community" width="200">
 
 ## 📄 License
 
-MIT
+MIT License - Making AI professional capabilities accessible
 
 ---
 
-**Need industry-specific roles but don't know how to develop them?** 
+**🚀 Get Started Now: Launch PromptX MCP Server and enhance your AI application with professional capabilities!**
 
-Feel free to [open an issue](https://github.com/Deepractice/PromptX/issues) with your requirements! 
+```
