@@ -25,12 +25,34 @@ npx dpml-prompt@snapshot mcp-server
   "mcpServers": {
     "promptx": {
       "command": "npx",
-      "args": ["dpml-prompt@snapshot", "mcp-server"],
-      "cwd": "/path/to/your/workspace"
+      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"],
+      "env": {
+        "PROMPTX_WORKSPACE": "D:\\Works\\Project\\GitHub\\PromptX"
+      }
     }
   }
 }
 ```
+
+**🔧 配置说明：**
+- `command`: 使用 `npx` 运行命令
+- `args`: 命令参数
+  - `-y`: 自动确认安装
+  - `-f`: 强制使用最新版本
+  - `dpml-prompt@snapshot`: 使用快照版本
+  - `mcp-server`: 启动MCP服务器
+- `env`: 环境变量配置
+  - `PROMPTX_WORKSPACE`: **重要** - 设置PromptX的工作空间路径，请替换为您的实际项目路径
+
+**📂 工作空间路径设置：**
+- **Windows**: `"D:\\Works\\Project\\GitHub\\PromptX"` (注意使用双反斜杠)
+- **macOS/Linux**: `"/Users/username/Projects/PromptX"`
+- **相对路径**: 也可以使用相对路径，如 `"./PromptX"`
+
+**💡 路径格式注意事项：**
+- Windows系统请使用双反斜杠 `\\` 或正斜杠 `/`
+- 确保路径存在且AI应用有访问权限
+- 工作空间用于存储角色数据和记忆文件
 
 #### **支持MCP的AI应用**
 
@@ -66,6 +88,21 @@ npx dpml-prompt@snapshot mcp-server
 - `promptx_remember` - 💾 经验保存
 
 📖 **[完整MCP集成指南](docs/mcp-integration-guide.md)**
+
+### **📸 配置成功后的使用效果**
+
+#### **🎭 角色发现和激活**
+![角色发现](assets/role-discovery.png)
+*步骤1：使用 `promptx_hello` 发现所有可用的专业角色*
+
+![角色选择](assets/role-select.png)
+*步骤2：使用 `promptx_action` 一键激活专业角色，获得完整专业能力*
+
+#### **💭 智能记忆管理**
+![记忆功能](assets/remember.png)
+*步骤3：使用 `promptx_remember` 保存重要信息，AI将主动记忆并在合适时机调用*
+
+> **✨ 配置提示**：完成MCP配置后，您的AI应用将获得上述所有专业功能。无需额外学习，按照界面提示即可享受专业化AI服务。
 
 ## 🎯 核心价值
 
@@ -352,7 +389,7 @@ pnpm changeset
 
 <img src="assets/qrcode.jpg" alt="技术交流群" width="200">
 
-## 🧪 设计哲学
+## 🎯 设计哲学
 
 > **"让AI应用获得专业灵魂"**
 
