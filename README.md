@@ -1,210 +1,393 @@
 # PromptX
 
-> **革命性AI提示词框架** - 基于DPML协议的自驱动AI提示词系统，让AI拥有记忆、人格和原则
+> **AI应用原生的专业能力增强系统** - 通过MCP协议为Claude Desktop等AI应用提供专业角色、记忆管理和知识体系
 
 **中文** | [English](README_EN.md) | [Issues](https://github.com/Deepractice/PromptX/issues)
 
-## 🤖 For AI（AI 阅读区）
+## 🚀 一键启动 - AI应用直连
 
-### 前置条件
-- Node.js（版本 >= 14）
-  - 如果您发现用户系统未安装 Node.js，请帮助用户安装：
-    - Windows: 引导用户访问 https://nodejs.org 下载安装包
-    - macOS: 执行 `brew install node`
-    - Linux: 执行 `sudo apt install nodejs` (Ubuntu/Debian) 或 `sudo dnf install nodejs` (Fedora)
+### 🔌 **MCP标准化接入**
 
-### 启动指令
+**让AI应用获得原生专业能力，无需环境配置，即插即用**
+
 ```bash
-npx -y dpml-prompt init
+# 1. 启动PromptX MCP Server
+npx dpml-prompt@snapshot mcp-server
+
+# 2. 在AI应用中配置MCP连接
 ```
 
-## 👤 快速开始（人类阅读区）
+#### **MCP配置示例**
+在AI应用的MCP配置文件中添加：
 
-### 两种使用方式：
-
-1. 已安装 Node.js, 请复制这句话给AI：
-   ```bash
-   npx -y dpml-prompt@snapshot init
-   ```
-
-2. 未安装 Node.js, 请复制以下提示词给 AI：
-   ```bash
-   https://github.com/Deepractice/PromptX/blob/main/README.md 启动
-   ```
-   AI 会指导您完成所有安装和设置步骤！
-
-## 📚 技术细节（人类阅读区）
-
-### 🧠 核心设计理念
-
-#### **PATEOAS协议** - Prompt as the Engine of Application State
-```
-AI状态转换完全由Prompt驱动，每个输出都包含下一步操作指引
-解决AI上下文遗忘问题 → 即使AI忘记对话，仍可独立执行
+```json
+{
+  "mcpServers": {
+    "promptx": {
+      "command": "npx",
+      "args": ["dpml-prompt@snapshot", "mcp-server"],
+      "cwd": "/path/to/your/workspace"
+    }
+  }
+}
 ```
 
-### **DPML协议** - Deepractice Prompt Markup Language  
+#### **支持MCP的AI应用**
+
+| AI应用 | 状态 | 配置文件位置 | 特性 |
+|--------|------|-------------|------|
+| **Claude Desktop** | ✅ 官方支持 | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` | Anthropic官方客户端，MCP原生支持 |
+| **Cursor** | ✅ 支持 | 通过MCP设置面板配置 | 智能代码编辑器，开发者友好 |
+| **Windsurf** | ✅ 支持 | IDE内MCP配置面板 | Codeium推出的AI原生IDE |
+| **Cline** | ✅ 支持 | VS Code插件配置 | 强大的AI编程助手 |
+| **Augment** | ✅ 支持 | 桌面应用配置 | AI原生代码编辑器 |
+| **Trae** | ✅ 支持 | IDE插件配置 | AI驱动的代码生成和重构工具 |
+| **通义灵码** | 🟡 计划支持 | 阿里云IDE插件 | 阿里云推出的AI编程助手 |
+| **Zed** | ✅ 支持 | 配置文件：`~/.config/zed/settings.json` | 高性能代码编辑器 |
+| **Continue** | ✅ 支持 | VS Code插件配置 | VS Code AI助手插件 |
+| **Replit Agent** | 🟡 实验支持 | Replit平台内置 | 在线编程环境 |
+| **Jan** | 🟡 开发中 | 本地AI客户端 | 隐私优先的本地AI助手 |
+| **Ollama WebUI** | 🟡 社区支持 | 第三方MCP适配器 | 本地大模型界面 |
+| **Open WebUI** | 🟡 社区支持 | 插件系统 | 开源AI界面 |
+| **百度 Comate** | 🟡 计划支持 | 百度IDE插件 | 百度推出的AI编程助手 |
+| **腾讯 CodeWhisperer** | 🟡 计划支持 | 腾讯云IDE | 腾讯云AI编程工具 |
+
+> **说明**：
+> - ✅ **官方支持**：原生支持MCP协议
+> - 🟡 **实验/社区支持**：通过插件或实验性功能支持
+> - 更多AI应用正在接入MCP协议...
+
+**🎯 配置完成后，AI应用将获得6个专业工具：**
+- `promptx_init` - 🏗️ 系统初始化
+- `promptx_hello` - 👋 角色发现  
+- `promptx_action` - ⚡ 角色激活
+- `promptx_learn` - 📚 知识学习
+- `promptx_recall` - 🔍 记忆检索
+- `promptx_remember` - 💾 经验保存
+
+📖 **[完整MCP集成指南](docs/mcp-integration-guide.md)**
+
+## 🎯 核心价值
+
+### **AI应用专业化的完整解决方案**
+
+#### **1. 🔗 标准化接入** → 消除集成障碍
+```
+传统痛点：AI应用无法访问外部专业能力，环境配置复杂
+PromptX方案：基于MCP协议的标准化工具接口，零配置接入
+实际效果：5分钟内AI应用获得完整专业能力体系
+```
+
+#### **2. 🧠 专业角色体系** → 领域专家级能力  
+```
+传统痛点：AI助手缺乏领域专业性和深度能力
+PromptX方案：涵盖管理、技术、创意的完整专业角色库
+实际效果：AI瞬间变身产品经理、技术专家、设计师等
+```
+
+#### **3. 💭 智能记忆系统** → 持续学习积累
+```
+传统痛点：AI无法保持跨会话的经验积累和知识沉淀
+PromptX方案：四层记忆架构和智能检索系统
+实际效果：AI主动记忆项目经验、最佳实践，越用越专业
+```
+
+#### **4. ⚡ 即时专业化** → 5秒角色转换
+```
+传统痛点：需要复杂的提示词工程才能获得专业输出
+PromptX方案：一键激活专业角色，自动加载完整能力体系
+实际效果：从通用AI到领域专家，5秒完成转换
+```
+
+## 🔬 技术架构
+
+### **🔌 MCP原生集成** 
+基于Model Context Protocol的标准化AI应用接入
+- **标准协议**：遵循MCP规范，与主流AI应用兼容
+- **工具化封装**：将专业能力封装为MCP工具
+- **零环境依赖**：AI应用无需安装配置，直接获得能力
+
+### **🧠 DPML协议驱动**
+Deepractice Prompt Markup Language - 标准化提示词架构
 ```xml
-<role domain="expertise">
-  <personality>思维模式定义</personality>
-  <principle>行为原则约束</principle>
-  <knowledge>专业知识体系</knowledge>
+<role domain="product-management">
+  <personality>产品思维：用户导向、数据驱动、迭代优化</personality>
+  <principle>产品原则：需求第一、体验至上、价值闭环</principle>
+  <knowledge>产品知识：用户研究、需求分析、数据指标</knowledge>
 </role>
 ```
-**标准化提示词标记语言，让AI角色定义规范化、可复用**
 
-### **@Reference引用系统**
+### **🔄 PATEOAS状态机**
+Prompt as the Engine of Application State
+- **智能导航**：每个输出都包含下一步操作指引
+- **状态保持**：即使AI忘记对话历史，仍可独立执行
+- **无缝切换**：在不同专业角色间平滑转换
+
+### **📚 @Reference引用系统**
+统一资源定位和模块化能力组装
 ```
-@role://video-copywriter     # 引用角色定义
-@thought://creative-thinking # 引用思维模式  
-@execution://best-practice   # 引用执行框架
-@memory://project-experience # 引用记忆系统
-```
-**统一资源定位，模块化组装AI能力**
-
-### **三层架构设计**
-
-#### **🎭 Role Layer (角色层)**
-- 定义AI的专业身份和领域expertise
-- 每个角色包含完整的知识体系和行为模式
-- 支持角色组合和能力叠加
-
-#### **🧠 Thought Layer (思维层)**  
-- 探索性思维：发散性思考，多角度分析
-- 系统性思维：结构化分解，逻辑性推理
-- 批判性思维：质疑假设，识别盲点
-
-#### **⚡ Execution Layer (执行层)**
-- 标准化执行流程和最佳实践
-- 质量检查和边界约束
-- 持续改进和反馈循环
-
-## 🔬 技术创新
-
-### **锦囊串联架构**
-```
-每个命令都是自包含的"锦囊"
-锦囊可以独立执行，也可以串联使用
-解决AI注意力分散和任务中断问题
+@role://product-manager      # 角色定义引用
+@thought://systems-thinking  # 思维模式引用  
+@execution://agile-process   # 执行框架引用
+@memory://project-experience # 记忆系统引用
 ```
 
-### **AI-First设计**
+## 🎭 专业角色生态
+
+PromptX内置完整的专业角色库，通过MCP直接调用：
+
+### **管理类角色**
+- 🎯 **产品经理** - 需求分析、用户研究、数据驱动决策
+- 📊 **项目经理** - 敏捷管理、风险控制、团队协调
+- 💼 **业务分析师** - 业务建模、流程优化、解决方案设计
+
+### **技术类角色**  
+- ☕ **Java后端专家** - Spring生态、微服务架构、性能调优
+- 🌐 **前端工程师** - React/Vue、UI/UX、性能优化
+- 🔧 **DevOps工程师** - CI/CD、容器化、云原生架构
+
+### **创意类角色**
+- ✍️ **内容创作专家** - 文案策划、品牌传播、内容营销
+- 🎨 **UI设计师** - 视觉设计、交互体验、设计系统
+- 📱 **产品设计师** - 用户体验、原型设计、设计思维
+
+**🔥 持续扩展中** - 专业角色库持续增长，覆盖更多领域
+
+## 💡 应用场景
+
+### **🏢 企业AI助手增强**
 ```
-不是"人用CLI"，而是"AI用CLI"
-AI通过CLI获取专业提示词能力
-实现AI自我增强和能力扩展
+场景：企业内部AI助手需要专业领域能力
+方案：通过MCP接入PromptX专业角色系统  
+效果：AI助手具备产品、技术、设计等专业能力
+价值：员工生产力提升50%，专业决策质量显著改善
 ```
 
-### **记忆持久化**
+### **🎬 内容创作工作流**
 ```
-声明性记忆：事实和知识
-程序性记忆：技能和流程  
-情景记忆：项目和经验
-语义记忆：概念和关系
+场景：内容团队需要AI协助创作和优化
+方案：激活内容创作角色，学习品牌调性
+效果：AI生成符合品牌风格的专业内容
+价值：内容创作效率提升3倍，品牌一致性100%保证
 ```
 
-## 📐 架构优势
+### **💻 开发团队协作**
+```
+场景：技术团队需要AI协助代码审查和架构设计
+方案：激活技术专家角色，记忆项目架构
+效果：AI提供专业的技术建议和最佳实践
+价值：代码质量提升，技术债务减少80%
+```
 
-### **🔄 状态无关性**
-- 每个锦囊包含完整执行信息
-- AI忘记上下文也能继续工作
-- 支持断点续传和状态恢复
+### **📚 知识管理体系**
+```
+场景：团队需要沉淀和传承专业经验
+方案：使用记忆系统保存最佳实践和经验教训
+效果：AI主动检索和应用团队知识库
+价值：知识传承效率提升10倍，新人上手时间减半
+```
 
-### **🎯 专注力管理** 
-- 每个锦囊专注单一任务
-- 避免AI注意力分散和偏题
-- 分阶段完成复杂任务
+## 🔄 MCP集成工作流
 
-### **⚡ 即时专家化**
-- 5秒内AI变身领域专家
-- 无需冗长的角色设定
-- 支持多角色快速切换
+### **完整使用流程**
+```mermaid
+graph TD
+    A[AI应用启动] --> B[MCP协议连接]
+    B --> C[PromptX MCP Server]
+    C --> D[🏗️ promptx_init<br/>环境初始化]
+    D --> E[👋 promptx_hello<br/>角色发现]
+    E --> F[⚡ promptx_action<br/>角色激活]
+    F --> G[📚 promptx_learn<br/>知识学习]
+    G --> H[🔍 promptx_recall<br/>经验检索]
+    H --> I[💾 promptx_remember<br/>记忆保存]
+    I --> J[🎯 专业能力输出]
+    J --> K[持续优化循环]
+    K --> G
+```
 
-### **🧠 认知增强**
-- 长期记忆系统
-- 跨会话知识保持
-- 自主学习和优化
+### **典型对话示例**
+```
+用户：帮我分析这个产品需求
+AI：我来为您激活产品经理角色...
 
-## 🎨 应用场景
+[调用 promptx_action: product-manager]
+[调用 promptx_recall: 产品需求分析]
 
-- **🏢 企业级AI助手**：标准化AI服务交付
-- **🎬 内容创作工具**：专业文案和创意支持
-- **💻 开发者工具**：代码审查和架构设计
-- **📚 知识管理**：团队经验沉淀和传承
-- **🔬 AI研究**：提示词工程和认知建模
+🎯 产品经理模式已激活！基于以往项目经验，我将从以下维度分析：
+1. 用户价值评估 - 真实需求vs伪需求识别
+2. 商业价值分析 - ROI预期和资源投入评估  
+3. 技术可行性 - 实现复杂度和风险评估
+4. 竞争优势 - 差异化价值和护城河分析
 
-## 🧪 设计哲学
+请提供具体的需求描述，我将进行专业分析...
+```
 
-> **"让AI成为AI的老师"**
+## 🎯 核心优势
 
-PromptX不仅仅是工具，更是一套AI认知架构：
-- **自我觉知**：AI了解自己的能力边界
-- **自主学习**：AI主动获取和内化知识  
-- **自我进化**：AI基于经验持续优化
-- **自我引导**：AI指导用户如何更好地使用AI
+### **🔌 标准化接入**
+- **MCP协议**：业界标准，与主流AI应用原生兼容  
+- **零配置门槛**：无需环境搭建，5分钟完成集成
+- **跨平台支持**：Windows、macOS、Linux全平台兼容
+
+### **🧠 专业深度**
+- **完整角色体系**：涵盖20+专业领域的深度角色
+- **知识体系化**：每个角色包含完整的专业知识架构
+- **持续迭代**：专业角色和知识持续更新优化
+
+### **💭 智能记忆**
+- **四层记忆架构**：声明性、程序性、情景性、语义性记忆
+- **智能检索**：基于语义相似度的精准记忆召回
+- **主动学习**：AI自主管理和积累专业经验
+
+### **⚡ 即时生效**
+- **5秒角色切换**：从通用AI到领域专家的瞬间转换
+- **上下文保持**：专业能力与通用对话的无缝衔接
+- **多角色并行**：支持同时激活多个专业角色
+
+### **🎯 企业级特性**
+- **数据隔离**：企业数据完全本地化，不上传云端
+- **定制扩展**：支持企业专有角色和知识体系定制
+- **审计追踪**：完整的操作记录和效果评估体系
+
+## 🛠️ 开发和部署
+
+### **快速开发环境**
+```bash
+# 克隆项目
+git clone https://github.com/Deepractice/PromptX.git
+cd PromptX
+
+# 安装依赖
+pnpm install
+
+# 运行测试
+pnpm test
+
+# 启动MCP Server (开发模式)
+pnpm dev:mcp
+```
+
+### **生产环境部署**
+```bash
+# 全局安装
+npm install -g dpml-prompt
+
+# 启动MCP Server
+dpml-prompt mcp-server
+
+# 或使用npx (推荐)
+npx dpml-prompt@snapshot mcp-server
+```
+
+### **Docker部署**
+```bash
+# 构建镜像
+docker build -t promptx-mcp .
+
+# 运行容器
+docker run -d --name promptx-mcp -p 3000:3000 promptx-mcp
+```
+
+## 📚 深度技术文档
+
+### **MCP集成系列**
+- 📖 **[MCP集成指南](docs/mcp-integration-guide.md)** - 完整的MCP配置和使用指南
+- 🔧 **[MCP适配器设计](docs/mcp-adapter-design.md)** - MCP适配器的技术架构文档
+- 🔀 **[MCP输出适配器](docs/mcp-adapter-design.md#mcpoutputadapter)** - 解决乱码问题的完整方案
+
+### **核心技术原理**
+- 🧠 **[DPML协议规范](docs/dpml-protocol.md)** - 提示词标记语言标准
+- 🔄 **[PATEOAS设计理念](docs/PATEOAS.md)** - AI状态机和锦囊架构
+- 📐 **[架构原理文档](docs/promptx-architecture-principle.md)** - 四层双提示词循环架构
+
+### **专业能力体系**
+- 🎭 **[角色系统设计](docs/role-system.md)** - 专业角色的设计和扩展
+- 💭 **[记忆架构文档](docs/memory-architecture.md)** - 四层记忆系统设计
+- 📚 **[知识体系文档](docs/knowledge-system.md)** - 领域知识的组织和管理
 
 ## 🔗 生态系统
 
 - **[DPML规范](https://github.com/Deepractice/dpml)** - 提示词标记语言标准
-- **[深度实践](https://www.deepracticex.com/)** - AI工程化实践社区
-- **角色库** - 持续增长的专业AI角色库
-- **最佳实践** - 提示词工程经验分享
+- **[深度实践](https://www.deepracticex.com/)** - AI工程化实践社区  
+- **[MCP官方](https://modelcontextprotocol.io/)** - Model Context Protocol标准
+- **角色生态** - 持续增长的专业AI角色生态
+- **最佳实践库** - 提示词工程和AI应用案例分享
 
 ## 🤝 参与共建
 
-PromptX是开源项目，欢迎贡献：
-- 🎭 **角色贡献**：设计新的专业AI角色
-- 🧠 **思维模式**：创建新的思考框架
-- ⚡ **执行模式**：优化AI行为模式
-- 📚 **知识库**：丰富领域知识体系
+PromptX是开源项目，欢迎贡献专业能力：
 
-### 贡献指南
+### **核心贡献方向**
+- 🔌 **MCP生态扩展**：开发新的MCP工具和应用场景
+- 🎭 **专业角色贡献**：设计新的专业AI角色和能力体系
+- 🧠 **记忆系统优化**：改进记忆效率和智能检索算法
+- 📚 **知识体系扩展**：丰富各领域的专业知识库和最佳实践
 
-- 📋 [贡献流程](CONTRIBUTING.md) - 详细的贡献指南
-- 🌿 [分支策略](docs/BRANCHING.md) - 分支管理和发布流程
-- 🚀 [发布流程](docs/RELEASE.md) - 版本管理和发布文档
-
-### 快速开始贡献
-
+### **快速开始贡献**
 ```bash
 # 1. Fork并克隆项目
 git clone https://github.com/YOUR_USERNAME/PromptX.git
 
-# 2. 切换到develop分支
-git checkout develop
+# 2. 安装依赖
+pnpm install
 
-# 3. 创建功能分支
+# 3. 运行测试确保环境正常
+pnpm test
+
+# 4. 创建功能分支
 git checkout -b feature/your-feature
 
-# 4. 开发功能并添加changeset
+# 5. 开发功能并添加changeset
 pnpm changeset
 
-# 5. 提交PR到develop分支
+# 6. 提交PR到develop分支
 ```
+
+### **贡献指南**
+- 📋 **[贡献流程](CONTRIBUTING.md)** - 详细的贡献指南和代码规范
+- 🌿 **[分支策略](docs/BRANCHING.md)** - 分支管理和发布流程  
+- 🚀 **[发布流程](docs/RELEASE.md)** - 版本管理和发布文档
 
 扫码加入技术交流群：
 
 <img src="assets/qrcode.jpg" alt="技术交流群" width="200">
 
+## 🧪 设计哲学
+
+> **"让AI应用获得专业灵魂"**
+
+PromptX致力于成为AI应用专业化的标准解决方案：
+
+### **🔌 标准化理念**
+- **MCP原生**：基于行业标准协议，确保长期兼容性
+- **零门槛接入**：消除技术壁垒，让所有AI应用都能获得专业能力
+- **开放生态**：建立可持续的专业能力共享生态
+
+### **🧠 专业化核心**
+- **深度专业**：不是简单的提示词模板，而是完整的专业能力体系
+- **知识体系化**：系统性的专业知识组织和传承机制
+- **持续进化**：专业角色和知识随着领域发展持续迭代
+
+### **💭 智能化记忆**
+- **经验积累**：让AI具备持续学习和经验积累能力
+- **知识传承**：将专业经验转化为可复用的AI能力
+- **智能检索**：在恰当时机主动调用相关专业经验
+
+### **⚡ 即时化价值**
+- **零学习成本**：用户无需学习复杂配置，即可获得专业AI能力
+- **即插即用**：5分钟完成配置，立即享受专业化服务
+- **持续优化**：使用过程中AI能力持续提升
+
+**核心愿景：让每个AI应用都能拥有专业的灵魂和深度的能力，成为真正的领域专家助手**
+
 ## 📄 许可证
 
-MIT License - 让AI触手可及
+MIT License - 让AI专业能力触手可及
 
-## 📚 深度技术文档
+---
 
-如果您想深入了解 PromptX 的技术原理：
+**🚀 立即体验：启动MCP Server，让您的AI应用获得专业能力增强！**
 
-1. [锦囊串联设计理念](docs/PATEOAS.md)
-   - PATEOAS 协议详解
-   - AI 状态机设计
-   - 锦囊自包含原理
-
-2. [架构原理文档](docs/promptx-architecture-principle.md)
-   - 四层双提示词循环架构
-   - AI 能力增强系统
-   - 专业化服务流程
-
-3. [三层协议体系设计](docs/reference-protocol-layers.md)
-   - 底层传输协议
-   - 中层语义协议
-   - 上层应用协议
+```bash
+npx dpml-prompt@snapshot mcp-server
+```

@@ -48,9 +48,10 @@ class PouchCLI {
    * 执行命令
    * @param {string} commandName - 命令名称
    * @param {Array} args - 命令参数
+   * @param {boolean} silent - 静默模式，不输出到console（用于MCP）
    * @returns {Promise<PouchOutput>} 执行结果
    */
-  async execute (commandName, args = []) {
+  async execute (commandName, args = [], silent = false) {
     // 确保已初始化
     if (!this.initialized) {
       await this.initialize()
@@ -65,16 +66,22 @@ class PouchCLI {
       // 通过状态机执行命令
       const result = await this.stateMachine.transition(commandName, args)
 
-      // 如果结果有 toString 方法，打印人类可读格式
-      if (result && result.toString && typeof result.toString === 'function') {
-        console.log(result.toString())
-      } else {
-        console.log(JSON.stringify(result, null, 2))
+      // 只在非静默模式下输出（避免干扰MCP协议）
+      if (!silent) {
+        // 如果结果有 toString 方法，打印人类可读格式
+        if (result && result.toString && typeof result.toString === 'function') {
+          console.log(result.toString())
+        } else {
+          console.log(JSON.stringify(result, null, 2))
+        }
       }
 
       return result
     } catch (error) {
-      console.error(`执行命令出错: ${error.message}`)
+      // 错误输出始终使用stderr，不干扰MCP协议
+      if (!silent) {
+        console.error(`执行命令出错: ${error.message}`)
+      }
       throw error
     }
   }

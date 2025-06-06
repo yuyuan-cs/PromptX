@@ -6,6 +6,8 @@ const packageJson = require('../../package.json')
 
 // 导入锦囊框架
 const { cli } = require('../lib/core/pouch')
+// 导入MCP Server命令
+const { MCPServerCommand } = require('../lib/commands/MCPServerCommand')
 
 // 创建主程序
 const program = new Command()
@@ -60,6 +62,21 @@ program
     await cli.execute('remember', args)
   })
 
+// MCP Server命令
+program
+  .command('mcp-server')
+  .description('🔌 启动MCP Server，支持Claude Desktop等AI应用接入')
+  .action(async (options) => {
+    try {
+      const mcpServer = new MCPServerCommand();
+      await mcpServer.execute();
+    } catch (error) {
+      // 输出到stderr，不污染MCP的stdout通信
+      console.error(chalk.red(`❌ MCP Server 启动失败: ${error.message}`));
+      process.exit(1);
+    }
+  })
+
 // 全局错误处理
 program.configureHelp({
   helpWidth: 100,
@@ -71,13 +88,14 @@ program.addHelpText('after', `
 
 ${chalk.cyan('💡 PromptX 锦囊框架 - AI use CLI get prompt for AI')}
 
-${chalk.cyan('🎒 五大锦囊命令:')}
+${chalk.cyan('🎒 六大核心命令:')}
   🏗️ ${chalk.cyan('init')}   → 初始化环境，传达系统协议
   👋 ${chalk.yellow('hello')}  → 发现可用角色和领域专家  
   ⚡ ${chalk.red('action')} → 激活特定角色，获取专业能力
   📚 ${chalk.blue('learn')}  → 深入学习领域知识体系
   🔍 ${chalk.green('recall')} → AI主动检索应用记忆
   🧠 ${chalk.magenta('remember')} → AI主动内化知识增强记忆
+  🔌 ${chalk.blue('mcp-server')} → 启动MCP Server，连接AI应用
 
 ${chalk.cyan('示例:')}
   ${chalk.gray('# 1️⃣ 初始化锦囊系统')}
@@ -102,6 +120,9 @@ ${chalk.cyan('示例:')}
   promptx remember "每日站会控制在15分钟内"
   promptx remember "测试→预发布→生产"
 
+  ${chalk.gray('# 7️⃣ 启动MCP服务')}
+  promptx mcp-server
+
 ${chalk.cyan('🔄 PATEOAS状态机:')}
   每个锦囊输出都包含 PATEOAS 导航，引导 AI 发现下一步操作
   即使 AI 忘记上文，仍可通过锦囊独立执行
@@ -111,6 +132,11 @@ ${chalk.cyan('💭 核心理念:')}
   • 串联无依赖：AI忘记上文也能继续执行
   • 分阶段专注：每个锦囊专注单一任务
   • Prompt驱动：输出引导AI发现下一步
+
+${chalk.cyan('🔌 MCP集成:')}
+  • AI应用连接：通过MCP协议连接Claude Desktop等AI应用
+  • 标准化接口：遵循Model Context Protocol标准
+  • 无环境依赖：解决CLI环境配置问题
 
 ${chalk.cyan('更多信息:')}
   GitHub: ${chalk.underline('https://github.com/Deepractice/PromptX')}
