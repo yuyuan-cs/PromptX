@@ -90,9 +90,15 @@ class ResourceManager {
         if (extractedSystemResources[resourceType]) {
           if (!mergedRegistry[resourceType]) mergedRegistry[resourceType] = {}
           for (const [id, resourceInfo] of Object.entries(extractedSystemResources[resourceType])) {
-            mergedRegistry[resourceType][id] = {
-              ...resourceInfo,
-              source: 'system'
+            // 对于role资源，resourceInfo是对象；对于thought/execution，resourceInfo是字符串
+            if (resourceType === 'role') {
+              mergedRegistry[resourceType][id] = {
+                ...resourceInfo,
+                source: 'system'
+              }
+            } else {
+              // 对于thought和execution，resourceInfo直接是路径字符串
+              mergedRegistry[resourceType][id] = resourceInfo
             }
           }
         }
@@ -161,9 +167,16 @@ class ResourceManager {
         const protocolHandler = new ProtocolClass()
 
         // 从统一注册表获取协议配置
-        const protocolConfig = this.registry.protocols[protocolName]
-        if (protocolConfig && protocolConfig.registry) {
-          protocolHandler.setRegistry(protocolConfig.registry)
+        // 对于基础协议(thought, execution等)，直接从registry中获取
+        const protocolRegistry = this.registry[protocolName]
+        if (protocolRegistry) {
+          protocolHandler.setRegistry(protocolRegistry)
+        } else {
+          // 对于复杂协议配置，从protocols配置中获取  
+          const protocolConfig = this.registry.protocols && this.registry.protocols[protocolName]
+          if (protocolConfig && protocolConfig.registry) {
+            protocolHandler.setRegistry(protocolConfig.registry)
+          }
         }
 
         handlers.set(protocolName, protocolHandler)
