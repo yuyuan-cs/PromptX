@@ -62,6 +62,7 @@ For custom configurations:
 |-------------|--------|---------------|-------|
 | **Claude Desktop** | ✅ Official | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` | Anthropic's official client with native MCP support |
 | **Cursor** | ✅ Supported | MCP settings panel | Developer-friendly code editor |
+| **Claude Code** | ✅ Supported | `/home/user/.claude.json` or `~/.claude.json` | Anthropic's official CLI tool with native MCP support, command-line AI programming assistant |
 | **Windsurf** | ✅ Supported | IDE MCP panel | Codeium's AI-native IDE |
 | **Cline** | ✅ Supported | VS Code plugin config | Powerful AI programming assistant |
 | **Augment** | ✅ Supported | Desktop app config | AI-native code editor |
