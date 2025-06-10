@@ -67,6 +67,7 @@
 |--------|------|-------------|------|
 | **Claude Desktop** | ✅ 官方支持 | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` | Anthropic官方客户端，MCP原生支持 |
 | **Cursor** | ✅ 支持 | 通过MCP设置面板配置 | 智能代码编辑器，开发者友好 |
+| **Claude Code** | ✅ 支持 | `/home/user/.claude.json` 或者 `~/.claude.json` | Anthropic官方CLI工具，MCP原生支持，命令行AI编程助手 |
 | **Windsurf** | ✅ 支持 | IDE内MCP配置面板 | Codeium推出的AI原生IDE |
 | **Cline** | ✅ 支持 | VS Code插件配置 | 强大的AI编程助手 |
 | **Augment** | ✅ 支持 | 桌面应用配置 | AI原生代码编辑器 |
