@@ -13,6 +13,7 @@
         "assistant": "@package://prompt/domain/assistant/thought/assistant.thought.md",
         "remember": "@package://prompt/core/thought/remember.thought.md",
         "recall": "@package://prompt/core/thought/recall.thought.md",
+        "role-creation": "@package://prompt/core/thought/role-creation.thought.md",
         "product-manager": "@package://prompt/domain/product-manager/thought/product-manager.thought.md",
         "java-backend-developer": "@package://prompt/domain/java-backend-developer/thought/java-backend-developer.thought.md"
       }
@@ -33,7 +34,14 @@
         "system-architecture": "@package://prompt/domain/java-backend-developer/execution/system-architecture.execution.md",
         "spring-ecosystem": "@package://prompt/domain/java-backend-developer/execution/spring-ecosystem.execution.md",
         "code-quality": "@package://prompt/domain/java-backend-developer/execution/code-quality.execution.md",
-        "database-design": "@package://prompt/domain/java-backend-developer/execution/database-design.execution.md"
+        "database-design": "@package://prompt/domain/java-backend-developer/execution/database-design.execution.md",
+        "role-generation": "@package://prompt/core/execution/role-generation.execution.md",
+        "execution-authoring": "@package://prompt/core/execution/execution-authoring.execution.md",
+        "thought-authoring": "@package://prompt/core/execution/thought-authoring.execution.md",
+        "role-authoring": "@package://prompt/core/execution/role-authoring.execution.md",
+        "resource-authoring": "@package://prompt/core/execution/resource-authoring.execution.md",
+
+        "wechat-miniprogram-development": "@package://prompt/domain/frontend-developer/execution/wechat-miniprogram-development.execution.md"
       }
     },
     "memory": {
@@ -77,6 +85,11 @@
           "file": "@package://prompt/domain/java-backend-developer/java-backend-developer.role.md",
           "name": "☕ Java后端开发者",
           "description": "专业Java后端开发专家，精通Spring生态系统、微服务架构和系统设计"
+        },
+        "nuwa": {
+          "file": "@package://prompt/core/nuwa/nuwa.role.md",
+          "name": "🎨 女娲",
+          "description": "专业角色创造顾问，通过对话收集需求，为用户量身定制AI助手角色"
         },
         "test-role": {
           "file": "@package://prompt/domain/test-role/test-role.role.md",
