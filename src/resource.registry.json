@@ -40,6 +40,8 @@
         "thought-authoring": "@package://prompt/core/execution/thought-authoring.execution.md",
         "role-authoring": "@package://prompt/core/execution/role-authoring.execution.md",
         "resource-authoring": "@package://prompt/core/execution/resource-authoring.execution.md",
+        "dpml-protocol-knowledge": "@package://prompt/core/execution/dpml-protocol-knowledge.execution.md",
+        "role-design-patterns": "@package://prompt/core/execution/role-design-patterns.execution.md",
 
         "wechat-miniprogram-development": "@package://prompt/domain/frontend-developer/execution/wechat-miniprogram-development.execution.md"
       }

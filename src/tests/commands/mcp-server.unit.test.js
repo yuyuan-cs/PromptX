@@ -57,7 +57,7 @@ describe('CLI函数调用基线测试', () => {
   test('action命令函数调用', async () => {
     const result = await cli.execute('action', ['assistant']);
     expect(result).toBeDefined();
-    expect(result.toString()).toContain('⚡');
+    expect(result.toString()).toContain('🎭');
   }, 10000);
 });
 
@@ -163,7 +163,7 @@ describe('MCP适配器单元测试', () => {
       const result = await mcpServer.callTool('promptx_init', {});
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('🎯');
+      expect(result.content[0].text).toContain('初始化');
     }, 15000);
     
     test('hello工具调用', async () => {
@@ -174,7 +174,7 @@ describe('MCP适配器单元测试', () => {
       
       const result = await mcpServer.callTool('promptx_hello', {});
       expect(result.content).toBeDefined();
-      expect(result.content[0].text).toContain('🎯');
+      expect(result.content[0].text).toContain('角色');
     }, 15000);
     
     test('action工具调用', async () => {
@@ -187,7 +187,7 @@ describe('MCP适配器单元测试', () => {
         role: 'assistant'
       });
       expect(result.content).toBeDefined();
-      expect(result.content[0].text).toContain('⚡');
+      expect(result.content[0].text).toContain('激活');
     }, 15000);
   });
 
