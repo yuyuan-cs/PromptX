@@ -46,9 +46,9 @@ ${buildCommand.register('my-custom-role')}
 - prompt/domain/${roleId}/thought/${roleId}.thought.md
 - prompt/domain/${roleId}/execution/${roleId}.execution.md
 
-💡 您可以使用角色设计师来创建完整的角色套件：
+💡 您可以使用女娲来创建完整的角色套件：
 \`\`\`bash
-${buildCommand.action('role-designer')}
+${buildCommand.action('nuwa')}
 \`\`\``
       }
 
@@ -193,8 +193,8 @@ ${buildCommand.action(roleId)}
           },
           {
             name: '创建新角色',
-            description: '使用角色设计师创建新角色',
-            command: buildCommand.action('role-designer'),
+            description: '使用女娲创建新角色',
+            command: buildCommand.action('nuwa'),
             priority: 'high'
           }
         ],
