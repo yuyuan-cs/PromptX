@@ -26,23 +26,25 @@ class HelloCommand extends BasePouchCommand {
     }
 
     try {
-      // 从ResourceManager获取统一注册表
+      // 使用新的ResourceManager架构
       const ResourceManager = require('../../resource/resourceManager')
       const resourceManager = new ResourceManager()
-      await resourceManager.initialize() // 确保初始化完成
-
-      let registeredRoles = {}
-      if (resourceManager.registry && resourceManager.registry.protocols && resourceManager.registry.protocols.role && resourceManager.registry.protocols.role.registry) {
-        registeredRoles = resourceManager.registry.protocols.role.registry
-      }
-
-      // 动态发现本地角色并合并
-      const discoveredRoles = await this.discoverLocalRoles()
       
-      // 合并注册表中的角色和动态发现的角色
-      this.roleRegistry = {
-        ...registeredRoles,
-        ...discoveredRoles
+      // 加载统一注册表（包含系统+用户资源）
+      const unifiedRegistry = await resourceManager.loadUnifiedRegistry()
+      
+      // 提取角色数据
+      const roleData = unifiedRegistry.role || {}
+      
+      // 转换为HelloCommand期望的格式
+      this.roleRegistry = {}
+      for (const [roleId, roleInfo] of Object.entries(roleData)) {
+        this.roleRegistry[roleId] = {
+          file: roleInfo.file,
+          name: roleInfo.name || roleId,
+          description: this.extractDescription(roleInfo) || `${roleInfo.name || roleId}专业角色`,
+          source: roleInfo.source || 'unknown'
+        }
       }
 
       // 如果没有任何角色，使用基础角色
@@ -51,36 +53,41 @@ class HelloCommand extends BasePouchCommand {
           assistant: {
             file: '@package://prompt/domain/assistant/assistant.role.md',
             name: '🙋 智能助手',
-            description: '通用助理角色，提供基础的助理服务和记忆支持'
+            description: '通用助理角色，提供基础的助理服务和记忆支持',
+            source: 'fallback'
           }
         }
       }
     } catch (error) {
-      console.warn('角色注册表加载失败，尝试动态发现:', error.message)
+      console.warn('角色注册表加载失败，使用基础角色:', error.message)
       
-      // fallback到动态发现
-      try {
-        const discoveredRoles = await this.discoverLocalRoles()
-        this.roleRegistry = Object.keys(discoveredRoles).length > 0 ? discoveredRoles : {
-          assistant: {
-            file: '@package://prompt/domain/assistant/assistant.role.md',
-            name: '🙋 智能助手',
-            description: '通用助理角色，提供基础的助理服务和记忆支持'
-          }
-        }
-      } catch (discoveryError) {
-        console.warn('动态角色发现也失败了:', discoveryError.message)
-        this.roleRegistry = {
-          assistant: {
-            file: '@package://prompt/domain/assistant/assistant.role.md',
-            name: '🙋 智能助手',
-            description: '通用助理角色，提供基础的助理服务和记忆支持'
-          }
+      // 使用基础角色作为fallback
+      this.roleRegistry = {
+        assistant: {
+          file: '@package://prompt/domain/assistant/assistant.role.md',
+          name: '🙋 智能助手',
+          description: '通用助理角色，提供基础的助理服务和记忆支持',
+          source: 'fallback'
         }
       }
     }
 
     return this.roleRegistry
+  }
+
+  /**
+   * 从角色信息中提取描述
+   * @param {Object} roleInfo - 角色信息对象
+   * @returns {string} 角色描述
+   */
+  extractDescription(roleInfo) {
+    // 尝试从不同字段提取描述
+    if (roleInfo.description) {
+      return roleInfo.description
+    }
+    
+    // 如果有更多元数据，可以在这里扩展提取逻辑
+    return null
   }
 
   /**
@@ -92,8 +99,27 @@ class HelloCommand extends BasePouchCommand {
       id,
       name: roleInfo.name,
       description: roleInfo.description,
-      file: roleInfo.file
+      file: roleInfo.file,
+      source: roleInfo.source
     }))
+  }
+
+  /**
+   * 获取来源标签
+   * @param {string} source - 资源来源
+   * @returns {string} 来源标签
+   */
+  getSourceLabel(source) {
+    switch (source) {
+      case 'user-generated':
+        return '(用户生成)'
+      case 'system':
+        return '(系统角色)'
+      case 'fallback':
+        return '(默认角色)'
+      default:
+        return ''
+    }
   }
 
   async getContent (args) {
@@ -111,7 +137,8 @@ class HelloCommand extends BasePouchCommand {
 
     // 清楚显示角色ID和激活命令
     allRoles.forEach((role, index) => {
-      content += `### ${index + 1}. ${role.name} 
+      const sourceLabel = this.getSourceLabel(role.source)
+      content += `### ${index + 1}. ${role.name} ${sourceLabel}
 **角色ID**: \`${role.id}\`  
 **专业能力**: ${role.description}  
 **激活命令**: \`${buildCommand.action(role.id)}\`

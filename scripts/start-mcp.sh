@@ -1,0 +1,1 @@
+cd /Users/sean/WorkSpaces/DeepracticeProjects/PromptX && pnpm start mcp-server

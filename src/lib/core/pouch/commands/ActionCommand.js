@@ -85,10 +85,16 @@ ${COMMANDS.HELLO}
    */
   async analyzeRoleDependencies (roleInfo) {
     try {
-      // 处理文件路径，将@package://前缀替换为实际路径
+      // 处理文件路径，将@package://和@project://前缀替换为实际路径
       let filePath = roleInfo.file
       if (filePath.startsWith('@package://')) {
         filePath = filePath.replace('@package://', '')
+      } else if (filePath.startsWith('@project://')) {
+        // 对于@project://路径，使用当前工作目录作为基础路径
+        const ProjectProtocol = require('../../resource/protocols/ProjectProtocol')
+        const projectProtocol = new ProjectProtocol()
+        const relativePath = filePath.replace('@project://', '')
+        filePath = path.join(process.cwd(), relativePath)
       }
 
       // 读取角色文件内容

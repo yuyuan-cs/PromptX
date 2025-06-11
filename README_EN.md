@@ -1,3 +1,17 @@
+<div align="center">
+  <img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
+  <p><strong>AI-native professional capability enhancement system</strong></p>
+  <p>Provides specialized roles, memory management, and knowledge systems for AI applications through MCP protocol</p>
+  
+  <p>
+    <a href="README.md">中文</a> | 
+    <strong><a href="README_EN.md">English</a></strong> | 
+    <a href="https://github.com/Deepractice/PromptX/issues">Issues</a>
+  </p>
+</div>
+
+<br/>
+
 # PromptX
 
 > **AI-native professional capability enhancement system** - Provides specialized roles, memory management, and knowledge systems for AI applications through MCP protocol
