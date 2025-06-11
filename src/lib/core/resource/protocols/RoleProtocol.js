@@ -46,11 +46,15 @@ class RoleProtocol extends ResourceProtocol {
       throw new Error(`角色 "${roleId}" 未在注册表中找到。可用角色：${Object.keys(this.registry).join(', ')}`)
     }
 
-    let resolvedPath = this.registry[roleId]
+    const roleInfo = this.registry[roleId]
+    let resolvedPath = typeof roleInfo === 'string' ? roleInfo : roleInfo.file
 
     // 处理 @package:// 前缀
     if (resolvedPath.startsWith('@package://')) {
-      resolvedPath = resolvedPath.replace('@package://', '')
+      const PackageProtocol = require('./PackageProtocol')
+      const packageProtocol = new PackageProtocol()
+      const relativePath = resolvedPath.replace('@package://', '')
+      resolvedPath = await packageProtocol.resolvePath(relativePath)
     }
 
     return resolvedPath
