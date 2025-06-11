@@ -26,6 +26,9 @@ importers:
       env-paths:
         specifier: 2.2.1
         version: 2.2.1
+      express:
+        specifier: ^5.1.0
+        version: 5.1.0
       find-monorepo-root:
         specifier: ^1.0.3
         version: 1.0.3
@@ -65,6 +68,9 @@ importers:
       yaml:
         specifier: ^2.3.0
         version: 2.8.0
+      zod:
+        specifier: ^3.25.62
+        version: 3.25.62
     devDependencies:
       '@changesets/changelog-github':
         specifier: ^0.5.1
@@ -2950,8 +2956,8 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.25.53:
-    resolution: {integrity: sha512-BKOKoY3XcGUVkqaalCtFK15LhwR0G0i65AClFpWSXLN2gJNBGlTktukHgwexCTa/dAacPPp9ReryXPWyeZF4LQ==}
+  zod@3.25.62:
+    resolution: {integrity: sha512-YCxsr4DmhPcrKPC9R1oBHQNlQzlJEyPAId//qTau/vBee9uO8K6prmRq4eMkOyxvBfH4wDPIPdLx9HVMWIY3xA==}
 
 snapshots:
 
@@ -3566,8 +3572,8 @@ snapshots:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.25.53
-      zod-to-json-schema: 3.24.5(zod@3.25.53)
+      zod: 3.25.62
+      zod-to-json-schema: 3.24.5(zod@3.25.62)
     transitivePeerDependencies:
       - supports-color
 
@@ -6454,8 +6460,8 @@ snapshots:
 
   yocto-queue@1.2.1: {}
 
-  zod-to-json-schema@3.24.5(zod@3.25.53):
+  zod-to-json-schema@3.24.5(zod@3.25.62):
     dependencies:
-      zod: 3.25.53
+      zod: 3.25.62
 
-  zod@3.25.53: {}
+  zod@3.25.62: {}
