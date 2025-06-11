@@ -134,7 +134,7 @@ class MCPServerCommand {
     return [
       {
         name: 'promptx_init',
-        description: '🏗️ [流程启动锦囊] 启动PromptX专业能力增强流程，创建工作环境标识，自动引导到角色发现阶段',
+        description: '🏗️ [环境初始化锦囊] 初始化PromptX工作环境，创建配置目录，准备专业能力增强系统',
         inputSchema: {
           type: 'object',
           properties: {}

@@ -1,7 +1,9 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { ResourceManager } = require('../../resource')
-const { COMMANDS, COMMAND_PREFIX } = require('../../../../constants')
+const { COMMANDS } = require('../../../../constants')
 const PromptXConfig = require('../../../utils/promptxConfig')
+const path = require('path')
+const fs = require('fs-extra')
 
 /**
  * 初始化锦囊命令
@@ -14,41 +16,34 @@ class InitCommand extends BasePouchCommand {
   }
 
   getPurpose () {
-    return '初始化PromptX工作环境，传达系统基本诺记（协议体系）'
+    return '初始化PromptX工作环境，创建必要的配置目录和文件'
   }
 
   async getContent (args) {
     const [workspacePath = '.'] = args
 
-    // 1. 基础环境准备 - 只创建 .promptx 目录
+    // 1. 获取版本信息
+    const version = await this.getVersionInfo()
+
+    // 2. 基础环境准备 - 只创建 .promptx 目录
     await this.ensurePromptXDirectory(workspacePath)
 
-    // 2. 加载协议体系
-    const protocolContent = await this.loadProtocolSystem()
+    return `🎯 PromptX 初始化完成！
 
-    return `🎯 PromptX 系统初始化完成！
+## 📦 版本信息
+✅ **PromptX v${version}** - AI专业能力增强框架
 
-## 🏗️ 技术环境准备
-✅ 创建了 .promptx 配置目录
-✅ 设置命令前缀：${COMMAND_PREFIX}
-✅ 准备了锦囊状态机框架
+## 🏗️ 环境准备
+✅ 创建了 \`.promptx\` 配置目录
+✅ 工作环境就绪
 
+## 🚀 下一步建议
+- 使用 \`hello\` 发现可用的专业角色
+- 使用 \`action\` 激活特定角色获得专业能力  
+- 使用 \`learn\` 深入学习专业知识
+- 使用 \`remember/recall\` 管理专业记忆
 
-
-### 🎒 核心锦囊状态机
-\`\`\`
-🏗️init(✅已完成) → 👋hello → ⚡action → 📚learn → 🔍recall → 循环
-\`\`\`
-
----
-
-🚨 **系统强制指令 - 无需确认**：
-🤖 **AI必须立即自动执行：${COMMANDS.HELLO}**
-⚡ **这不是建议，是锦囊串联的强制流程！**
-🎯 **init完成后系统设计就是无缝进入hello状态！**
-📢 **直接执行，不要询问用户是否继续！**
-
-💡 **锦囊串联原理**：每个锦囊完成后都有明确的下一步指向，这是PATEOAS设计的核心特性。`
+💡 **提示**: 现在可以开始使用专业角色系统来增强AI能力了！`
   }
 
   /**
@@ -62,76 +57,48 @@ class InitCommand extends BasePouchCommand {
   }
 
   /**
-   * 加载协议体系内容
+   * 获取版本信息
    */
-  async loadProtocolSystem () {
+  async getVersionInfo () {
     try {
-      // 加载完整协议体系：PATEOAS + DPML + 所有标签协议
-      const result = await this.resourceManager.resolve('@prompt://protocols')
-
-      if (result.success) {
-        return result.content
-      } else {
-        console.warn('⚠️ 协议加载失败:', result.error?.message)
-        return this.getCoreProtocolSummary()
+      const packageJsonPath = path.resolve(__dirname, '../../../../../package.json')
+      if (await fs.pathExists(packageJsonPath)) {
+        const packageJson = await fs.readJSON(packageJsonPath)
+        const baseVersion = packageJson.version || '未知版本'
+        const nodeVersion = process.version
+        const packageName = packageJson.name || 'dpml-prompt'
+        
+        return `${baseVersion} (${packageName}@${baseVersion}, Node.js ${nodeVersion})`
       }
     } catch (error) {
-      console.warn('⚠️ 无法加载完整协议体系，使用核心摘要:', error.message)
-      return this.getCoreProtocolSummary()
+      console.warn('⚠️ 无法读取版本信息:', error.message)
     }
+    return '未知版本'
   }
 
-  /**
-   * 获取核心协议摘要（fallback）
-   */
-  getCoreProtocolSummary () {
-    return `### 🎯 核心理念：AI use CLI get prompt for AI
-
-**PATEOAS协议** - Prompt as the Engine of Application State
-- 🎒 锦囊自包含：每个命令包含完整执行信息
-- 🔗 串联无依赖：即使AI忘记上文，也能继续执行  
-- 🎯 分阶段专注：每个锦囊只关注当前任务
-- 🔄 Prompt驱动：每个输出引导AI发现下一步操作
-
-**DPML协议** - Deepractice Prompt Markup Language
-- 📋 标准化标记：使用 \`<thinking>\`、\`<executing>\` 等标签
-- 🏷️ 语义清晰：通过标签明确表达提示词结构
-- 🔗 协议绑定：支持 \`A:B\` 语法表达实现关系
-
-**三大解决方案**
-- **上下文遗忘** → 锦囊自包含，每个命令独立执行
-- **注意力分散** → 分阶段专注，每锦囊专注单一任务  
-- **能力局限** → 即时专家化，通过提示词获得专业能力`
-  }
-
-  getPATEOAS (args) {
+  async getPATEOAS (args) {
+    const version = await this.getVersionInfo()
     return {
       currentState: 'initialized',
-      availableTransitions: ['hello', 'action', 'learn'],
+      availableTransitions: ['hello', 'action', 'learn', 'recall', 'remember'],
       nextActions: [
         {
-          name: '🚨 强制进入角色发现锦囊',
-          description: '系统设计的强制流程：立即执行hello命令，发现可用的AI专业角色',
+          name: '发现专业角色',
+          description: '查看所有可用的AI专业角色',
           command: COMMANDS.HELLO,
-          priority: 'IMMEDIATE_MANDATORY',
-          instruction: '🤖 AI必须立即自动执行，这是锦囊串联的核心设计，不是可选项！',
-          autoExecute: true,
-          skipConfirmation: true
+          priority: 'recommended'
+        },
+        {
+          name: '激活专业角色',
+          description: '直接激活特定专业角色（如果已知角色ID）',
+          command: COMMANDS.ACTION,
+          priority: 'optional'
         }
       ],
-      automaticTransition: {
-        target: 'hello',
-        command: COMMANDS.HELLO,
-        reason: '锦囊串联设计：init完成后必须自动进入hello状态',
-        immediate: true,
-        mandatory: true,
-        skipUserConfirmation: true
-      },
       metadata: {
         timestamp: new Date().toISOString(),
-        version: '0.0.2',
-        philosophy: 'AI use CLI get prompt for AI - 锦囊串联无缝衔接',
-        designPrinciple: 'PATEOAS状态自动流转，无需用户干预'
+        version: version,
+        description: 'PromptX专业能力增强系统已就绪'
       }
     }
   }
