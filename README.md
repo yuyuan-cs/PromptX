@@ -1,8 +1,16 @@
-# PromptX
+<div align="center">
+  <img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
+  <p><strong>AI应用原生的专业能力增强系统</strong></p>
+  <p>通过MCP协议为Claude Desktop等AI应用提供专业角色、记忆管理和知识体系</p>
+  
+  <p>
+    <strong><a href="README.md">中文</a></strong> | 
+    <a href="README_EN.md">English</a> | 
+    <a href="https://github.com/Deepractice/PromptX/issues">Issues</a>
+  </p>
+</div>
 
-> **AI应用原生的专业能力增强系统** - 通过MCP协议为Claude Desktop等AI应用提供专业角色、记忆管理和知识体系
-
-**中文** | [English](README_EN.md) | [Issues](https://github.com/Deepractice/PromptX/issues)
+<br/>
 
 ## 🚀 一键启动 - AI应用直连
 
