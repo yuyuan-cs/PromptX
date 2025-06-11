@@ -2,7 +2,10 @@ const path = require('path')
 const fs = require('fs-extra')
 const os = require('os')
 
-describe('跨平台角色发现兼容性测试', () => {
+// Import the new SimplifiedRoleDiscovery for testing
+const SimplifiedRoleDiscovery = require('../../lib/core/resource/SimplifiedRoleDiscovery')
+
+describe('跨平台角色发现兼容性测试 - 优化版', () => {
   let tempDir
   let projectDir
 
@@ -11,65 +14,60 @@ describe('跨平台角色发现兼容性测试', () => {
     projectDir = path.join(tempDir, 'test-project')
     
     await fs.ensureDir(path.join(projectDir, 'prompt', 'domain'))
-    await fs.ensureDir(path.join(projectDir, '.promptx', 'user-roles'))
+    await fs.ensureDir(path.join(projectDir, '.promptx', 'resource', 'domain'))
+    await fs.writeFile(
+      path.join(projectDir, 'package.json'), 
+      JSON.stringify({ name: 'test-project', version: '1.0.0' })
+    )
+    
+    // Mock process.cwd to point to our test project
+    jest.spyOn(process, 'cwd').mockReturnValue(projectDir)
   })
 
   afterEach(async () => {
     if (tempDir) {
       await fs.remove(tempDir)
     }
+    jest.restoreAllMocks()
   })
 
-  describe('Node.js 原生 API 替代 glob', () => {
-    test('应该能使用 fs.readdir 代替 glob.sync', async () => {
-      // 创建测试角色文件
-      const roleDir = path.join(projectDir, 'prompt', 'domain', 'test-role')
+  describe('SimplifiedRoleDiscovery 跨平台兼容性', () => {
+    test('应该使用原生API替代glob发现用户角色', async () => {
+      // 创建用户角色文件
+      const roleDir = path.join(projectDir, '.promptx', 'resource', 'domain', 'test-user-role')
       await fs.ensureDir(roleDir)
       await fs.writeFile(
-        path.join(roleDir, 'test-role.role.md'),
-        '<role><personality>测试</personality></role>'
+        path.join(roleDir, 'test-user-role.role.md'),
+        '<role><personality>用户测试角色</personality></role>'
       )
 
-      // 使用Node.js原生API实现角色发现（替代glob）
-      async function discoverRolesWithNativeAPI(scanPath) {
-        const discoveredRoles = {}
-        
-        try {
-          if (await fs.pathExists(scanPath)) {
-            const domains = await fs.readdir(scanPath)
-            
-            for (const domain of domains) {
-              const domainDir = path.join(scanPath, domain)
-              const stat = await fs.stat(domainDir)
-              
-              if (stat.isDirectory()) {
-                const roleFile = path.join(domainDir, `${domain}.role.md`)
-                if (await fs.pathExists(roleFile)) {
-                  const content = await fs.readFile(roleFile, 'utf-8')
-                  
-                  discoveredRoles[domain] = {
-                    file: roleFile,
-                    name: `🎭 ${domain}`,
-                    description: '原生API发现的角色',
-                    source: 'native-api'
-                  }
-                }
-              }
-            }
-          }
-          
-          return discoveredRoles
-        } catch (error) {
-          console.warn('原生API角色发现失败:', error.message)
-          return {}
-        }
-      }
-
-      const domainPath = path.join(projectDir, 'prompt', 'domain')
-      const discoveredRoles = await discoverRolesWithNativeAPI(domainPath)
+      const discovery = new SimplifiedRoleDiscovery()
+      const userRoles = await discovery.discoverUserRoles()
       
-      expect(discoveredRoles).toHaveProperty('test-role')
-      expect(discoveredRoles['test-role'].source).toBe('native-api')
+      expect(userRoles).toHaveProperty('test-user-role')
+      expect(userRoles['test-user-role'].source).toBe('user-generated')
+    })
+
+    test('应该正确合并系统角色和用户角色', async () => {
+      // 创建用户角色（与系统角色同名，应该覆盖）
+      const roleDir = path.join(projectDir, '.promptx', 'resource', 'domain', 'assistant')
+      await fs.ensureDir(roleDir)
+      await fs.writeFile(
+        path.join(roleDir, 'assistant.role.md'),
+        `# 自定义助手
+> 用户自定义的助手角色
+<role><personality>自定义助手</personality></role>`
+      )
+
+      const discovery = new SimplifiedRoleDiscovery()
+      const allRoles = await discovery.discoverAllRoles()
+      
+      // 应该包含系统角色和用户角色
+      expect(allRoles).toHaveProperty('assistant')
+      
+      // 用户角色应该覆盖系统角色
+      expect(allRoles.assistant.source).toBe('user-generated')
+      expect(allRoles.assistant.name).toBe('自定义助手')
     })
 
     test('应该能处理不同平台的路径分隔符', () => {

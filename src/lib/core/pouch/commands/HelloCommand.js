@@ -2,6 +2,8 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { buildCommand } = require('../../../../constants')
+const SimplifiedRoleDiscovery = require('../../resource/SimplifiedRoleDiscovery')
+const logger = require('../../../utils/logger')
 
 /**
  * 角色发现锦囊命令
@@ -10,7 +12,8 @@ const { buildCommand } = require('../../../../constants')
 class HelloCommand extends BasePouchCommand {
   constructor () {
     super()
-    this.roleRegistry = null // 角色注册表将从资源系统动态加载
+    // 移除roleRegistry缓存，改为每次实时扫描
+    this.discovery = new SimplifiedRoleDiscovery()
   }
 
   getPurpose () {
@@ -18,28 +21,21 @@ class HelloCommand extends BasePouchCommand {
   }
 
   /**
-   * 动态加载角色注册表
+   * 动态加载角色注册表 - 使用SimplifiedRoleDiscovery
+   * 移除缓存机制，每次都实时扫描，确保角色发现的一致性
    */
   async loadRoleRegistry () {
-    if (this.roleRegistry) {
-      return this.roleRegistry
-    }
-
+    // 移除缓存检查，每次都实时扫描
+    // 原因：1) 客户端应用，action频次不高 2) 避免新角色创建后的状态不一致问题
+    
     try {
-      // 使用新的ResourceManager架构
-      const ResourceManager = require('../../resource/resourceManager')
-      const resourceManager = new ResourceManager()
+      // 使用新的SimplifiedRoleDiscovery算法
+      const allRoles = await this.discovery.discoverAllRoles()
       
-      // 加载统一注册表（包含系统+用户资源）
-      const unifiedRegistry = await resourceManager.loadUnifiedRegistry()
-      
-      // 提取角色数据
-      const roleData = unifiedRegistry.role || {}
-      
-      // 转换为HelloCommand期望的格式
-      this.roleRegistry = {}
-      for (const [roleId, roleInfo] of Object.entries(roleData)) {
-        this.roleRegistry[roleId] = {
+      // 转换为HelloCommand期望的格式，不缓存
+      const roleRegistry = {}
+      for (const [roleId, roleInfo] of Object.entries(allRoles)) {
+        roleRegistry[roleId] = {
           file: roleInfo.file,
           name: roleInfo.name || roleId,
           description: this.extractDescription(roleInfo) || `${roleInfo.name || roleId}专业角色`,
@@ -48,21 +44,21 @@ class HelloCommand extends BasePouchCommand {
       }
 
       // 如果没有任何角色，使用基础角色
-      if (Object.keys(this.roleRegistry).length === 0) {
-        this.roleRegistry = {
-          assistant: {
-            file: '@package://prompt/domain/assistant/assistant.role.md',
-            name: '🙋 智能助手',
-            description: '通用助理角色，提供基础的助理服务和记忆支持',
-            source: 'fallback'
-          }
+      if (Object.keys(roleRegistry).length === 0) {
+        roleRegistry.assistant = {
+          file: '@package://prompt/domain/assistant/assistant.role.md',
+          name: '🙋 智能助手',
+          description: '通用助理角色，提供基础的助理服务和记忆支持',
+          source: 'fallback'
         }
       }
+      
+      return roleRegistry
     } catch (error) {
-      console.warn('角色注册表加载失败，使用基础角色:', error.message)
+      logger.warn('角色注册表加载失败，使用基础角色:', error.message)
       
       // 使用基础角色作为fallback
-      this.roleRegistry = {
+      return {
         assistant: {
           file: '@package://prompt/domain/assistant/assistant.role.md',
           name: '🙋 智能助手',
@@ -71,8 +67,6 @@ class HelloCommand extends BasePouchCommand {
         }
       }
     }
-
-    return this.roleRegistry
   }
 
   /**
@@ -212,19 +206,28 @@ ${buildCommand.action(allRoles[0]?.id || 'assistant')}
    * 获取角色信息（提供给其他命令使用）
    */
   async getRoleInfo (roleId) {
+    logger.debug(`[HelloCommand] getRoleInfo调用，角色ID: ${roleId}`)
+    
     const registry = await this.loadRoleRegistry()
+    logger.debug(`[HelloCommand] 注册表加载完成，包含角色:`, Object.keys(registry))
+    
     const roleData = registry[roleId]
+    logger.debug(`[HelloCommand] 查找角色${roleId}结果:`, roleData ? '找到' : '未找到')
 
     if (!roleData) {
+      logger.debug(`[HelloCommand] 角色${roleId}在注册表中不存在`)
       return null
     }
 
-    return {
+    const result = {
       id: roleId,
       name: roleData.name,
       description: roleData.description,
       file: roleData.file
     }
+    
+    logger.debug(`[HelloCommand] 返回角色信息:`, result)
+    return result
   }
 
   /**
@@ -238,62 +241,10 @@ ${buildCommand.action(allRoles[0]?.id || 'assistant')}
   }
 
   /**
-   * 动态发现本地角色文件
+   * 注意：原来的discoverLocalRoles方法已被移除
+   * 现在使用SimplifiedRoleDiscovery.discoverAllRoles()替代
+   * 这避免了glob依赖和跨平台兼容性问题
    */
-  async discoverLocalRoles () {
-    const PackageProtocol = require('../../resource/protocols/PackageProtocol')
-    const packageProtocol = new PackageProtocol()
-    const glob = require('glob')
-    const path = require('path')
-    
-    try {
-      const packageRoot = await packageProtocol.getPackageRoot()
-      const domainPath = path.join(packageRoot, 'prompt', 'domain')
-      
-      // 扫描所有角色目录
-      const rolePattern = path.join(domainPath, '*', '*.role.md')
-      const roleFiles = glob.sync(rolePattern)
-      
-      const discoveredRoles = {}
-      
-      for (const roleFile of roleFiles) {
-        try {
-          const content = await fs.readFile(roleFile, 'utf-8')
-          const relativePath = path.relative(packageRoot, roleFile)
-          const roleName = path.basename(roleFile, '.role.md')
-          
-          // 尝试从文件内容中提取角色信息
-          let description = '本地发现的角色'
-          let name = `🎭 ${roleName}`
-          
-          // 简单的元数据提取（支持多行）
-          const descMatch = content.match(/description:\s*(.+?)(?:\n|$)/i)
-          if (descMatch) {
-            description = descMatch[1].trim()
-          }
-          
-          const nameMatch = content.match(/name:\s*(.+?)(?:\n|$)/i)
-          if (nameMatch) {
-            name = nameMatch[1].trim()
-          }
-          
-          discoveredRoles[roleName] = {
-            file: `@package://${relativePath}`,
-            name,
-            description,
-            source: 'local-discovery'
-          }
-        } catch (error) {
-          console.warn(`跳过无效的角色文件: ${roleFile}`, error.message)
-        }
-      }
-      
-      return discoveredRoles
-    } catch (error) {
-      console.warn('动态角色发现失败:', error.message)
-      return {}
-    }
-  }
 }
 
 module.exports = HelloCommand
