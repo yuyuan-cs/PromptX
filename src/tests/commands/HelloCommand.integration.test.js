@@ -54,24 +54,20 @@ describe('HelloCommand - ResourceManager集成', () => {
       
       await fs.writeFile(path.join(roleDir, 'sales-expert.role.md'), roleContent)
       
-      // Mock ResourceManager的loadUnifiedRegistry方法
-      jest.spyOn(ResourceManager.prototype, 'loadUnifiedRegistry')
+      // Mock SimplifiedRoleDiscovery的discoverAllRoles方法
+      jest.spyOn(helloCommand.discovery, 'discoverAllRoles')
         .mockResolvedValue({
-          role: {
-            'assistant': {
-              file: '@package://prompt/domain/assistant/assistant.role.md',
-              name: '🙋 智能助手',
-              source: 'system',
-              format: 'dpml',
-              type: 'role'
-            },
-            'sales-expert': {
-              file: path.join(roleDir, 'sales-expert.role.md'),
-              name: '销售专家思维模式',
-              source: 'user-generated',
-              format: 'dpml',
-              type: 'role'
-            }
+          'assistant': {
+            file: '@package://prompt/domain/assistant/assistant.role.md',
+            name: '🙋 智能助手',
+            description: '通用助理角色，提供基础的助理服务和记忆支持',
+            source: 'system'
+          },
+          'sales-expert': {
+            file: path.join(roleDir, 'sales-expert.role.md'),
+            name: '销售专家',
+            description: '专业销售角色，提供销售技巧和客户关系管理',
+            source: 'user-generated'
           }
         })
       
@@ -113,17 +109,14 @@ describe('HelloCommand - ResourceManager集成', () => {
       
       await fs.writeFile(path.join(roleDir, 'assistant.role.md'), customAssistantContent)
       
-      // Mock ResourceManager返回用户覆盖的角色
-      jest.spyOn(ResourceManager.prototype, 'loadUnifiedRegistry')
+      // Mock SimplifiedRoleDiscovery返回用户覆盖的角色
+      jest.spyOn(helloCommand.discovery, 'discoverAllRoles')
         .mockResolvedValue({
-          role: {
-            'assistant': {
-              file: path.join(roleDir, 'assistant.role.md'),
-              name: '定制智能助手',
-              source: 'user-generated',
-              format: 'dpml',
-              type: 'role'
-            }
+          'assistant': {
+            file: path.join(roleDir, 'assistant.role.md'),
+            name: '定制智能助手',
+            description: '专业技术助手，专注于编程和技术解决方案',
+            source: 'user-generated'
           }
         })
       
@@ -164,31 +157,26 @@ describe('HelloCommand - ResourceManager集成', () => {
       
       await fs.writeFile(path.join(userRoleDir, 'data-analyst.role.md'), userRoleContent)
       
-      // Mock ResourceManager返回系统和用户角色
-      jest.spyOn(ResourceManager.prototype, 'loadUnifiedRegistry')
+      // Mock SimplifiedRoleDiscovery返回系统和用户角色
+      jest.spyOn(helloCommand.discovery, 'discoverAllRoles')
         .mockResolvedValue({
-          role: {
-            'assistant': {
-              file: '@package://prompt/domain/assistant/assistant.role.md',
-              name: '🙋 智能助手',
-              source: 'system',
-              format: 'dpml',
-              type: 'role'
-            },
-            'java-backend-developer': {
-              file: '@package://prompt/domain/java-backend-developer/java-backend-developer.role.md',
-              name: '☕ Java后端开发专家',
-              source: 'system',
-              format: 'dpml',
-              type: 'role'
-            },
-            'data-analyst': {
-              file: path.join(userRoleDir, 'data-analyst.role.md'),
-              name: '数据分析师',
-              source: 'user-generated',
-              format: 'dpml',
-              type: 'role'
-            }
+          'assistant': {
+            file: '@package://prompt/domain/assistant/assistant.role.md',
+            name: '🙋 智能助手',
+            description: '通用助理角色，提供基础的助理服务和记忆支持',
+            source: 'system'
+          },
+          'java-backend-developer': {
+            file: '@package://prompt/domain/java-backend-developer/java-backend-developer.role.md',
+            name: '☕ Java后端开发专家',
+            description: '专业Java后端开发专家，精通Spring生态系统、微服务架构和系统设计',
+            source: 'system'
+          },
+          'data-analyst': {
+            file: path.join(userRoleDir, 'data-analyst.role.md'),
+            name: '数据分析师',
+            description: '专业数据分析师，提供数据洞察和统计分析',
+            source: 'user-generated'
           }
         })
       
@@ -206,8 +194,8 @@ describe('HelloCommand - ResourceManager集成', () => {
 
   describe('错误处理', () => {
     it('应该优雅处理资源发现失败', async () => {
-      // 模拟ResourceManager错误
-      jest.spyOn(ResourceManager.prototype, 'loadUnifiedRegistry')
+      // 模拟SimplifiedRoleDiscovery错误
+      jest.spyOn(helloCommand.discovery, 'discoverAllRoles')
         .mockRejectedValue(new Error('资源发现失败'))
       
       // 应该不抛出异常
@@ -219,8 +207,8 @@ describe('HelloCommand - ResourceManager集成', () => {
 
     it('应该处理空的资源注册表', async () => {
       // Mock空的资源注册表
-      jest.spyOn(ResourceManager.prototype, 'loadUnifiedRegistry')
-        .mockResolvedValue({ role: {} })
+      jest.spyOn(helloCommand.discovery, 'discoverAllRoles')
+        .mockResolvedValue({})
       
       const result = await helloCommand.execute([])
       

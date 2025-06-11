@@ -40,6 +40,8 @@
         "thought-authoring": "@package://prompt/core/execution/thought-authoring.execution.md",
         "role-authoring": "@package://prompt/core/execution/role-authoring.execution.md",
         "resource-authoring": "@package://prompt/core/execution/resource-authoring.execution.md",
+        "dpml-protocol-knowledge": "@package://prompt/core/execution/dpml-protocol-knowledge.execution.md",
+        "role-design-patterns": "@package://prompt/core/execution/role-design-patterns.execution.md",
 
         "wechat-miniprogram-development": "@package://prompt/domain/frontend-developer/execution/wechat-miniprogram-development.execution.md"
       }
@@ -71,11 +73,7 @@
           "name": "🙋 智能助手",
           "description": "通用助理角色，提供基础的助理服务和记忆支持"
         },
-        "role-designer": {
-          "file": "@package://prompt/domain/role-designer/role-designer.role.md",
-          "name": "🎭 角色设计师",
-          "description": "专业角色设计专家，基于DPML协议创建和优化新的AI角色"
-        },
+
         "product-manager": {
           "file": "@package://prompt/domain/product-manager/product-manager.role.md",
           "name": "📊 产品经理",

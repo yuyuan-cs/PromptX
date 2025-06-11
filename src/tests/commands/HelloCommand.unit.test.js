@@ -24,17 +24,15 @@ describe('HelloCommand 单元测试', () => {
     if (tempDir) {
       await fs.remove(tempDir)
     }
-    // 清理缓存
-    if (helloCommand.roleRegistry) {
-      helloCommand.roleRegistry = null
-    }
+    // 清理 mock
+    jest.clearAllMocks()
   })
 
   describe('基础功能测试', () => {
     test('应该能实例化HelloCommand', () => {
       expect(helloCommand).toBeInstanceOf(HelloCommand)
-      expect(typeof helloCommand.discoverLocalRoles).toBe('function')
       expect(typeof helloCommand.loadRoleRegistry).toBe('function')
+      expect(helloCommand.discovery).toBeDefined()
     })
 
     test('getPurpose应该返回正确的目的描述', () => {
@@ -44,198 +42,67 @@ describe('HelloCommand 单元测试', () => {
     })
   })
 
-  describe('discoverLocalRoles 功能测试', () => {
+  describe('SimplifiedRoleDiscovery 集成测试', () => {
     test('应该能发现系统内置角色', async () => {
-      // 创建模拟的系统角色文件
-      const assistantDir = path.join(tempProjectDir, 'prompt', 'domain', 'assistant')
-      await fs.ensureDir(assistantDir)
-      
-      const roleFileContent = `<!--
-name: 🙋 智能助手
-description: 通用助理角色，提供基础的助理服务和记忆支持
--->
-
-<role>
-  <personality>
-    @!thought://remember
-    @!thought://recall
-    @!thought://assistant
-  </personality>
-  
-  <principle>
-    @!execution://assistant
-  </principle>
-</role>`
-      
-      await fs.writeFile(
-        path.join(assistantDir, 'assistant.role.md'),
-        roleFileContent
-      )
-
-      // Mock PackageProtocol.getPackageRoot 返回临时目录
-      const originalRequire = require
-      jest.doMock('../../lib/core/resource/protocols/PackageProtocol', () => {
-        return class MockPackageProtocol {
-          async getPackageRoot() {
-            return tempProjectDir
+      // Mock SimplifiedRoleDiscovery.discoverAllRoles 返回系统角色
+      const mockDiscovery = {
+        discoverAllRoles: jest.fn().mockResolvedValue({
+          'assistant': {
+            file: '@package://prompt/domain/assistant/assistant.role.md',
+            name: '🙋 智能助手',
+            description: '通用助理角色，提供基础的助理服务和记忆支持',
+            source: 'system'
           }
-        }
-      })
+        })
+      }
 
-      // 重新加载HelloCommand使用mock
-      delete require.cache[require.resolve('../../lib/core/pouch/commands/HelloCommand')]
-      const MockedHelloCommand = require('../../lib/core/pouch/commands/HelloCommand')
-      const mockedCommand = new MockedHelloCommand()
-
-      const discoveredRoles = await mockedCommand.discoverLocalRoles()
+      helloCommand.discovery = mockDiscovery
+      const roleRegistry = await helloCommand.loadRoleRegistry()
       
-      expect(discoveredRoles).toHaveProperty('assistant')
-      expect(discoveredRoles.assistant.name).toContain('智能助手')
-      expect(discoveredRoles.assistant.description).toContain('通用助理角色')
-      expect(discoveredRoles.assistant.source).toBe('local-discovery')
-
-      // 恢复原始require
-      jest.unmock('../../lib/core/resource/protocols/PackageProtocol')
+      expect(roleRegistry).toHaveProperty('assistant')
+      expect(roleRegistry.assistant.name).toContain('智能助手')
+      expect(roleRegistry.assistant.description).toContain('助理')
+      expect(roleRegistry.assistant.source).toBe('system')
     })
 
     test('应该处理空的角色目录', async () => {
-      // Mock PackageProtocol.getPackageRoot 返回空目录
-      jest.doMock('../../lib/core/resource/protocols/PackageProtocol', () => {
-        return class MockPackageProtocol {
-          async getPackageRoot() {
-            return tempProjectDir
-          }
-        }
-      })
+      // Mock SimplifiedRoleDiscovery.discoverAllRoles 返回空对象
+      const mockDiscovery = {
+        discoverAllRoles: jest.fn().mockResolvedValue({})
+      }
 
-      delete require.cache[require.resolve('../../lib/core/pouch/commands/HelloCommand')]
-      const MockedHelloCommand = require('../../lib/core/pouch/commands/HelloCommand')
-      const mockedCommand = new MockedHelloCommand()
-
-      const discoveredRoles = await mockedCommand.discoverLocalRoles()
-      expect(discoveredRoles).toEqual({})
+      helloCommand.discovery = mockDiscovery
+      const roleRegistry = await helloCommand.loadRoleRegistry()
       
-      jest.unmock('../../lib/core/resource/protocols/PackageProtocol')
+      // 应该返回fallback assistant角色
+      expect(roleRegistry).toHaveProperty('assistant')
+      expect(roleRegistry.assistant.source).toBe('fallback')
     })
 
-    test('应该优雅处理文件读取错误', async () => {
-      // 创建无效的角色文件（权限问题）
-      const invalidRoleDir = path.join(tempProjectDir, 'prompt', 'domain', 'invalid')
-      await fs.ensureDir(invalidRoleDir)
+    test('应该使用SimplifiedRoleDiscovery处理错误', async () => {
+      const mockedCommand = new HelloCommand()
       
-      const invalidRoleFile = path.join(invalidRoleDir, 'invalid.role.md')
-      await fs.writeFile(invalidRoleFile, 'invalid content')
+      // Mock discovery to throw an error
+      mockedCommand.discovery.discoverAllRoles = jest.fn().mockRejectedValue(new Error('Mock error'))
       
-      // 修改文件权限使其不可读（仅在Unix系统上有效）
-      if (process.platform !== 'win32') {
-        await fs.chmod(invalidRoleFile, 0o000)
-      }
-
-      jest.doMock('../../lib/core/resource/protocols/PackageProtocol', () => {
-        return class MockPackageProtocol {
-          async getPackageRoot() {
-            return tempProjectDir
-          }
-        }
-      })
-
-      delete require.cache[require.resolve('../../lib/core/pouch/commands/HelloCommand')]
-      const MockedHelloCommand = require('../../lib/core/pouch/commands/HelloCommand')
-      const mockedCommand = new MockedHelloCommand()
-
-      // 应该不抛出异常，而是记录警告并跳过无效文件
-      const discoveredRoles = await mockedCommand.discoverLocalRoles()
-      expect(typeof discoveredRoles).toBe('object')
-      
-      // 恢复文件权限
-      if (process.platform !== 'win32') {
-        await fs.chmod(invalidRoleFile, 0o644)
-      }
-      
-      jest.unmock('../../lib/core/resource/protocols/PackageProtocol')
+      // 应该fallback到默认assistant角色
+      const roleRegistry = await mockedCommand.loadRoleRegistry()
+      expect(roleRegistry).toHaveProperty('assistant')
+      expect(roleRegistry.assistant.source).toBe('fallback')
     })
   })
 
   describe('元数据提取测试', () => {
-    test('应该正确提取角色名称和描述', async () => {
-      const testRoleDir = path.join(tempProjectDir, 'prompt', 'domain', 'test-role')
-      await fs.ensureDir(testRoleDir)
-      
-      const roleContent = `<!--
-name: 🧪 测试角色
-description: 这是一个测试用的角色
--->
-
-<role>
-  <personality>
-    测试思维模式
-  </personality>
-  
-  <principle>
-    测试行为原则
-  </principle>
-</role>`
-      
-      await fs.writeFile(
-        path.join(testRoleDir, 'test-role.role.md'),
-        roleContent
-      )
-
-      jest.doMock('../../lib/core/resource/protocols/PackageProtocol', () => {
-        return class MockPackageProtocol {
-          async getPackageRoot() {
-            return tempProjectDir
-          }
-        }
-      })
-
-      delete require.cache[require.resolve('../../lib/core/pouch/commands/HelloCommand')]
-      const MockedHelloCommand = require('../../lib/core/pouch/commands/HelloCommand')
-      const mockedCommand = new MockedHelloCommand()
-
-      const discoveredRoles = await mockedCommand.discoverLocalRoles()
-      
-      expect(discoveredRoles).toHaveProperty('test-role')
-      expect(discoveredRoles['test-role'].name).toBe('🧪 测试角色')
-      expect(discoveredRoles['test-role'].description).toBe('这是一个测试用的角色')
-      
-      jest.unmock('../../lib/core/resource/protocols/PackageProtocol')
+    test('应该正确提取角色描述', () => {
+      const roleInfo = { description: '这是一个测试用的角色' }
+      const extracted = helloCommand.extractDescription(roleInfo)
+      expect(extracted).toBe('这是一个测试用的角色')
     })
 
-    test('应该处理缺少元数据的角色文件', async () => {
-      const testRoleDir = path.join(tempProjectDir, 'prompt', 'domain', 'no-meta')
-      await fs.ensureDir(testRoleDir)
-      
-      const roleContent = `<role>
-  <personality>
-    基础角色内容
-  </personality>
-</role>`
-      
-      await fs.writeFile(
-        path.join(testRoleDir, 'no-meta.role.md'),
-        roleContent
-      )
-
-      jest.doMock('../../lib/core/resource/protocols/PackageProtocol', () => {
-        return class MockPackageProtocol {
-          async getPackageRoot() {
-            return tempProjectDir
-          }
-        }
-      })
-
-      delete require.cache[require.resolve('../../lib/core/pouch/commands/HelloCommand')]
-      const MockedHelloCommand = require('../../lib/core/pouch/commands/HelloCommand')
-      const mockedCommand = new MockedHelloCommand()
-
-      const discoveredRoles = await mockedCommand.discoverLocalRoles()
-      
-      expect(discoveredRoles).toHaveProperty('no-meta')
-      expect(discoveredRoles['no-meta'].name).toBe('🎭 no-meta')  // 默认格式
-      expect(discoveredRoles['no-meta'].description).toBe('本地发现的角色')  // 默认描述
-      
-      jest.unmock('../../lib/core/resource/protocols/PackageProtocol')
+    test('应该处理缺少元数据的角色文件', () => {
+      const roleInfo = { name: 'test-role' }
+      const extracted = helloCommand.extractDescription(roleInfo)
+      expect(extracted).toBeNull()
     })
   })
 
@@ -244,46 +111,33 @@ description: 这是一个测试用的角色
       const result = await helloCommand.loadRoleRegistry()
       
       expect(typeof result).toBe('object')
-      expect(helloCommand.roleRegistry).toBe(result)
+      expect(result).toBeDefined()
     })
 
     test('应该在失败时返回默认assistant角色', async () => {
-      // Mock ResourceManager抛出异常
-      jest.doMock('../../lib/core/resource/resourceManager', () => {
-        return class MockResourceManager {
-          async initialize() {
-            throw new Error('Mock initialization failure')
-          }
-        }
-      })
-
-      // Mock discoverLocalRoles也失败
-      jest.spyOn(helloCommand, 'discoverLocalRoles').mockRejectedValue(new Error('Mock discovery failure'))
-
-      delete require.cache[require.resolve('../../lib/core/pouch/commands/HelloCommand')]
-      const MockedHelloCommand = require('../../lib/core/pouch/commands/HelloCommand')
-      const mockedCommand = new MockedHelloCommand()
+      const mockedCommand = new HelloCommand()
+      
+      // Mock discovery to throw an error
+      mockedCommand.discovery.discoverAllRoles = jest.fn().mockRejectedValue(new Error('Mock error'))
 
       const result = await mockedCommand.loadRoleRegistry()
       
       expect(result).toHaveProperty('assistant')
       expect(result.assistant.name).toContain('智能助手')
-      
-      jest.unmock('../../lib/core/resource/resourceManager')
-      helloCommand.discoverLocalRoles.mockRestore()
+      expect(result.assistant.source).toBe('fallback')
     })
   })
 
   describe('角色信息获取测试', () => {
     test('getRoleInfo应该返回正确的角色信息', async () => {
-      // Mock注册表
-      helloCommand.roleRegistry = {
+      // Mock loadRoleRegistry 方法
+      helloCommand.loadRoleRegistry = jest.fn().mockResolvedValue({
         'test-role': {
           name: '测试角色',
           description: '测试描述',
           file: '@package://test/path'
         }
-      }
+      })
 
       const roleInfo = await helloCommand.getRoleInfo('test-role')
       
@@ -296,7 +150,7 @@ description: 这是一个测试用的角色
     })
 
     test('getRoleInfo对不存在的角色应该返回null', async () => {
-      helloCommand.roleRegistry = {}
+      helloCommand.loadRoleRegistry = jest.fn().mockResolvedValue({})
       
       const roleInfo = await helloCommand.getRoleInfo('non-existent')
       expect(roleInfo).toBeNull()
@@ -305,19 +159,42 @@ description: 这是一个测试用的角色
 
   describe('getAllRoles测试', () => {
     test('应该返回角色数组格式', async () => {
-      helloCommand.roleRegistry = {
-        'role1': { name: '角色1', description: '描述1', file: 'file1' },
-        'role2': { name: '角色2', description: '描述2', file: 'file2' }
-      }
+      // Mock loadRoleRegistry 方法
+      helloCommand.loadRoleRegistry = jest.fn().mockResolvedValue({
+        'role1': {
+          name: '角色1',
+          description: '描述1',
+          file: 'file1',
+          source: 'system'
+        },
+        'role2': {
+          name: '角色2',
+          description: '描述2',
+          file: 'file2',
+          source: 'user-generated'
+        }
+      })
 
-      const allRoles = await helloCommand.getAllRoles()
+      const roles = await helloCommand.getAllRoles()
       
-      expect(Array.isArray(allRoles)).toBe(true)
-      expect(allRoles).toHaveLength(2)
-      expect(allRoles[0]).toHaveProperty('id')
-      expect(allRoles[0]).toHaveProperty('name')
-      expect(allRoles[0]).toHaveProperty('description')
-      expect(allRoles[0]).toHaveProperty('file')
+      expect(Array.isArray(roles)).toBe(true)
+      expect(roles).toHaveLength(2)
+      
+      expect(roles[0]).toEqual({
+        id: 'role1',
+        name: '角色1',
+        description: '描述1',
+        file: 'file1',
+        source: 'system'
+      })
+      
+      expect(roles[1]).toEqual({
+        id: 'role2',
+        name: '角色2',
+        description: '描述2',
+        file: 'file2',
+        source: 'user-generated'
+      })
     })
   })
-}) 
+})

@@ -3,6 +3,9 @@ const fs = require('fs-extra')
 const path = require('path')
 const { COMMANDS, buildCommand } = require('../../../../constants')
 const ResourceManager = require('../../resource/resourceManager')
+const DPMLContentParser = require('../../resource/DPMLContentParser')
+const SemanticRenderer = require('../../resource/SemanticRenderer')
+const logger = require('../../../utils/logger')
 
 /**
  * 角色激活锦囊命令
@@ -14,6 +17,8 @@ class ActionCommand extends BasePouchCommand {
     // 获取HelloCommand的角色注册表
     this.helloCommand = null
     this.resourceManager = new ResourceManager()
+    this.dpmlParser = new DPMLContentParser()
+    this.semanticRenderer = new SemanticRenderer()
   }
 
   getPurpose () {
@@ -38,9 +43,14 @@ ${COMMANDS.HELLO}
     }
 
     try {
+      logger.debug(`[ActionCommand] 开始激活角色: ${roleId}`)
+      
       // 1. 获取角色信息
       const roleInfo = await this.getRoleInfo(roleId)
+      logger.debug(`[ActionCommand] getRoleInfo结果:`, roleInfo)
+      
       if (!roleInfo) {
+        logger.warn(`[ActionCommand] 角色 "${roleId}" 不存在！`)
         return `❌ 角色 "${roleId}" 不存在！
 
 🔍 请使用以下命令查看可用角色：
@@ -71,24 +81,34 @@ ${COMMANDS.HELLO}
    * 获取角色信息（从HelloCommand）
    */
   async getRoleInfo (roleId) {
+    logger.debug(`[ActionCommand] getRoleInfo调用，角色ID: ${roleId}`)
+    
     // 懒加载HelloCommand实例
     if (!this.helloCommand) {
+      logger.debug(`[ActionCommand] 创建新的HelloCommand实例`)
       const HelloCommand = require('./HelloCommand')
       this.helloCommand = new HelloCommand()
+    } else {
+      logger.debug(`[ActionCommand] 复用现有HelloCommand实例`)
     }
 
-    return await this.helloCommand.getRoleInfo(roleId)
+    const result = await this.helloCommand.getRoleInfo(roleId)
+    logger.debug(`[ActionCommand] HelloCommand.getRoleInfo返回:`, result)
+    return result
   }
 
   /**
-   * 分析角色文件，提取thought和execution依赖
+   * 分析角色文件，提取完整的角色语义（@引用 + 直接内容）
    */
   async analyzeRoleDependencies (roleInfo) {
     try {
       // 处理文件路径，将@package://和@project://前缀替换为实际路径
       let filePath = roleInfo.file
       if (filePath.startsWith('@package://')) {
-        filePath = filePath.replace('@package://', '')
+        const PackageProtocol = require('../../resource/protocols/PackageProtocol')
+        const packageProtocol = new PackageProtocol()
+        const relativePath = filePath.replace('@package://', '')
+        filePath = await packageProtocol.resolvePath(relativePath)
       } else if (filePath.startsWith('@project://')) {
         // 对于@project://路径，使用当前工作目录作为基础路径
         const ProjectProtocol = require('../../resource/protocols/ProjectProtocol')
@@ -99,32 +119,47 @@ ${COMMANDS.HELLO}
 
       // 读取角色文件内容
       const roleContent = await fs.readFile(filePath, 'utf-8')
-
-      // 提取所有资源引用
-      const resourceRegex = /@([!?]?)([a-zA-Z][a-zA-Z0-9_-]*):\/\/([a-zA-Z0-9_\/.,-]+?)(?=[\s\)\],]|$)/g
-      const matches = Array.from(roleContent.matchAll(resourceRegex))
-
-      const dependencies = {
-        thoughts: new Set(),
-        executions: new Set(),
-        knowledge: [roleInfo.id] // 角色自身的knowledge
-      }
-
-      // 分类依赖
-      matches.forEach(match => {
-        const [fullMatch, priority, protocol, resource] = match
-
-        if (protocol === 'thought') {
-          dependencies.thoughts.add(resource)
-        } else if (protocol === 'execution') {
-          dependencies.executions.add(resource)
+      
+      // 使用DPMLContentParser解析完整的角色语义
+      const roleSemantics = this.dpmlParser.parseRoleDocument(roleContent)
+      
+      // 提取@引用依赖（保持兼容性）
+      // 注意：对于包含语义内容的角色，引用已在语义渲染中处理，无需重复加载
+      const thoughts = new Set()
+      const executions = new Set()
+      
+      // 从所有标签中提取thought和execution引用
+      // 但排除已在语义内容中处理的引用
+      Object.values(roleSemantics).forEach(tagSemantics => {
+        if (tagSemantics && tagSemantics.references) {
+          tagSemantics.references.forEach(ref => {
+            // 跳过已在语义内容中处理的引用
+            if (tagSemantics.fullSemantics) {
+              // 如果标签有完整语义内容，其引用将在语义渲染中处理，无需独立加载
+              return
+            }
+            
+            if (ref.protocol === 'thought') {
+              thoughts.add(ref.resource)
+            } else if (ref.protocol === 'execution') {
+              executions.add(ref.resource)
+            }
+          })
         }
       })
 
       return {
-        thoughts: dependencies.thoughts,
-        executions: dependencies.executions,
-        knowledge: dependencies.knowledge
+        // 保持原有结构（兼容性）
+        thoughts,
+        executions,
+        knowledge: [roleInfo.id],
+        
+        // 新增：完整的角色语义结构
+        roleSemantics: {
+          personality: roleSemantics.personality || null,
+          principle: roleSemantics.principle || null,
+          knowledge: roleSemantics.knowledge || null
+        }
       }
     } catch (error) {
       console.error('Error analyzing role dependencies:', error)
@@ -132,7 +167,12 @@ ${COMMANDS.HELLO}
       return {
         thoughts: [],
         executions: [],
-        knowledge: [roleInfo.id]
+        knowledge: [roleInfo.id],
+        roleSemantics: {
+          personality: null,
+          principle: null,
+          knowledge: null
+        }
       }
     }
   }
@@ -267,29 +307,67 @@ ${result.content}
   }
 
   /**
-   * 生成学习计划并直接加载所有内容
+   * 生成学习计划并直接加载所有内容（包含完整的角色语义）
    */
   async generateLearningPlan (roleId, dependencies) {
-    const { thoughts, executions } = dependencies
+    const { thoughts, executions, roleSemantics } = dependencies
 
     let content = `🎭 **角色激活完成：${roleId}** - 所有技能已自动加载\n`
 
-    // 加载思维模式
+    // 加载思维模式技能（仅包含独立的thought引用）
     if (thoughts.size > 0) {
       content += `# 🧠 思维模式技能 (${thoughts.size}个)\n`
       
+      // 加载引用的思维资源
       for (const thought of Array.from(thoughts)) {
         content += await this.loadLearnContent(`thought://${thought}`)
       }
     }
 
-    // 加载执行技能
+    // 添加角色人格特征（支持@引用占位符语义渲染）
+    if (roleSemantics.personality && roleSemantics.personality.fullSemantics) {
+      content += `# 👤 角色人格特征\n`
+      content += `## ✅ 👤 人格特征：${roleId}\n`
+      const personalityContent = await this.semanticRenderer.renderSemanticContent(
+        roleSemantics.personality, 
+        this.resourceManager
+      )
+      content += `${personalityContent}\n`
+      content += `---\n`
+    }
+
+    // 加载执行技能（仅包含独立的execution引用）
     if (executions.size > 0) {
       content += `# ⚡ 执行技能 (${executions.size}个)\n`
       
+      // 加载引用的执行资源
       for (const execution of Array.from(executions)) {
         content += await this.loadLearnContent(`execution://${execution}`)
       }
+    }
+
+    // 添加角色行为原则（支持@引用占位符语义渲染）
+    if (roleSemantics.principle && roleSemantics.principle.fullSemantics) {
+      content += `# ⚖️ 角色行为原则\n`
+      content += `## ✅ ⚖️ 行为原则：${roleId}\n`
+      const principleContent = await this.semanticRenderer.renderSemanticContent(
+        roleSemantics.principle, 
+        this.resourceManager
+      )
+      content += `${principleContent}\n`
+      content += `---\n`
+    }
+
+    // 添加语义渲染的知识体系（支持@引用占位符）
+    if (roleSemantics.knowledge && roleSemantics.knowledge.fullSemantics) {
+      content += `# 📚 专业知识体系\n`
+      content += `## ✅ 📚 知识体系：${roleId}-knowledge\n`
+      const knowledgeContent = await this.semanticRenderer.renderSemanticContent(
+        roleSemantics.knowledge, 
+        this.resourceManager
+      )
+      content += `${knowledgeContent}\n`
+      content += `---\n`
     }
 
     // 激活总结
@@ -298,6 +376,16 @@ ${result.content}
     content += `📋 **已获得能力**：\n`
     if (thoughts.size > 0) content += `- 🧠 思维模式：${Array.from(thoughts).join(', ')}\n`
     if (executions.size > 0) content += `- ⚡ 执行技能：${Array.from(executions).join(', ')}\n`
+    
+    // 显示角色核心组件
+    const roleComponents = []
+    if (roleSemantics.personality?.fullSemantics) roleComponents.push('👤 人格特征')
+    if (roleSemantics.principle?.fullSemantics) roleComponents.push('⚖️ 行为原则')
+    if (roleSemantics.knowledge?.fullSemantics) roleComponents.push('📚 专业知识')
+    if (roleComponents.length > 0) {
+      content += `- 🎭 角色组件：${roleComponents.join(', ')}\n`
+    }
+    
     content += `💡 **现在可以立即开始以 ${roleId} 身份提供专业服务！**\n`
 
     // 自动执行 recall 命令

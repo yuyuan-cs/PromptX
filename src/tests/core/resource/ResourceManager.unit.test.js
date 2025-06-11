@@ -144,15 +144,17 @@ describe('ResourceManager - 用户资源发现', () => {
 
   describe('loadUnifiedRegistry', () => {
     it('应该合并系统资源和用户资源', async () => {
-      // 模拟系统资源
+      // 模拟系统资源（使用正确的registry格式）
       const mockSystemResources = {
-        role: {
-          'assistant': {
-            file: '@package://prompt/domain/assistant/assistant.role.md',
-            name: '🙋 智能助手',
-            source: 'system',
-            format: 'dpml',
-            type: 'role'
+        protocols: {
+          role: {
+            registry: {
+              'assistant': {
+                file: '@package://prompt/domain/assistant/assistant.role.md',
+                name: '🙋 智能助手',
+                description: '通用助理角色，提供基础的助理服务和记忆支持'
+              }
+            }
           }
         }
       }
@@ -181,15 +183,17 @@ describe('ResourceManager - 用户资源发现', () => {
     })
 
     it('应该让用户资源覆盖同名系统资源', async () => {
-      // 模拟系统资源
+      // 模拟系统资源（使用正确的registry格式）
       const mockSystemResources = {
-        role: {
-          'assistant': {
-            file: '@package://prompt/domain/assistant/assistant.role.md',
-            name: '🙋 智能助手',
-            source: 'system',
-            format: 'dpml',
-            type: 'role'
+        protocols: {
+          role: {
+            registry: {
+              'assistant': {
+                file: '@package://prompt/domain/assistant/assistant.role.md',
+                name: '🙋 智能助手',
+                description: '通用助理角色，提供基础的助理服务和记忆支持'
+              }
+            }
           }
         }
       }

@@ -49,7 +49,10 @@ class ExecutionProtocol extends ResourceProtocol {
 
     // 处理 @package:// 前缀
     if (resolvedPath.startsWith('@package://')) {
-      resolvedPath = resolvedPath.replace('@package://', '')
+      const PackageProtocol = require('./PackageProtocol')
+      const packageProtocol = new PackageProtocol()
+      const relativePath = resolvedPath.replace('@package://', '')
+      resolvedPath = await packageProtocol.resolvePath(relativePath)
     } else if (resolvedPath.startsWith('@project://')) {
       // 处理 @project:// 前缀，转换为绝对路径
       const relativePath = resolvedPath.replace('@project://', '')
