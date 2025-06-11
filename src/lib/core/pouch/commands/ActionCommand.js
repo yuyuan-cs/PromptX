@@ -105,7 +105,10 @@ ${COMMANDS.HELLO}
       // 处理文件路径，将@package://和@project://前缀替换为实际路径
       let filePath = roleInfo.file
       if (filePath.startsWith('@package://')) {
-        filePath = filePath.replace('@package://', '')
+        const PackageProtocol = require('../../resource/protocols/PackageProtocol')
+        const packageProtocol = new PackageProtocol()
+        const relativePath = filePath.replace('@package://', '')
+        filePath = await packageProtocol.resolvePath(relativePath)
       } else if (filePath.startsWith('@project://')) {
         // 对于@project://路径，使用当前工作目录作为基础路径
         const ProjectProtocol = require('../../resource/protocols/ProjectProtocol')
