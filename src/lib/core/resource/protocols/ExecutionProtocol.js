@@ -10,6 +10,14 @@ class ExecutionProtocol extends ResourceProtocol {
   constructor () {
     super('execution')
     this.registry = {}
+    this.registryManager = null // 统一注册表管理器
+  }
+
+  /**
+   * 设置注册表管理器
+   */
+  setRegistryManager(manager) {
+    this.registryManager = manager
   }
 
   /**
@@ -40,7 +48,36 @@ class ExecutionProtocol extends ResourceProtocol {
    */
   async resolvePath (resourcePath, queryParams) {
     const executionId = resourcePath.trim()
+    const fullResourceId = `execution:${executionId}`
 
+    // 优先使用统一注册表管理器
+    if (this.registryManager) {
+      const reference = this.registryManager.registry.get(fullResourceId)
+      if (!reference) {
+        const availableExecutions = this.registryManager.registry.keys()
+          .filter(id => id.startsWith('execution:'))
+          .map(id => id.replace('execution:', ''))
+        throw new Error(`执行模式 "${executionId}" 未在注册表中找到。可用执行模式：${availableExecutions.join(', ')}`)
+      }
+
+      let resolvedPath = reference
+
+      // 处理 @package:// 前缀
+      if (resolvedPath.startsWith('@package://')) {
+        const PackageProtocol = require('./PackageProtocol')
+        const packageProtocol = new PackageProtocol()
+        const relativePath = resolvedPath.replace('@package://', '')
+        resolvedPath = await packageProtocol.resolvePath(relativePath)
+      } else if (resolvedPath.startsWith('@project://')) {
+        // 处理 @project:// 前缀，转换为绝对路径
+        const relativePath = resolvedPath.replace('@project://', '')
+        resolvedPath = path.join(process.cwd(), relativePath)
+      }
+
+      return resolvedPath
+    }
+
+    // 向后兼容：使用旧的registry
     if (!this.registry[executionId]) {
       throw new Error(`执行模式 "${executionId}" 未在注册表中找到`)
     }

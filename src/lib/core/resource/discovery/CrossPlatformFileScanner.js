@@ -14,14 +14,14 @@ class CrossPlatformFileScanner {
    * @param {Object} options - 扫描选项
    * @param {Array<string>} options.extensions - 文件扩展名列表，如 ['.role.md', '.execution.md']
    * @param {Array<string>} options.subdirs - 限制扫描的子目录，如 ['domain', 'execution']
-   * @param {number} options.maxDepth - 最大扫描深度，默认10
+   * @param {number} options.maxDepth - 最大扫描深度，默认5
    * @returns {Promise<Array<string>>} 匹配的文件路径列表
    */
   async scanFiles(baseDir, options = {}) {
     const {
       extensions = [],
       subdirs = null,
-      maxDepth = 10
+      maxDepth = 5
     } = options
 
     if (!await fs.pathExists(baseDir)) {
@@ -43,15 +43,19 @@ class CrossPlatformFileScanner {
     const resourceConfig = {
       role: {
         extensions: ['.role.md'],
-        subdirs: ['domain'] // 角色文件通常在domain目录下
+        subdirs: null // 不限制子目录，在所有地方查找role文件
       },
       execution: {
         extensions: ['.execution.md'],
-        subdirs: ['execution'] // 执行模式文件在execution目录下
+        subdirs: null // 不限制子目录，在所有地方查找execution文件
       },
       thought: {
         extensions: ['.thought.md'],
-        subdirs: ['thought'] // 思维模式文件在thought目录下
+        subdirs: null // 不限制子目录，在所有地方查找thought文件
+      },
+      knowledge: {
+        extensions: ['.knowledge.md'],
+        subdirs: null // 不限制子目录，在所有地方查找knowledge文件
       }
     }
 

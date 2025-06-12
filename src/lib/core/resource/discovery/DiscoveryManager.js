@@ -83,6 +83,82 @@ class DiscoveryManager {
   }
 
   /**
+   * 发现并合并所有注册表（新架构方法）
+   * @returns {Promise<Map>} 合并后的资源注册表 Map<resourceId, reference>
+   */
+  async discoverRegistries() {
+    const registryPromises = this.discoveries.map(async (discovery) => {
+      try {
+        // 优先使用新的discoverRegistry方法
+        if (typeof discovery.discoverRegistry === 'function') {
+          const registry = await discovery.discoverRegistry()
+          return registry instanceof Map ? registry : new Map()
+        } else {
+          // 向后兼容：将discover()结果转换为注册表格式
+          const resources = await discovery.discover()
+          const registry = new Map()
+          if (Array.isArray(resources)) {
+            resources.forEach(resource => {
+              if (resource.id && resource.reference) {
+                registry.set(resource.id, resource.reference)
+              }
+            })
+          }
+          return registry
+        }
+      } catch (error) {
+        console.warn(`[DiscoveryManager] ${discovery.source} registry discovery failed: ${error.message}`)
+        return new Map()
+      }
+    })
+
+    // 并行执行所有发现器
+    const registryResults = await Promise.allSettled(registryPromises)
+
+    // 收集所有成功的注册表
+    const registries = []
+    registryResults.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        registries.push(result.value)
+      } else {
+        console.warn(`[DiscoveryManager] ${this.discoveries[index].source} registry discovery rejected: ${result.reason}`)
+        registries.push(new Map())
+      }
+    })
+
+    // 按发现器优先级合并注册表
+    return this._mergeRegistries(registries)
+  }
+
+  /**
+   * 按源类型发现注册表
+   * @param {string} source - 发现器源类型
+   * @returns {Promise<Map>} 指定源的资源注册表
+   */
+  async discoverRegistryBySource(source) {
+    const discovery = this._findDiscoveryBySource(source)
+    if (!discovery) {
+      throw new Error(`Discovery source ${source} not found`)
+    }
+
+    if (typeof discovery.discoverRegistry === 'function') {
+      return await discovery.discoverRegistry()
+    } else {
+      // 向后兼容：将discover()结果转换为注册表格式
+      const resources = await discovery.discover()
+      const registry = new Map()
+      if (Array.isArray(resources)) {
+        resources.forEach(resource => {
+          if (resource.id && resource.reference) {
+            registry.set(resource.id, resource.reference)
+          }
+        })
+      }
+      return registry
+    }
+  }
+
+  /**
    * 按源类型发现资源
    * @param {string} source - 发现器源类型
    * @returns {Promise<Array>} 指定源的资源列表
@@ -131,6 +207,30 @@ class DiscoveryManager {
    */
   getDiscoveryCount() {
     return this.discoveries.length
+  }
+
+  /**
+   * 合并多个注册表
+   * @param {Array<Map>} registries - 注册表数组，按优先级排序（数字越小优先级越高）
+   * @returns {Map} 合并后的注册表
+   * @private
+   */
+  _mergeRegistries(registries) {
+    const mergedRegistry = new Map()
+
+    // 从后往前合并：先添加低优先级的，再让高优先级的覆盖
+    // registries按优先级升序排列 [high(0), med(1), low(2)]
+    // 我们从低优先级开始，让高优先级的覆盖
+    for (let i = registries.length - 1; i >= 0; i--) {
+      const registry = registries[i]
+      if (registry instanceof Map) {
+        for (const [key, value] of registry) {
+          mergedRegistry.set(key, value) // 直接设置，让高优先级的最终覆盖
+        }
+      }
+    }
+
+    return mergedRegistry
   }
 
   /**

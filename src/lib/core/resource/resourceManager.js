@@ -1,51 +1,166 @@
 const fs = require('fs')
 const ResourceRegistry = require('./resourceRegistry')
-const ProtocolResolver = require('./ProtocolResolver')
-const ResourceDiscovery = require('./ResourceDiscovery')
+const ResourceProtocolParser = require('./resourceProtocolParser') 
+const DiscoveryManager = require('./discovery/DiscoveryManager')
+
+// 导入协议处理器
+const PackageProtocol = require('./protocols/PackageProtocol')
+const ProjectProtocol = require('./protocols/ProjectProtocol')
+const RoleProtocol = require('./protocols/RoleProtocol')
+const ThoughtProtocol = require('./protocols/ThoughtProtocol')
+const ExecutionProtocol = require('./protocols/ExecutionProtocol')
+const KnowledgeProtocol = require('./protocols/KnowledgeProtocol')
 
 class ResourceManager {
   constructor() {
     this.registry = new ResourceRegistry()
-    this.resolver = new ProtocolResolver()
-    this.discovery = new ResourceDiscovery()
+    this.protocolParser = new ResourceProtocolParser()
+    this.parser = new ResourceProtocolParser() // 向后兼容别名
+    this.discoveryManager = new DiscoveryManager() // 新发现管理器
+    
+    // 初始化协议处理器
+    this.protocols = new Map()
+    this.initializeProtocols()
   }
 
-  async initialize() {
-    // 1. Load static registry from resource.registry.json
-    this.registry.loadFromFile('src/resource.registry.json')
+  /**
+   * 初始化所有协议处理器
+   */
+  initializeProtocols() {
+    // 基础协议 - 直接文件系统映射
+    this.protocols.set('package', new PackageProtocol())
+    this.protocols.set('project', new ProjectProtocol()) 
 
-    // 2. Discover dynamic resources from scan paths
-    const scanPaths = [
-      'prompt/', // Package internal resources
-      '.promptx/', // Project resources
-      process.env.PROMPTX_USER_DIR // User resources
-    ].filter(Boolean) // Remove undefined values
+    // 逻辑协议 - 需要注册表查询
+    this.protocols.set('role', new RoleProtocol())
+    this.protocols.set('thought', new ThoughtProtocol())
+    this.protocols.set('execution', new ExecutionProtocol())
+    this.protocols.set('knowledge', new KnowledgeProtocol())
+  }
 
-    const discovered = await this.discovery.discoverResources(scanPaths)
+  /**
+   * 新架构初始化方法
+   */
+  async initializeWithNewArchitecture() {
+    try {
+      // 1. 使用DiscoveryManager发现并合并所有注册表
+      const discoveredRegistry = await this.discoveryManager.discoverRegistries()
 
-    // 3. Register discovered resources (don't overwrite static registry)
-    for (const resource of discovered) {
-      if (!this.registry.index.has(resource.id)) {
-        this.registry.register(resource.id, resource.reference)
+      // 2. 批量注册到ResourceRegistry
+      for (const [resourceId, reference] of discoveredRegistry) {
+        this.registry.register(resourceId, reference)
       }
+
+      // 3. 为逻辑协议设置注册表引用
+      this.setupLogicalProtocols()
+
+      // 4. 设置初始化状态
+      this.initialized = true
+
+      // 初始化完成，不输出日志避免干扰用户界面
+    } catch (error) {
+      console.warn(`[ResourceManager] New architecture initialization failed: ${error.message}`)
+      console.warn('[ResourceManager] Continuing with empty registry')
+      this.initialized = true // 即使失败也标记为已初始化，避免重复尝试
+    }
+  }
+
+  /**
+   * 为逻辑协议设置注册表引用
+   */
+  setupLogicalProtocols() {
+    // 将统一注册表传递给逻辑协议处理器
+    const roleProtocol = this.protocols.get('role')
+    const executionProtocol = this.protocols.get('execution')
+    const thoughtProtocol = this.protocols.get('thought')
+    const knowledgeProtocol = this.protocols.get('knowledge')
+    
+    if (roleProtocol) {
+      roleProtocol.setRegistryManager(this)
+    }
+    if (executionProtocol) {
+      executionProtocol.setRegistryManager(this)
+    }
+    if (thoughtProtocol) {
+      thoughtProtocol.setRegistryManager(this)
+    }
+    if (knowledgeProtocol) {
+      knowledgeProtocol.setRegistryManager(this)
+    }
+    
+    // 逻辑协议设置完成，不输出日志避免干扰用户界面
+  }
+
+  /**
+   * 通过协议解析加载资源内容
+   * @param {string} reference - 资源引用
+   * @returns {Promise<string>} 资源内容
+   */
+  async loadResourceByProtocol(reference) {
+    // 1. 使用ResourceProtocolParser解析DPML语法
+    const parsed = this.protocolParser.parse(reference)
+    
+    // 2. 获取对应的协议处理器
+    const protocol = this.protocols.get(parsed.protocol)
+    if (!protocol) {
+      throw new Error(`不支持的协议: ${parsed.protocol}`)
+    }
+
+    // 3. 委托给协议处理器解析并加载内容
+    const result = await protocol.resolve(parsed.path, parsed.queryParams)
+    
+    // 4. 确保返回字符串内容，解包可能的对象格式
+    if (typeof result === 'string') {
+      return result
+    } else if (result && typeof result === 'object' && result.content) {
+      return result.content
+    } else {
+      throw new Error(`协议${parsed.protocol}返回了无效的内容格式`)
     }
   }
 
   async loadResource(resourceId) {
     try {
-      // 1. Resolve resourceId to @reference through registry
-      const reference = this.registry.resolve(resourceId)
+      // 使用新架构初始化
+      if (this.registry.size === 0) {
+        await this.initializeWithNewArchitecture()
+      }
       
-      // 2. Resolve @reference to file path through protocol resolver
-      const filePath = await this.resolver.resolve(reference)
+      // 处理@!开头的DPML格式（如 @!role://java-developer）
+      if (resourceId.startsWith('@!')) {
+        const parsed = this.protocolParser.parse(resourceId)
+        const logicalResourceId = `${parsed.protocol}:${parsed.path}`
+        
+        // 从注册表查找对应的@package://引用
+        const reference = this.registry.get(logicalResourceId)
+        if (!reference) {
+          throw new Error(`Resource not found: ${logicalResourceId}`)
+        }
+        
+        // 通过协议解析加载内容
+        const content = await this.loadResourceByProtocol(reference)
+        
+        return {
+          success: true,
+          content,
+          resourceId,
+          reference
+        }
+      }
       
-      // 3. Load file content from file system
-      const content = fs.readFileSync(filePath, 'utf8')
+      // 处理传统格式（如 role:java-developer）
+      const reference = this.registry.get(resourceId)
+      if (!reference) {
+        throw new Error(`Resource not found: ${resourceId}`)
+      }
+      
+      // 通过协议解析加载内容
+      const content = await this.loadResourceByProtocol(reference)
 
       return {
         success: true,
         content,
-        path: filePath,
+        resourceId,
         reference
       }
     } catch (error) {
@@ -57,31 +172,81 @@ class ResourceManager {
     }
   }
 
-  // Backward compatibility method for existing code
+  /**
+   * 统一协议解析入口点 - 按照架构文档设计
+   */
+  async resolveProtocolReference(reference) {
+    // 1. 使用ResourceProtocolParser解析DPML语法
+    const parsed = this.parser.parse(reference)
+    
+    // 2. 获取对应的协议处理器
+    const protocol = this.protocols.get(parsed.protocol)
+    if (!protocol) {
+      throw new Error(`不支持的协议: ${parsed.protocol}`)
+    }
+
+    // 3. 委托给协议处理器解析
+    return await protocol.resolve(parsed.path, parsed.queryParams)
+  }
+
+  /**
+   * 获取所有已注册的协议
+   * @returns {Array<string>} 协议名称列表
+   */
+  getAvailableProtocols() {
+    return Array.from(this.protocols.keys())
+  }
+
+  /**
+   * 检查是否支持指定协议
+   * @param {string} protocol - 协议名称
+   * @returns {boolean} 是否支持
+   */
+  supportsProtocol(protocol) {
+    return this.protocols.has(protocol)
+  }
+
+  /**
+   * 设置初始化状态
+   */
+  set initialized(value) {
+    this._initialized = value
+  }
+
+  /**
+   * 获取初始化状态
+   */
+  get initialized() {
+    return this._initialized || false
+  }
+
+  // 向后兼容方法
   async resolve(resourceUrl) {
     try {
-      await this.initialize()
+      // 使用新架构初始化
+      if (this.registry.size === 0) {
+        await this.initializeWithNewArchitecture()
+      }
       
       // Handle old format: role:java-backend-developer or @package://...
       if (resourceUrl.startsWith('@')) {
         // Parse the reference to check if it's a custom protocol
-        const parsed = this.resolver.parseReference(resourceUrl)
+        const parsed = this.protocolParser.parse(resourceUrl)
         
-        // Check if it's a basic protocol that ProtocolResolver can handle directly
+        // Check if it's a basic protocol that can be handled directly
         const basicProtocols = ['package', 'project', 'file']
         if (basicProtocols.includes(parsed.protocol)) {
-          // Direct protocol format - use ProtocolResolver
-          const filePath = await this.resolver.resolve(resourceUrl)
-          const content = fs.readFileSync(filePath, 'utf8')
+          // Direct protocol format - use protocol resolution
+          const content = await this.loadResourceByProtocol(resourceUrl)
           return {
             success: true,
             content,
-            path: filePath,
+            path: resourceUrl,
             reference: resourceUrl
           }
         } else {
           // Custom protocol - extract resource ID and use ResourceRegistry
-          const resourceId = `${parsed.protocol}:${parsed.resourcePath}`
+          const resourceId = `${parsed.protocol}:${parsed.path}`
           return await this.loadResource(resourceId)
         }
       } else {

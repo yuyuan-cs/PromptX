@@ -3,12 +3,12 @@ const fs = require('fs-extra')
 const path = require('path')
 
 /**
- * AI角色协议处理器
- * 处理 role:// 协议的资源解析，直接加载完整role文件
+ * 知识资源协议处理器
+ * 处理 knowledge:// 协议的资源解析
  */
-class RoleProtocol extends ResourceProtocol {
+class KnowledgeProtocol extends ResourceProtocol {
   constructor () {
-    super('role')
+    super('knowledge')
     this.registry = {}
     this.registryManager = null // 统一注册表管理器
   }
@@ -32,14 +32,12 @@ class RoleProtocol extends ResourceProtocol {
    */
   getProtocolInfo () {
     return {
-      name: 'role',
-      description: 'AI角色资源协议',
-      location: 'role://{role_id}',
+      name: 'knowledge',
+      description: '知识资源协议',
+      location: 'knowledge://{knowledge_id}',
       examples: [
-        'role://video-copywriter',
-        'role://product-owner',
-        'role://assistant',
-        'role://prompt-developer'
+        'knowledge://xiaohongshu-marketing',
+        'knowledge://ai-tools-guide'
       ]
     }
   }
@@ -48,19 +46,19 @@ class RoleProtocol extends ResourceProtocol {
    * 解析资源路径
    */
   async resolvePath (resourcePath, queryParams) {
-    const roleId = resourcePath.trim()
-    const fullResourceId = `role:${roleId}`
+    const knowledgeId = resourcePath.trim()
+    const fullResourceId = `knowledge:${knowledgeId}`
 
     // 优先使用统一注册表管理器
     if (this.registryManager) {
       const reference = this.registryManager.registry.get(fullResourceId)
       if (!reference) {
-        const availableRoles = this.registryManager.registry.keys()
-          .filter(id => id.startsWith('role:'))
-          .map(id => id.replace('role:', ''))
-        throw new Error(`角色 "${roleId}" 未在注册表中找到。可用角色：${availableRoles.join(', ')}`)
+        const availableKnowledge = this.registryManager.registry.keys()
+          .filter(id => id.startsWith('knowledge:'))
+          .map(id => id.replace('knowledge:', ''))
+        throw new Error(`知识资源 "${knowledgeId}" 未在注册表中找到。可用知识资源：${availableKnowledge.join(', ')}`)
       }
-      
+
       let resolvedPath = reference
 
       // 处理 @package:// 前缀
@@ -79,12 +77,11 @@ class RoleProtocol extends ResourceProtocol {
     }
 
     // 向后兼容：使用旧的registry
-    if (!this.registry[roleId]) {
-      throw new Error(`角色 "${roleId}" 未在注册表中找到。可用角色：${Object.keys(this.registry).join(', ')}`)
+    if (!this.registry[knowledgeId]) {
+      throw new Error(`知识资源 "${knowledgeId}" 未在注册表中找到`)
     }
 
-    const roleInfo = this.registry[roleId]
-    let resolvedPath = typeof roleInfo === 'string' ? roleInfo : roleInfo.file
+    let resolvedPath = this.registry[knowledgeId]
 
     // 处理 @package:// 前缀
     if (resolvedPath.startsWith('@package://')) {
@@ -92,6 +89,10 @@ class RoleProtocol extends ResourceProtocol {
       const packageProtocol = new PackageProtocol()
       const relativePath = resolvedPath.replace('@package://', '')
       resolvedPath = await packageProtocol.resolvePath(relativePath)
+    } else if (resolvedPath.startsWith('@project://')) {
+      // 处理 @project:// 前缀，转换为绝对路径
+      const relativePath = resolvedPath.replace('@project://', '')
+      resolvedPath = path.join(process.cwd(), relativePath)
     }
 
     return resolvedPath
@@ -105,7 +106,7 @@ class RoleProtocol extends ResourceProtocol {
       const content = await fs.readFile(resolvedPath, 'utf-8')
       return content
     } catch (error) {
-      throw new Error(`无法加载角色文件 ${resolvedPath}: ${error.message}`)
+      throw new Error(`无法加载知识资源文件 ${resolvedPath}: ${error.message}`)
     }
   }
 
@@ -117,4 +118,4 @@ class RoleProtocol extends ResourceProtocol {
   }
 }
 
-module.exports = RoleProtocol
+module.exports = KnowledgeProtocol 

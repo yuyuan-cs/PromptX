@@ -19,22 +19,18 @@ class PackageDiscovery extends BaseDiscovery {
   }
 
   /**
-   * 发现包级资源
+   * 发现包级资源 (新架构 - 纯动态扫描)
    * @returns {Promise<Array>} 发现的资源列表
    */
   async discover() {
     const resources = []
 
     try {
-      // 1. 加载静态注册表资源
-      const registryResources = await this._loadStaticRegistryResources()
-      resources.push(...registryResources)
-
-      // 2. 扫描prompt目录资源
+      // 扫描prompt目录资源（新架构只使用动态扫描）
       const scanResources = await this._scanPromptDirectory()
       resources.push(...scanResources)
 
-      // 3. 规范化所有资源
+      // 规范化所有资源
       return resources.map(resource => this.normalizeResource(resource))
 
     } catch (error) {
@@ -44,63 +40,43 @@ class PackageDiscovery extends BaseDiscovery {
   }
 
   /**
-   * 从静态注册表加载资源
-   * @returns {Promise<Array>} 注册表中的资源列表
+   * 发现包级资源注册表 (新架构 - 纯动态扫描)
+   * @returns {Promise<Map>} 发现的资源注册表 Map<resourceId, reference>
    */
-  async _loadStaticRegistryResources() {
+  async discoverRegistry() {
     try {
-      const registry = await this._loadStaticRegistry()
-      const resources = []
+      // 扫描动态资源（新架构只使用动态扫描）
+      const scanResults = await this._scanPromptDirectory()
+      const registry = this._buildRegistryFromScanResults(scanResults)
 
-      if (registry.protocols) {
-        // 遍历所有协议
-        for (const [protocol, protocolInfo] of Object.entries(registry.protocols)) {
-          if (protocolInfo.registry) {
-            // 遍历协议下的所有资源
-            for (const [resourceId, resourceInfo] of Object.entries(protocolInfo.registry)) {
-              const reference = typeof resourceInfo === 'string' 
-                ? resourceInfo 
-                : resourceInfo.file
+      return registry
 
-              if (reference) {
-                resources.push({
-                  id: `${protocol}:${resourceId}`,
-                  reference: reference
-                })
-              }
-            }
-          }
-        }
-      }
-
-      return resources
     } catch (error) {
-      console.warn(`[PackageDiscovery] Failed to load static registry: ${error.message}`)
-      return []
+      console.warn(`[PackageDiscovery] Registry discovery failed: ${error.message}`)
+      return new Map()
     }
   }
+
+
 
   /**
-   * 加载静态注册表文件
-   * @returns {Promise<Object>} 注册表内容
+   * 从扫描结果构建Map
+   * @param {Array} scanResults - 扫描结果数组
+   * @returns {Map} 资源注册表 Map<resourceId, reference>
    */
-  async _loadStaticRegistry() {
-    const packageRoot = await this._findPackageRoot()
-    
-    // 尝试主要路径：src/resource.registry.json
-    const primaryPath = path.join(packageRoot, 'src', 'resource.registry.json')
-    if (await fs.pathExists(primaryPath)) {
-      return await fs.readJSON(primaryPath)
+  _buildRegistryFromScanResults(scanResults) {
+    const registry = new Map()
+
+    for (const resource of scanResults) {
+      if (resource.id && resource.reference) {
+        registry.set(resource.id, resource.reference)
+      }
     }
 
-    // 尝试后备路径：resource.registry.json
-    const alternativePath = path.join(packageRoot, 'resource.registry.json')
-    if (await fs.pathExists(alternativePath)) {
-      return await fs.readJSON(alternativePath)
-    }
-
-    throw new Error('Static registry file not found')
+    return registry
   }
+
+
 
   /**
    * 扫描prompt目录发现资源
@@ -118,7 +94,7 @@ class PackageDiscovery extends BaseDiscovery {
       const resources = []
 
       // 定义要扫描的资源类型
-      const resourceTypes = ['role', 'execution', 'thought']
+      const resourceTypes = ['role', 'execution', 'thought', 'knowledge']
 
       // 并行扫描所有资源类型
       for (const resourceType of resourceTypes) {

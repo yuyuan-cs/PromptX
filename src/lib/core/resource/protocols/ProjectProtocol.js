@@ -89,6 +89,11 @@ class ProjectProtocol extends ResourceProtocol {
       return false
     }
 
+    // 特殊处理：允许.promptx开头的路径（项目配置目录）
+    if (resourcePath.startsWith('.promptx/')) {
+      return true
+    }
+
     // 解析路径的第一部分（目录类型）
     const parts = resourcePath.split('/')
     const dirType = parts[0]
@@ -162,11 +167,37 @@ class ProjectProtocol extends ResourceProtocol {
 
   /**
    * 解析项目路径
-   * @param {string} resourcePath - 原始资源路径，如 "src/index.js"
+   * @param {string} resourcePath - 原始资源路径，如 "src/index.js" 或 ".promptx/resource/..."
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 解析后的绝对路径
    */
   async resolvePath (resourcePath, queryParams) {
+    // 特殊处理：.promptx开头的路径直接相对于项目根目录
+    if (resourcePath.startsWith('.promptx/')) {
+      // 确定搜索起始点
+      const startDir = queryParams?.get('from') || process.cwd()
+
+      // 查找项目根目录
+      const projectRoot = await this.findProjectRoot(startDir)
+      if (!projectRoot) {
+        throw new Error('未找到项目根目录（.promptx标识）。请确保在项目目录内或使用 \'from\' 参数指定项目路径')
+      }
+
+      // 直接拼接完整路径
+      const fullPath = path.join(projectRoot, resourcePath)
+
+      // 安全检查：确保路径在项目目录内
+      const resolvedPath = path.resolve(fullPath)
+      const resolvedProjectRoot = path.resolve(projectRoot)
+
+      if (!resolvedPath.startsWith(resolvedProjectRoot)) {
+        throw new Error(`安全错误：路径超出项目目录范围: ${resolvedPath}`)
+      }
+
+      return resolvedPath
+    }
+
+    // 标准路径处理逻辑
     const parts = resourcePath.split('/')
     const dirType = parts[0]
     const relativePath = parts.slice(1).join('/')

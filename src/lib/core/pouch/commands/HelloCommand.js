@@ -2,7 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { buildCommand } = require('../../../../constants')
-const SimplifiedRoleDiscovery = require('../../resource/SimplifiedRoleDiscovery')
+const ResourceManager = require('../../resource/resourceManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -12,8 +12,8 @@ const logger = require('../../../utils/logger')
 class HelloCommand extends BasePouchCommand {
   constructor () {
     super()
-    // 移除roleRegistry缓存，改为每次实时扫描
-    this.discovery = new SimplifiedRoleDiscovery()
+    // 使用新的ResourceManager架构替代SimplifiedRoleDiscovery
+    this.resourceManager = new ResourceManager()
   }
 
   getPurpose () {
@@ -21,25 +21,41 @@ class HelloCommand extends BasePouchCommand {
   }
 
   /**
-   * 动态加载角色注册表 - 使用SimplifiedRoleDiscovery
+   * 动态加载角色注册表 - 使用新的ResourceManager架构
    * 移除缓存机制，每次都实时扫描，确保角色发现的一致性
    */
   async loadRoleRegistry () {
-    // 移除缓存检查，每次都实时扫描
-    // 原因：1) 客户端应用，action频次不高 2) 避免新角色创建后的状态不一致问题
-    
     try {
-      // 使用新的SimplifiedRoleDiscovery算法
-      const allRoles = await this.discovery.discoverAllRoles()
+      // 使用新的ResourceManager架构初始化
+      await this.resourceManager.initializeWithNewArchitecture()
       
-      // 转换为HelloCommand期望的格式，不缓存
+      // 获取所有角色相关的资源
       const roleRegistry = {}
-      for (const [roleId, roleInfo] of Object.entries(allRoles)) {
-        roleRegistry[roleId] = {
-          file: roleInfo.file,
-          name: roleInfo.name || roleId,
-          description: this.extractDescription(roleInfo) || `${roleInfo.name || roleId}专业角色`,
-          source: roleInfo.source || 'unknown'
+      
+      // 从ResourceRegistry中获取所有role:开头的资源
+      const registry = this.resourceManager.registry
+      for (const [resourceId, reference] of registry.index) {
+        if (resourceId.startsWith('role:')) {
+          const roleId = resourceId.substring(5) // 移除 'role:' 前缀
+          
+          try {
+            // 尝试加载角色内容以提取元数据
+            const result = await this.resourceManager.loadResource(resourceId)
+            if (result.success) {
+              const name = this.extractRoleNameFromContent(result.content) || roleId
+              const description = this.extractDescriptionFromContent(result.content) || `${name}专业角色`
+              
+              roleRegistry[roleId] = {
+                file: reference,
+                name,
+                description,
+                source: reference.startsWith('@package://') ? 'system' : 'user-generated'
+              }
+            }
+          } catch (error) {
+            // 单个角色加载失败不影响其他角色
+            logger.warn(`角色${roleId}加载失败: ${error.message}`)
+          }
         }
       }
 
@@ -70,7 +86,37 @@ class HelloCommand extends BasePouchCommand {
   }
 
   /**
-   * 从角色信息中提取描述
+   * 从角色内容中提取角色名称
+   * @param {string} content - 角色文件内容
+   * @returns {string|null} 角色名称
+   */
+  extractRoleNameFromContent(content) {
+    if (!content || typeof content !== 'string') {
+      return null
+    }
+    
+    // 提取Markdown标题
+    const match = content.match(/^#\s*(.+)$/m)
+    return match ? match[1].trim() : null
+  }
+
+  /**
+   * 从角色内容中提取描述
+   * @param {string} content - 角色文件内容
+   * @returns {string|null} 角色描述
+   */
+  extractDescriptionFromContent(content) {
+    if (!content || typeof content !== 'string') {
+      return null
+    }
+    
+    // 提取Markdown引用（描述）
+    const match = content.match(/^>\s*(.+)$/m)
+    return match ? match[1].trim() : null
+  }
+
+  /**
+   * 从角色信息中提取描述（保持向后兼容）
    * @param {Object} roleInfo - 角色信息对象
    * @returns {string} 角色描述
    */
@@ -245,6 +291,36 @@ ${buildCommand.action(allRoles[0]?.id || 'assistant')}
    * 现在使用SimplifiedRoleDiscovery.discoverAllRoles()替代
    * 这避免了glob依赖和跨平台兼容性问题
    */
+
+  /**
+   * 调试方法：打印所有注册的资源
+   */
+  async debugRegistry() {
+    await this.loadRoleRegistry()
+    
+    console.log('\n🔍 HelloCommand - 注册表调试信息')
+    console.log('='.repeat(50))
+    
+    if (this.roleRegistry && Object.keys(this.roleRegistry).length > 0) {
+      console.log(`📊 发现 ${Object.keys(this.roleRegistry).length} 个角色资源:\n`)
+      
+      Object.entries(this.roleRegistry).forEach(([id, roleInfo]) => {
+        console.log(`🎭 ${id}`)
+        console.log(`   名称: ${roleInfo.name || '未命名'}`)
+        console.log(`   描述: ${roleInfo.description || '无描述'}`)
+        console.log(`   文件: ${roleInfo.file}`)
+        console.log(`   来源: ${roleInfo.source || '未知'}`)
+        console.log('')
+      })
+    } else {
+      console.log('🔍 没有发现任何角色资源')
+    }
+    
+    // 同时显示ResourceManager的注册表
+    console.log('\n📋 ResourceManager 注册表:')
+    console.log('-'.repeat(30))
+    this.resourceManager.registry.printAll('底层资源注册表')
+  }
 }
 
 module.exports = HelloCommand

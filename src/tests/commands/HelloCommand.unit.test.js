@@ -32,7 +32,7 @@ describe('HelloCommand 单元测试', () => {
     test('应该能实例化HelloCommand', () => {
       expect(helloCommand).toBeInstanceOf(HelloCommand)
       expect(typeof helloCommand.loadRoleRegistry).toBe('function')
-      expect(helloCommand.discovery).toBeDefined()
+      expect(helloCommand.resourceManager).toBeDefined()
     })
 
     test('getPurpose应该返回正确的目的描述', () => {
@@ -42,21 +42,21 @@ describe('HelloCommand 单元测试', () => {
     })
   })
 
-  describe('SimplifiedRoleDiscovery 集成测试', () => {
+  describe('ResourceManager 集成测试', () => {
     test('应该能发现系统内置角色', async () => {
-      // Mock SimplifiedRoleDiscovery.discoverAllRoles 返回系统角色
-      const mockDiscovery = {
-        discoverAllRoles: jest.fn().mockResolvedValue({
-          'assistant': {
-            file: '@package://prompt/domain/assistant/assistant.role.md',
-            name: '🙋 智能助手',
-            description: '通用助理角色，提供基础的助理服务和记忆支持',
-            source: 'system'
-          }
-        })
-      }
+      // Mock ResourceManager的initializeWithNewArchitecture和registry
+      const mockRegistry = new Map([
+        ['role:assistant', '@package://prompt/domain/assistant/assistant.role.md']
+      ])
+      mockRegistry.index = mockRegistry // 向后兼容
 
-      helloCommand.discovery = mockDiscovery
+      helloCommand.resourceManager.initializeWithNewArchitecture = jest.fn().mockResolvedValue()
+      helloCommand.resourceManager.registry = { index: mockRegistry }
+      helloCommand.resourceManager.loadResource = jest.fn().mockResolvedValue({
+        success: true,
+        content: '# 🙋 智能助手\n> 通用助理角色，提供基础的助理服务和记忆支持'
+      })
+
       const roleRegistry = await helloCommand.loadRoleRegistry()
       
       expect(roleRegistry).toHaveProperty('assistant')
@@ -66,12 +66,13 @@ describe('HelloCommand 单元测试', () => {
     })
 
     test('应该处理空的角色目录', async () => {
-      // Mock SimplifiedRoleDiscovery.discoverAllRoles 返回空对象
-      const mockDiscovery = {
-        discoverAllRoles: jest.fn().mockResolvedValue({})
-      }
+      // Mock ResourceManager返回空注册表
+      const mockRegistry = new Map()
+      mockRegistry.index = mockRegistry
 
-      helloCommand.discovery = mockDiscovery
+      helloCommand.resourceManager.initializeWithNewArchitecture = jest.fn().mockResolvedValue()
+      helloCommand.resourceManager.registry = { index: mockRegistry }
+
       const roleRegistry = await helloCommand.loadRoleRegistry()
       
       // 应该返回fallback assistant角色
@@ -79,11 +80,11 @@ describe('HelloCommand 单元测试', () => {
       expect(roleRegistry.assistant.source).toBe('fallback')
     })
 
-    test('应该使用SimplifiedRoleDiscovery处理错误', async () => {
+    test('应该使用ResourceManager处理错误', async () => {
       const mockedCommand = new HelloCommand()
       
-      // Mock discovery to throw an error
-      mockedCommand.discovery.discoverAllRoles = jest.fn().mockRejectedValue(new Error('Mock error'))
+      // Mock ResourceManager to throw an error
+      mockedCommand.resourceManager.initializeWithNewArchitecture = jest.fn().mockRejectedValue(new Error('Mock error'))
       
       // 应该fallback到默认assistant角色
       const roleRegistry = await mockedCommand.loadRoleRegistry()
@@ -93,7 +94,24 @@ describe('HelloCommand 单元测试', () => {
   })
 
   describe('元数据提取测试', () => {
+    test('应该正确提取角色名称', () => {
+      const content = '# 测试角色\n> 这是一个测试角色的描述'
+      const name = helloCommand.extractRoleNameFromContent(content)
+      expect(name).toBe('测试角色')
+    })
+
     test('应该正确提取角色描述', () => {
+      const content = '# 测试角色\n> 这是一个测试角色的描述'
+      const description = helloCommand.extractDescriptionFromContent(content)
+      expect(description).toBe('这是一个测试角色的描述')
+    })
+
+    test('应该处理无效内容', () => {
+      expect(helloCommand.extractRoleNameFromContent('')).toBeNull()
+      expect(helloCommand.extractDescriptionFromContent(null)).toBeNull()
+    })
+
+    test('应该正确提取角色描述（向后兼容）', () => {
       const roleInfo = { description: '这是一个测试用的角色' }
       const extracted = helloCommand.extractDescription(roleInfo)
       expect(extracted).toBe('这是一个测试用的角色')
@@ -117,8 +135,8 @@ describe('HelloCommand 单元测试', () => {
     test('应该在失败时返回默认assistant角色', async () => {
       const mockedCommand = new HelloCommand()
       
-      // Mock discovery to throw an error
-      mockedCommand.discovery.discoverAllRoles = jest.fn().mockRejectedValue(new Error('Mock error'))
+      // Mock ResourceManager to throw an error
+      mockedCommand.resourceManager.initializeWithNewArchitecture = jest.fn().mockRejectedValue(new Error('Mock error'))
 
       const result = await mockedCommand.loadRoleRegistry()
       

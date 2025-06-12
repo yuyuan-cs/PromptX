@@ -258,12 +258,17 @@ class PackageProtocol extends ResourceProtocol {
   findPackageJson (startPath = __dirname) {
     let currentPath = path.resolve(startPath)
 
-    while (currentPath !== path.parse(currentPath).root) {
+    let maxIterations = 50 // Prevent infinite loops
+    while (currentPath !== path.parse(currentPath).root && maxIterations-- > 0) {
       const packageJsonPath = path.join(currentPath, 'package.json')
       if (require('fs').existsSync(packageJsonPath)) {
         return packageJsonPath
       }
-      currentPath = path.dirname(currentPath)
+      const parentPath = path.dirname(currentPath)
+      if (parentPath === currentPath) {
+        break // Additional protection
+      }
+      currentPath = parentPath
     }
 
     return null
@@ -275,13 +280,18 @@ class PackageProtocol extends ResourceProtocol {
   findRootPackageJson () {
     let currentPath = process.cwd()
     let lastValidPackageJson = null
+    let maxIterations = 50 // Prevent infinite loops
 
-    while (currentPath !== path.parse(currentPath).root) {
+    while (currentPath !== path.parse(currentPath).root && maxIterations-- > 0) {
       const packageJsonPath = path.join(currentPath, 'package.json')
       if (require('fs').existsSync(packageJsonPath)) {
         lastValidPackageJson = packageJsonPath
       }
-      currentPath = path.dirname(currentPath)
+      const parentPath = path.dirname(currentPath)
+      if (parentPath === currentPath) {
+        break // Additional protection
+      }
+      currentPath = parentPath
     }
 
     return lastValidPackageJson
@@ -520,23 +530,27 @@ class PackageProtocol extends ResourceProtocol {
 
   /**
    * 加载资源内容
+   * @param {string} resolvedPath - 已解析的路径
+   * @param {QueryParams} [queryParams] - 查询参数
+   * @returns {Object} 包含内容和元数据的对象
    */
   async loadContent (resolvedPath, queryParams) {
     try {
       await fsPromises.access(resolvedPath)
       const content = await fsPromises.readFile(resolvedPath, 'utf8')
       const stats = await fsPromises.stat(resolvedPath)
-
+      const packageRoot = await this.getPackageRoot()
+      
       return {
         content,
         path: resolvedPath,
-        protocol: this.name,
+        protocol: 'package',
         installMode: this.detectInstallMode(),
         metadata: {
           size: content.length,
           lastModified: stats.mtime,
           absolutePath: resolvedPath,
-          relativePath: path.relative(await this.getPackageRoot(), resolvedPath)
+          relativePath: path.relative(packageRoot, resolvedPath)
         }
       }
     } catch (error) {
