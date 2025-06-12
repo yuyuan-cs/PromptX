@@ -83,6 +83,41 @@ class DiscoveryManager {
   }
 
   /**
+   * 发现资源并直接注册到指定注册表（新的简化方法）
+   * @param {ResourceRegistry} registry - 目标注册表
+   * @returns {Promise<void>}
+   */
+  async discoverAndDirectRegister(registry) {
+    // 按优先级顺序直接注册，让高优先级的覆盖低优先级的
+    for (const discovery of this.discoveries) {
+      try {
+        if (typeof discovery.discoverRegistry === 'function') {
+          // 使用新的discoverRegistry方法
+          const discoveredRegistry = await discovery.discoverRegistry()
+          if (discoveredRegistry instanceof Map) {
+            for (const [resourceId, reference] of discoveredRegistry) {
+              registry.register(resourceId, reference)  // 直接注册，自动覆盖
+            }
+          }
+        } else {
+          // 向后兼容：使用discover()方法
+          const resources = await discovery.discover()
+          if (Array.isArray(resources)) {
+            resources.forEach(resource => {
+              if (resource.id && resource.reference) {
+                registry.register(resource.id, resource.reference)  // 直接注册
+              }
+            })
+          }
+        }
+      } catch (error) {
+        console.warn(`[DiscoveryManager] ${discovery.source} direct registration failed: ${error.message}`)
+        // 单个发现器失败不影响其他发现器
+      }
+    }
+  }
+
+  /**
    * 发现并合并所有注册表（新架构方法）
    * @returns {Promise<Map>} 合并后的资源注册表 Map<resourceId, reference>
    */

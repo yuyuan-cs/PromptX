@@ -43,18 +43,13 @@ class ResourceManager {
    */
   async initializeWithNewArchitecture() {
     try {
-      // 1. 使用DiscoveryManager发现并合并所有注册表
-      const discoveredRegistry = await this.discoveryManager.discoverRegistries()
+      // 1. 直接发现并注册资源（无需中间合并步骤）
+      await this.discoveryManager.discoverAndDirectRegister(this.registry)
 
-      // 2. 批量注册到ResourceRegistry
-      for (const [resourceId, reference] of discoveredRegistry) {
-        this.registry.register(resourceId, reference)
-      }
-
-      // 3. 为逻辑协议设置注册表引用
+      // 2. 为逻辑协议设置注册表引用
       this.setupLogicalProtocols()
 
-      // 4. 设置初始化状态
+      // 3. 设置初始化状态
       this.initialized = true
 
       // 初始化完成，不输出日志避免干扰用户界面
@@ -121,10 +116,8 @@ class ResourceManager {
 
   async loadResource(resourceId) {
     try {
-      // 使用新架构初始化
-      if (this.registry.size === 0) {
-        await this.initializeWithNewArchitecture()
-      }
+      // 每次都刷新资源（无状态设计）
+      await this.refreshResources()
       
       // 处理@!开头的DPML格式（如 @!role://java-developer）
       if (resourceId.startsWith('@!')) {
@@ -189,8 +182,6 @@ class ResourceManager {
     return await protocol.resolve(parsed.path, parsed.queryParams)
   }
 
-
-
   /**
    * 获取所有已注册的协议
    * @returns {Array<string>} 协议名称列表
@@ -225,10 +216,8 @@ class ResourceManager {
   // 向后兼容方法
   async resolve(resourceUrl) {
     try {
-      // 使用新架构初始化
-      if (this.registry.size === 0) {
-        await this.initializeWithNewArchitecture()
-      }
+      // 每次都刷新资源（无状态设计）
+      await this.refreshResources()
       
       // Handle old format: role:java-backend-developer or @package://...
       if (resourceUrl.startsWith('@')) {
@@ -264,7 +253,38 @@ class ResourceManager {
     }
   }
 
+  /**
+   * 无状态资源刷新（推荐方法）
+   * 每次都重新发现并注册资源，无需维护初始化状态
+   */
+  async refreshResources() {
+    try {
+      // 1. 清空当前注册表
+      this.registry.clear()
+      
+      // 2. 清除发现器缓存
+      if (this.discoveryManager && typeof this.discoveryManager.clearCache === 'function') {
+        this.discoveryManager.clearCache()
+      }
+      
+      // 3. 重新发现并直接注册
+      await this.discoveryManager.discoverAndDirectRegister(this.registry)
+      
+      // 4. 更新协议引用
+      this.setupLogicalProtocols()
+      
+      // 无状态设计：不设置initialized标志
+    } catch (error) {
+      console.warn(`[ResourceManager] Resource refresh failed: ${error.message}`)
+      // 失败时保持注册表为空状态，下次调用时重试
+    }
+  }
 
+  /**
+   * 强制重新初始化资源发现（清除缓存）
+   * 用于解决新创建角色无法被发现的问题
+   * @deprecated 推荐使用 refreshResources() 方法
+   */
 }
 
 module.exports = ResourceManager

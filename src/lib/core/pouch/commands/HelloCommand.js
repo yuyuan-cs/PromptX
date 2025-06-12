@@ -26,9 +26,9 @@ class HelloCommand extends BasePouchCommand {
    */
   async loadRoleRegistry () {
     try {
-      // 使用新的ResourceManager架构初始化
-      await this.resourceManager.initializeWithNewArchitecture()
-      
+      // 无状态资源刷新，确保能发现新创建的角色
+      await this.resourceManager.refreshResources()
+
       // 获取所有角色相关的资源
       const roleRegistry = {}
       
