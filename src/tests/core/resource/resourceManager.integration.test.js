@@ -166,8 +166,9 @@ describe('ResourceManager - Integration Tests', () => {
       glob.mockResolvedValue([])
       await manager.initialize()
 
-      await expect(manager.loadResource('non-existent-resource'))
-        .rejects.toThrow("Resource 'non-existent-resource' not found")
+      const result = await manager.loadResource('non-existent-resource')
+      expect(result.success).toBe(false)
+      expect(result.message).toBe("Resource 'non-existent-resource' not found")
     })
 
     test('应该处理协议解析失败', async () => {
@@ -177,8 +178,9 @@ describe('ResourceManager - Integration Tests', () => {
 
       jest.spyOn(manager.resolver, 'resolve').mockRejectedValue(new Error('Protocol resolution failed'))
 
-      await expect(manager.loadResource('java-backend-developer'))
-        .rejects.toThrow('Protocol resolution failed')
+      const result = await manager.loadResource('java-backend-developer')
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('Protocol resolution failed')
     })
 
     test('应该处理文件读取失败', async () => {
@@ -194,8 +196,9 @@ describe('ResourceManager - Integration Tests', () => {
         throw new Error('File not found')
       })
 
-      await expect(manager.loadResource('java-backend-developer'))
-        .rejects.toThrow('File not found')
+      const result = await manager.loadResource('java-backend-developer')
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('File not found')
     })
 
     test('应该处理初始化失败', async () => {

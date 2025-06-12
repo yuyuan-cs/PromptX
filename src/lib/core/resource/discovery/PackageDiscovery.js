@@ -86,13 +86,20 @@ class PackageDiscovery extends BaseDiscovery {
    */
   async _loadStaticRegistry() {
     const packageRoot = await this._findPackageRoot()
-    const registryPath = path.join(packageRoot, 'src', 'resource.registry.json')
-
-    if (!await fs.pathExists(registryPath)) {
-      throw new Error('Static registry file not found')
+    
+    // 尝试主要路径：src/resource.registry.json
+    const primaryPath = path.join(packageRoot, 'src', 'resource.registry.json')
+    if (await fs.pathExists(primaryPath)) {
+      return await fs.readJSON(primaryPath)
     }
 
-    return await fs.readJSON(registryPath)
+    // 尝试后备路径：resource.registry.json
+    const alternativePath = path.join(packageRoot, 'resource.registry.json')
+    if (await fs.pathExists(alternativePath)) {
+      return await fs.readJSON(alternativePath)
+    }
+
+    throw new Error('Static registry file not found')
   }
 
   /**
@@ -147,6 +154,86 @@ class PackageDiscovery extends BaseDiscovery {
   }
 
   /**
+   * 检测执行环境类型
+   * @returns {Promise<string>} 环境类型：development, npx, local, unknown
+   */
+  async _detectExecutionEnvironment() {
+    // 1. 检查是否在开发环境
+    if (await this._isDevelopmentMode()) {
+      return 'development'
+    }
+
+    // 2. 检查是否通过npx执行
+    if (this._isNpxExecution()) {
+      return 'npx'
+    }
+
+    // 3. 检查是否在node_modules中安装
+    if (this._isLocalInstallation()) {
+      return 'local'
+    }
+
+    return 'unknown'
+  }
+
+  /**
+   * 检查是否在开发模式
+   * @returns {Promise<boolean>} 是否为开发模式
+   */
+  async _isDevelopmentMode() {
+    const cwd = process.cwd()
+    const hasCliScript = await fs.pathExists(path.join(cwd, 'src', 'bin', 'promptx.js'))
+    const hasPackageJson = await fs.pathExists(path.join(cwd, 'package.json'))
+    
+    if (!hasCliScript || !hasPackageJson) {
+      return false
+    }
+
+    try {
+      const packageJson = await fs.readJSON(path.join(cwd, 'package.json'))
+      return packageJson.name === 'dpml-prompt'
+    } catch (error) {
+      return false
+    }
+  }
+
+  /**
+   * 检查是否通过npx执行
+   * @returns {boolean} 是否为npx执行
+   */
+  _isNpxExecution() {
+    // 检查环境变量
+    if (process.env.npm_execpath && process.env.npm_execpath.includes('npx')) {
+      return true
+    }
+
+    // 检查目录路径（npx缓存目录）
+    const currentDir = this._getCurrentDirectory()
+    if (currentDir.includes('.npm/_npx/') || currentDir.includes('_npx')) {
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * 检查是否在本地安装
+   * @returns {boolean} 是否为本地安装
+   */
+  _isLocalInstallation() {
+    const currentDir = this._getCurrentDirectory()
+    return currentDir.includes('node_modules/dpml-prompt')
+  }
+
+  /**
+   * 获取当前目录（可以被测试mock）
+   * @returns {string} 当前目录路径
+   */
+  _getCurrentDirectory() {
+    return __dirname
+  }
+
+  /**
    * 查找包根目录
    * @returns {Promise<string>} 包根目录路径
    */
@@ -157,9 +244,23 @@ class PackageDiscovery extends BaseDiscovery {
       return cached
     }
 
-    const packageRoot = await this._findPackageJsonWithPrompt()
+    const environment = await this._detectExecutionEnvironment()
+    let packageRoot = null
+
+    switch (environment) {
+      case 'development':
+        packageRoot = await this._findDevelopmentRoot()
+        break
+      case 'npx':
+      case 'local':
+        packageRoot = await this._findInstalledRoot()
+        break
+      default:
+        packageRoot = await this._findFallbackRoot()
+    }
+
     if (!packageRoot) {
-      throw new Error('Package root with prompt directory not found')
+      throw new Error('Package root not found')
     }
 
     this.setCache(cacheKey, packageRoot)
@@ -167,39 +268,76 @@ class PackageDiscovery extends BaseDiscovery {
   }
 
   /**
-   * 查找包含prompt目录的package.json
+   * 查找开发环境的包根目录
    * @returns {Promise<string|null>} 包根目录路径或null
    */
-  async _findPackageJsonWithPrompt() {
-    let currentDir = __dirname
+  async _findDevelopmentRoot() {
+    const cwd = process.cwd()
+    const hasPackageJson = await fs.pathExists(path.join(cwd, 'package.json'))
+    const hasPromptDir = await fs.pathExists(path.join(cwd, 'prompt'))
 
-    while (currentDir !== path.parse(currentDir).root) {
-      const packageJsonPath = path.join(currentDir, 'package.json')
-      const promptDirPath = path.join(currentDir, 'prompt')
+    if (!hasPackageJson || !hasPromptDir) {
+      return null
+    }
 
-      // 检查是否同时存在package.json和prompt目录
-      const [hasPackageJson, hasPromptDir] = await Promise.all([
-        fs.pathExists(packageJsonPath),
-        fs.pathExists(promptDirPath)
-      ])
-
-      if (hasPackageJson && hasPromptDir) {
-        // 验证是否是PromptX包
-        try {
-          const packageJson = await fs.readJSON(packageJsonPath)
-          if (packageJson.name === 'promptx' || packageJson.name === 'dpml-prompt') {
-            return currentDir
-          }
-        } catch (error) {
-          // 忽略package.json读取错误
-        }
+    try {
+      const packageJson = await fs.readJSON(path.join(cwd, 'package.json'))
+      if (packageJson.name === 'dpml-prompt') {
+        return fs.realpathSync(cwd) // 解析符号链接
       }
-
-      currentDir = path.dirname(currentDir)
+    } catch (error) {
+      // Ignore JSON parsing errors
     }
 
     return null
   }
+
+  /**
+   * 查找已安装包的根目录
+   * @returns {Promise<string|null>} 包根目录路径或null
+   */
+  async _findInstalledRoot() {
+    try {
+      const currentDir = this._getCurrentDirectory()
+      let searchDir = currentDir
+      
+      // 向上查找package.json
+      while (searchDir !== path.parse(searchDir).root) {
+        const packageJsonPath = path.join(searchDir, 'package.json')
+        
+        if (await fs.pathExists(packageJsonPath)) {
+          const packageJson = await fs.readJSON(packageJsonPath)
+          
+          if (packageJson.name === 'dpml-prompt') {
+            return searchDir
+          }
+        }
+        
+        searchDir = path.dirname(searchDir)
+      }
+    } catch (error) {
+      // Ignore errors
+    }
+
+    return null
+  }
+
+  /**
+   * 后备方案：使用模块解析查找包根目录
+   * @returns {Promise<string|null>} 包根目录路径或null
+   */
+  async _findFallbackRoot() {
+    try {
+      const resolve = require('resolve')
+      const packageJsonPath = resolve.sync('dpml-prompt/package.json', {
+        basedir: process.cwd()
+      })
+      return path.dirname(packageJsonPath)
+    } catch (error) {
+      return null
+    }
+  }
+
 
   /**
    * 生成包引用路径

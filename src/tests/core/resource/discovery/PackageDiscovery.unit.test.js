@@ -113,19 +113,38 @@ describe('PackageDiscovery', () => {
   })
 
   describe('_findPackageRoot', () => {
-    test('should find package root containing prompt directory', async () => {
-      // Mock file system check
-      jest.spyOn(discovery, '_findPackageJsonWithPrompt').mockResolvedValue('/mock/package/root')
+    test('should find package root in development environment', async () => {
+      // Mock environment detection and development root finder
+      jest.spyOn(discovery, '_detectExecutionEnvironment').mockResolvedValue('development')
+      jest.spyOn(discovery, '_findDevelopmentRoot').mockResolvedValue('/mock/package/root')
 
       const root = await discovery._findPackageRoot()
-
       expect(root).toBe('/mock/package/root')
     })
 
-    test('should throw error if package root not found', async () => {
-      jest.spyOn(discovery, '_findPackageJsonWithPrompt').mockResolvedValue(null)
+    test('should find package root in installed environment', async () => {
+      // Mock environment detection and installed root finder
+      jest.spyOn(discovery, '_detectExecutionEnvironment').mockResolvedValue('local')
+      jest.spyOn(discovery, '_findInstalledRoot').mockResolvedValue('/mock/node_modules/dpml-prompt')
 
-      await expect(discovery._findPackageRoot()).rejects.toThrow('Package root with prompt directory not found')
+      const root = await discovery._findPackageRoot()
+      expect(root).toBe('/mock/node_modules/dpml-prompt')
+    })
+
+    test('should use fallback method for unknown environment', async () => {
+      // Mock environment detection and fallback finder
+      jest.spyOn(discovery, '_detectExecutionEnvironment').mockResolvedValue('unknown')
+      jest.spyOn(discovery, '_findFallbackRoot').mockResolvedValue('/mock/fallback/root')
+
+      const root = await discovery._findPackageRoot()
+      expect(root).toBe('/mock/fallback/root')
+    })
+
+    test('should throw error if package root not found', async () => {
+      jest.spyOn(discovery, '_detectExecutionEnvironment').mockResolvedValue('development')
+      jest.spyOn(discovery, '_findDevelopmentRoot').mockResolvedValue(null)
+
+      await expect(discovery._findPackageRoot()).rejects.toThrow('Package root not found')
     })
   })
 

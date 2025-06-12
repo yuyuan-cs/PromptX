@@ -114,6 +114,7 @@ describe('ResourceManager - Unit Tests', () => {
       const result = await manager.loadResource('java-backend-developer')
 
       expect(result).toEqual({
+        success: true,
         content: mockContent,
         path: '/resolved/path/java.role.md',
         reference: '@package://prompt/domain/java-backend-developer/java-backend-developer.role.md'
@@ -144,15 +145,17 @@ describe('ResourceManager - Unit Tests', () => {
     })
 
     test('应该处理资源未找到错误', async () => {
-      await expect(manager.loadResource('non-existent-role'))
-        .rejects.toThrow("Resource 'non-existent-role' not found")
+      const result = await manager.loadResource('non-existent-role')
+      expect(result.success).toBe(false)
+      expect(result.message).toBe("Resource 'non-existent-role' not found")
     })
 
     test('应该处理协议解析失败', async () => {
       jest.spyOn(manager.resolver, 'resolve').mockRejectedValue(new Error('Protocol resolution failed'))
 
-      await expect(manager.loadResource('java-backend-developer'))
-        .rejects.toThrow('Protocol resolution failed')
+      const result = await manager.loadResource('java-backend-developer')
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('Protocol resolution failed')
     })
 
     test('应该处理文件读取失败', async () => {
@@ -161,8 +164,9 @@ describe('ResourceManager - Unit Tests', () => {
         throw new Error('File not found')
       })
 
-      await expect(manager.loadResource('java-backend-developer'))
-        .rejects.toThrow('File not found')
+      const result = await manager.loadResource('java-backend-developer')
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('File not found')
     })
   })
 

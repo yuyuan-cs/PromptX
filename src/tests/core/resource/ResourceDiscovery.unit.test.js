@@ -269,7 +269,7 @@ describe('ResourceDiscovery', () => {
       const discovered = await discovery.discoverResources(scanPaths.filter(Boolean))
 
       // Should only call glob for valid paths
-      expect(glob).toHaveBeenCalledTimes(6) // 2 valid paths × 3 resource types
+      expect(glob).toHaveBeenCalledTimes(8) // 2 valid paths × 4 resource types (role, execution, thought, knowledge)
     })
   })
 
