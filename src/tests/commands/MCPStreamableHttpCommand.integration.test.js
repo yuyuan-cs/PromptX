@@ -14,15 +14,22 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
   afterEach(async () => {
     if (server && server.close) {
       await new Promise((resolve) => {
-        server.close(resolve);
+        server.close(() => {
+          server = null;
+          resolve();
+        });
       });
+    }
+    // 清理命令实例
+    if (command && command.server) {
+      command.server = null;
     }
   });
 
   describe('Streamable HTTP Server', () => {
     it('should start server and respond to health check', async () => {
       // 启动服务器
-      const serverPromise = command.execute({ 
+      server = await command.execute({ 
         transport: 'http', 
         port, 
         host: 'localhost' 
@@ -44,7 +51,7 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
 
     it('should handle MCP initialize request', async () => {
       // 启动服务器
-      await command.execute({ 
+      server = await command.execute({ 
         transport: 'http', 
         port, 
         host: 'localhost' 
@@ -87,7 +94,7 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
 
     it('should handle tools/list request', async () => {
       // 启动服务器
-      await command.execute({ 
+      server = await command.execute({ 
         transport: 'http', 
         port, 
         host: 'localhost' 
@@ -119,7 +126,12 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
         }
       }, JSON.stringify(initRequest));
 
-      const sessionId = JSON.parse(initResponse.data).result?.sessionId;
+      const initResponseData = JSON.parse(initResponse.data);
+      const sessionId = initResponse.headers['mcp-session-id'];
+      
+      if (!sessionId) {
+        throw new Error('Session ID not found in initialization response headers. Headers: ' + JSON.stringify(initResponse.headers) + ', Body: ' + JSON.stringify(initResponseData));
+      }
 
       // 发送工具列表请求
       const toolsRequest = {
@@ -137,7 +149,7 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json, text/event-stream',
-          'mcp-session-id': sessionId || 'test-session'
+          'mcp-session-id': sessionId
         }
       }, JSON.stringify(toolsRequest));
 
@@ -150,7 +162,7 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
 
     it('should handle tool call request', async () => {
       // 启动服务器
-      await command.execute({ 
+      server = await command.execute({ 
         transport: 'http', 
         port, 
         host: 'localhost' 
@@ -158,6 +170,36 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
 
       // 等待服务器启动
       await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 先初始化
+      const initRequest = {
+        jsonrpc: '2.0',
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' }
+        },
+        id: 1
+      };
+
+      const initResponse = await makeHttpRequest({
+        hostname: 'localhost',
+        port,
+        path: '/mcp',
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json, text/event-stream'
+        }
+      }, JSON.stringify(initRequest));
+
+      const initResponseData = JSON.parse(initResponse.data);
+      const sessionId = initResponse.headers['mcp-session-id'];
+      
+      if (!sessionId) {
+        throw new Error('Session ID not found in initialization response headers. Headers: ' + JSON.stringify(initResponse.headers));
+      }
 
       // 发送工具调用请求
       const toolCallRequest = {
@@ -178,7 +220,7 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json, text/event-stream',
-          'mcp-session-id': 'test-session'
+          'mcp-session-id': sessionId
         }
       }, JSON.stringify(toolCallRequest));
 
@@ -213,8 +255,11 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
 
       const request = {
         jsonrpc: '2.0',
-        method: 'tools/list',
-        params: {},
+        method: 'tools/call',
+        params: {
+          name: 'promptx_hello',
+          arguments: {}
+        },
         id: 1
       };
 
@@ -237,6 +282,11 @@ describe('MCPStreamableHttpCommand Integration Tests', () => {
 // Helper function to make HTTP requests
 function makeHttpRequest(options, data = null) {
   return new Promise((resolve, reject) => {
+    // 如果有数据，添加Content-Length header
+    if (data && options.headers) {
+      options.headers['Content-Length'] = Buffer.byteLength(data);
+    }
+    
     const req = http.request(options, (res) => {
       let responseData = '';
       res.on('data', (chunk) => {

@@ -114,14 +114,26 @@ class MCPStreamableHttpCommand {
     this.log('Express 错误处理:', error);
     
     if (!res.headersSent) {
-      res.status(500).json({
-        jsonrpc: '2.0',
-        error: {
-          code: -32603,
-          message: 'Internal server error'
-        },
-        id: null
-      });
+      // 检查是否是JSON解析错误
+      if (error.type === 'entity.parse.failed' || error.message?.includes('JSON')) {
+        res.status(400).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32700,
+            message: 'Parse error: Invalid JSON'
+          },
+          id: null
+        });
+      } else {
+        res.status(500).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32603,
+            message: 'Internal server error'
+          },
+          id: null
+        });
+      }
     }
   }
 
@@ -402,6 +414,7 @@ class MCPStreamableHttpCommand {
         // 新的初始化请求
         transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
+          enableJsonResponse: true,
           onsessioninitialized: (sessionId) => {
             this.log(`会话初始化: ${sessionId}`);
             this.transports[sessionId] = transport;
@@ -425,7 +438,8 @@ class MCPStreamableHttpCommand {
       } else if (!sessionId && this.isStatelessRequest(req.body)) {
         // 无状态请求（如 tools/list, prompts/list 等）
         transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: undefined // 无状态模式
+          sessionIdGenerator: undefined, // 无状态模式
+          enableJsonResponse: true
         });
 
         // 连接到 MCP 服务器
