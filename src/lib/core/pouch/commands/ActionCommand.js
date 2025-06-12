@@ -83,14 +83,10 @@ ${COMMANDS.HELLO}
   async getRoleInfo (roleId) {
     logger.debug(`[ActionCommand] getRoleInfo调用，角色ID: ${roleId}`)
     
-    // 懒加载HelloCommand实例
-    if (!this.helloCommand) {
-      logger.debug(`[ActionCommand] 创建新的HelloCommand实例`)
-      const HelloCommand = require('./HelloCommand')
-      this.helloCommand = new HelloCommand()
-    } else {
-      logger.debug(`[ActionCommand] 复用现有HelloCommand实例`)
-    }
+    // 总是创建新的HelloCommand实例，确保获取最新的角色信息
+    logger.debug(`[ActionCommand] 创建新的HelloCommand实例以获取最新角色信息`)
+    const HelloCommand = require('./HelloCommand')
+    this.helloCommand = new HelloCommand()
 
     const result = await this.helloCommand.getRoleInfo(roleId)
     logger.debug(`[ActionCommand] HelloCommand.getRoleInfo返回:`, result)
