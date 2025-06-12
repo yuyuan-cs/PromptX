@@ -189,25 +189,7 @@ class ResourceManager {
     return await protocol.resolve(parsed.path, parsed.queryParams)
   }
 
-  /**
-   * 强制重新初始化资源发现（清除缓存）
-   * 用于解决新创建角色无法被发现的问题
-   */
-  async forceRefresh() {
-    // 1. 清除ResourceManager的初始化状态
-    this.initialized = false
-    
-    // 2. 清空注册表
-    this.registry.clear()
-    
-    // 3. 清除所有发现器的缓存
-    if (this.discoveryManager && this.discoveryManager.clearCache) {
-      this.discoveryManager.clearCache()
-    }
-    
-    // 4. 重新初始化
-    await this.initializeWithNewArchitecture()
-  }
+
 
   /**
    * 获取所有已注册的协议
@@ -281,6 +263,8 @@ class ResourceManager {
       }
     }
   }
+
+
 }
 
 module.exports = ResourceManager
