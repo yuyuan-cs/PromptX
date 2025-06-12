@@ -120,6 +120,36 @@
 
 > **✨ 配置提示**：完成MCP配置后，您的AI应用将获得上述所有专业功能。无需额外学习，按照界面提示即可享受专业化AI服务。
 
+## 📋 实践案例
+
+### 🎮 Legacy Lands Library
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
+</div>
+
+#### 📖 项目概述
+
+**项目名称：** Legacy Lands Library  
+**项目地址：** https://github.com/LegacyLands/legacy-lands-library  
+**项目简介：** legacy-lands-library 是一个面向现代 Minecraft 服务端插件开发的开发工具库。它旨在为开发者提供一个跨平台、生产就绪的基础设施。
+
+#### 🏢 组织信息
+
+**组织名称：** 遗迹之地制作组 (Legacy Lands)  
+**官方网站：** https://www.legacylands.cn/  
+**组织简介：** 遗迹之地 (Legacy Lands) 是一个专注于构建大型 Minecraft 文明模拟体验的创新团队。参与开源社区，为 Minecraft 服务端插件等领域开发提供优雅、高效且可靠的解决方案。
+
+#### 💡 使用心得
+
+使用 PromptX 的开发体验真的非常不一样。我们团队基于 Claude Code，并结合 PromptX，一位开发者仅三天内就完成了超过一万一千行的高质量 Java 代码。
+
+这套工作流的价值在实际开发中体现得淋漓尽致。PromptX 解决了 AI 使用时的许多痛点，时刻确保代码风格的统一和质量的达标，大大降低了新成员的学习成本。过去那些需要反复沟通、依靠文档传承的最佳实践，现在能够自然而然地融入到每一次代码生成中。
+
+#### 📚 相关资源
+
+**AI集成标准与实践指南：** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHCN.md
+
 ## ⭐ Star增长趋势
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
