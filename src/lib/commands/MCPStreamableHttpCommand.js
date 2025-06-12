@@ -516,19 +516,12 @@ class MCPStreamableHttpCommand {
       const result = await cli.execute(toolName.replace('promptx_', ''), cliArgs, true);
       this.log(`✅ CLI执行完成: ${toolName}`);
       
-      // 返回新 MCP SDK 格式的响应
-      return {
-        content: [
-          {
-            type: 'text',
-            text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
-          }
-        ]
-      };
+      // 使用输出适配器转换为MCP响应格式（与stdio模式保持一致）
+      return this.outputAdapter.convertToMCPFormat(result);
       
     } catch (error) {
       this.log(`❌ 工具调用失败: ${toolName} - ${error.message}`);
-      throw error; // 让 MCP SDK 处理错误
+      return this.outputAdapter.handleError(error);
     }
   }
 
