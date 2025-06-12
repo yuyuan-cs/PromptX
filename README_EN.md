@@ -12,7 +12,11 @@
 
 <br/>
 
+# PromptX
 
+> **AI-native professional capability enhancement system** - Provides specialized roles, memory management, and knowledge systems for AI applications through MCP protocol
+
+[中文](README.md) | **English** | [Issues](https://github.com/Deepractice/PromptX/issues)
 
 ## 🚀 Quick Start - Direct AI Application Integration
 
