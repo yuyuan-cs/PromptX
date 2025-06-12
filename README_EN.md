@@ -12,11 +12,7 @@
 
 <br/>
 
-# PromptX
 
-> **AI-native professional capability enhancement system** - Provides specialized roles, memory management, and knowledge systems for AI applications through MCP protocol
-
-[中文](README.md) | **English** | [Issues](https://github.com/Deepractice/PromptX/issues)
 
 ## 🚀 Quick Start - Direct AI Application Integration
 
@@ -120,6 +116,36 @@ For custom configurations:
 *Step 3: Use `promptx_remember` to save important information for intelligent recall*
 
 > **✨ Configuration Note**: After completing MCP configuration, your AI application will have all the above professional features. No additional learning required - just follow the interface prompts to enjoy professional AI services.
+
+## 📋 Practice Cases
+
+### 🎮 Legacy Lands Library
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
+</div>
+
+#### 📖 Project Overview
+
+**Project Name:** Legacy Lands Library  
+**Project URL:** https://github.com/LegacyLands/legacy-lands-library  
+**Project Description:** legacy-lands-library is a development toolkit library for modern Minecraft server plugin development. It aims to provide developers with a cross-platform, production-ready infrastructure.
+
+#### 🏢 Organization Information
+
+**Organization Name:** Legacy Lands Development Team  
+**Official Website:** https://www.legacylands.cn/  
+**Organization Description:** Legacy Lands is an innovative team focused on building large-scale Minecraft civilization simulation experiences. They participate in the open-source community, providing elegant, efficient, and reliable solutions for Minecraft server plugin development and other domains.
+
+#### 💡 User Experience
+
+The development experience with PromptX is truly different. Our team, using Claude Code combined with PromptX, had one developer complete over eleven thousand lines of high-quality Java code in just three days.
+
+The value of this workflow is fully demonstrated in actual development. PromptX solves many pain points in AI usage, consistently ensuring code style uniformity and quality standards, greatly reducing the learning curve for new team members. Best practices that previously required repeated communication and documentation inheritance can now naturally integrate into every code generation.
+
+#### 📚 Related Resources
+
+**AI Integration Standards and Practice Guide:** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHCN.md
 
 ## ⭐ Star Growth Trend
 
