@@ -1,21 +1,21 @@
 <div align="center">
-  <img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
+  < img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
   <h1>PromptX · AI应用原生专业能力增强系统</h1>
-  <p>通过MCP协议为AI应用提供专业角色、记忆管理和知识体系，一行命令，让任何 AI 客户端秒变专业选手。</p>
+  <p>通过MCP协议为AI应用提供专业角色、记忆管理和知识体系，一行命令，让任何 AI 客户端秒变专业选手。</p >
 
   <!-- Badges -->
   <p>
-    <a href="https://github.com/Deepractice/PromptX/stargazers"><img src="https://img.shields.io/github/stars/Deepractice/PromptX?style=social" alt="Stars"/></a>
-    <a href="https://www.npmjs.com/package/dpml-prompt"><img src="https://img.shields.io/npm/v/dpml-prompt?color=orange&logo=npm" alt="npm version"/></a>
-    <a href="LICENSE"><img src="https://img.shields.io/github/license/Deepractice/PromptX?color=blue" alt="License"/></a>
-    <a href="https://github.com/Deepractice/PromptX/actions"><img src="https://img.shields.io/github/actions/workflow/status/Deepractice/PromptX/ci.yml?label=CI&logo=github" alt="CI Status"/></a>
-  </p>
+    <a href=" ">< img src="https://img.shields.io/github/stars/Deepractice/PromptX?style=social" alt="Stars"/></a >
+    <a href="https://www.npmjs.com/package/dpml-prompt">< img src="https://img.shields.io/npm/v/dpml-prompt?color=orange&logo=npm" alt="npm version"/></a >
+    <a href="LICENSE">< img src="https://img.shields.io/github/license/Deepractice/PromptX?color=blue" alt="License"/></a >
+    <a href="https://github.com/Deepractice/PromptX/actions">< img src="https://img.shields.io/github/actions/workflow/status/Deepractice/PromptX/ci.yml?label=CI&logo=github" alt="CI Status"/></a >
+  </p >
 
   <p>
-    <strong><a href="README.md">中文</a></strong> | 
-    <a href="README_EN.md">English</a> | 
-    <a href="https://github.com/Deepractice/PromptX/issues">Issues</a>
-  </p>
+    <strong><a href="README.md">中文</a ></strong> | 
+    <a href="README_EN.md">English</a > | 
+    <a href="https://github.com/Deepractice/PromptX/issues">Issues</a >
+  </p >
 </div>
 
 ---
@@ -34,11 +34,11 @@ PromptX 能做什么？简单来说，它让你的 AI 助手拥有了"大脑"和
 
 #### **1. 发现并激活专业角色**
 *使用 `promptx_hello` 发现可用角色，再用 `promptx_action` 激活，AI即刻变身领域专家。*
-<img src="assets/role-discovery.png" alt="角色发现与激活" width="80%">
+< img src="assets/role-discovery.png" alt="角色发现与激活" width="80%">
 
 #### **2. 拥有智能记忆**
 *使用 `promptx_remember` 保存关键信息，AI将在后续的交流中主动运用这些知识。*
-<img src="assets/remember.png" alt="记忆功能" width="80%">
+< img src="assets/remember.png" alt="记忆功能" width="80%">
 
 ---
 
@@ -141,28 +141,29 @@ graph TD
 
 ---
 
-### 💡 **支持的 AI 应用**
+### 不知道MCP怎么使用？  [点击查看 MCP幼儿园教程 BiliBili](https://www.bilibili.com/video/BV1HFd6YhErb)
 
-PromptX 兼容所有支持MCP协议的AI应用。
+#### **支持MCP的AI应用**
 
-| AI应用 | 状态 | 特性 |
-|---|---|---|
-| **Claude Desktop** | ✅ 官方支持 | Anthropic官方客户端，MCP原生支持 |
-| **Cursor** | ✅ 支持 | 智能代码编辑器，开发者友好 |
-| **Claude Code** | ✅ 支持 | Anthropic官方CLI工具，命令行AI编程助手 |
-| **Windsurf** | ✅ 支持 | Codeium推出的AI原生IDE |
-| **Cline** | ✅ 支持 | 强大的AI编程助手 |
-| **Augment** | ✅ 支持 | AI原生代码编辑器 |
-| **Trae** | ✅ 支持 | AI驱动的代码生成和重构工具 |
-| **通义灵码** | 🟡 计划支持 | 阿里云推出的AI编程助手 |
-| **Zed** | ✅ 支持 | 高性能代码编辑器 |
-| **Continue** | ✅ 支持 | VS Code AI助手插件 |
-| **Replit Agent** | 🟡 实验支持 | 在线编程环境 |
-| **Jan** | 🟡 开发中 | 隐私优先的本地AI助手 |
-| **Ollama WebUI** | 🟡 社区支持 | 本地大模型界面 |
-| **Open WebUI** | 🟡 社区支持 | 开源AI界面 |
-| **百度 Comate** | 🟡 计划支持 | 百度推出的AI编程助手 |
-| **腾讯 CodeWhisperer** | 🟡 计划支持 | 腾讯云AI编程工具 |
+| AI应用 | 状态 | 配置文件位置 | 特性 |
+|--------|--------|-----------|------|
+| **Claude Desktop** | ✅ 官方支持 | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` | Anthropic官方客户端，MCP原生支持 |
+| **Cursor** | ✅ 支持 | 通过MCP设置面板配置 | 智能代码编辑器，开发者友好 |
+| **Claude Code** | ✅ 支持 | `/home/user/.claude.json` 或者 `~/.claude.json` | Anthropic官方CLI工具，MCP原生支持，命令行AI编程助手 |
+| **Windsurf** | ✅ 支持 | IDE内MCP配置面板 | Codeium推出的AI原生IDE |
+| **Cline** | ✅ 支持 | VS Code插件配置 | 强大的AI编程助手 |
+| **Augment** | ✅ 支持 | 桌面应用配置 | AI原生代码编辑器 |
+| **Trae** | ✅ 支持 | IDE插件配置 | AI驱动的代码生成和重构工具 |
+| **通义灵码** | 🟡 计划支持 | 阿里云IDE插件 | 阿里云推出的AI编程助手 |
+| **Zed** | ✅ 支持 | 配置文件：`~/.config/zed/settings.json` | 高性能代码编辑器 |
+| **Continue** | ✅ 支持 | VS Code插件配置 | VS Code AI助手插件 |
+| **Replit Agent** | 🟡 实验支持 | Replit平台内置 | 在线编程环境 |
+| **Jan** | 🟡 开发中 | 本地AI客户端 | 隐私优先的本地AI助手 |
+| **Ollama WebUI** | 🟡 社区支持 | 第三方MCP适配器 | 本地大模型界面 |
+| **Open WebUI** | 🟡 社区支持 | 插件系统 | 开源AI界面 |
+| **百度 Comate** | 🟡 计划支持 | 百度IDE插件 | 百度推出的AI编程助手 |
+| **腾讯 CodeWhisperer** | 🟡 计划支持 | 腾讯云IDE | 腾讯云AI编程工具 |
+
 
 > **图例说明**：
 > - ✅ **官方支持**：原生或通过官方插件支持MCP协议。
@@ -184,7 +185,7 @@ PromptX 兼容所有支持MCP协议的AI应用。
 ## 📋 **实践案例: Legacy Lands Library**
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
+  < img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
 </div>
 
 **项目简介：** [legacy-lands-library](https://github.com/LegacyLands/legacy-lands-library) 是一个面向现代 Minecraft 服务端插件开发的工具库，由"遗迹之地制作组"开发并应用于实际生产。
@@ -217,12 +218,10 @@ PromptX 兼容所有支持MCP协议的AI应用。
 
 扫码加入技术交流群：
 
-<img src="assets/qrcode.jpg" alt="技术交流群" width="200">
+< img src="assets/qrcode.jpg" alt="技术交流群" width="200">
 
 ---
 
 ## 📄 **许可证**
 
 [MIT License](LICENSE) - 让AI专业能力触手可及
-
-
