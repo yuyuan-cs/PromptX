@@ -44,27 +44,6 @@ PromptX 能做什么？简单来说，它让你的 AI 助手拥有了"大脑"和
 
 ## 🚀 **一键启动，30秒完成配置**
 
-### **第 1 步：找到AI应用的MCP配置文件**
-
-首先，找到您AI应用的配置文件。不知道在哪？没关系，我们为您准备了速查表：
-
-<details>
-<summary>👉 **点击这里，查看主流AI应用的配置文件位置**</summary>
-
-| AI应用 | 状态 | 配置文件位置 |
-|---|---|---|
-| **Claude Desktop** | ✅ 官方支持 | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| **Cursor** | ✅ 支持 | 通过MCP设置面板配置 |
-| **Zed** | ✅ 支持 | 配置文件：`~/.config/zed/settings.json` |
-| **Continue** | ✅ 支持 | VS Code插件配置 |
-| *...以及更多应用* | | *请参考下方的完整列表* |
-
-</details>
-
-<br/>
-
-### **第 2 步：添加 PromptX 配置**
-
 打开配置文件，将下面的 `promptx` 配置代码复制进去。这是最简单的 **零配置模式**，PromptX 会自动为您处理一切。
 
 ```json
@@ -116,11 +95,11 @@ PromptX 作为您和AI应用之间的"专业能力中间件"，通过标准的 [
 
 ```mermaid
 graph TD
-    subgraph Your AI App(Claude, Cursor, etc.)
+    subgraph "Your AI App (Claude, Cursor, etc.)"
         A[👨‍💻 User Interaction]
     end
 
-    subgraph PromptX MCP Server
+    subgraph "PromptX MCP Server"
         C{PromptX Engine}
         D[🎭 Role Library]
         E[🧠 Memory & Knowledge]
@@ -131,7 +110,7 @@ graph TD
     C -- "Accesses" --> D
     C -- "Accesses" --> E
 
-    subgraph Enhanced Response
+    subgraph "Enhanced Response"
         F[✨ Professional Output]
     end
     C --> F
