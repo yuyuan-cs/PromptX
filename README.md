@@ -1,21 +1,21 @@
 <div align="center">
-  < img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
+  <img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
   <h1>PromptX · AI应用原生专业能力增强系统</h1>
-  <p>通过MCP协议为AI应用提供专业角色、记忆管理和知识体系，一行命令，让任何 AI 客户端秒变专业选手。</p >
+  <p>通过MCP协议为AI应用提供专业角色、记忆管理和知识体系，一行命令，让任何 AI 客户端秒变专业选手。</p>
 
   <!-- Badges -->
   <p>
-    <a href=" ">< img src="https://img.shields.io/github/stars/Deepractice/PromptX?style=social" alt="Stars"/></a >
-    <a href="https://www.npmjs.com/package/dpml-prompt">< img src="https://img.shields.io/npm/v/dpml-prompt?color=orange&logo=npm" alt="npm version"/></a >
-    <a href="LICENSE">< img src="https://img.shields.io/github/license/Deepractice/PromptX?color=blue" alt="License"/></a >
-    <a href="https://github.com/Deepractice/PromptX/actions">< img src="https://img.shields.io/github/actions/workflow/status/Deepractice/PromptX/ci.yml?label=CI&logo=github" alt="CI Status"/></a >
-  </p >
+    <a href=" "><img src="https://img.shields.io/github/stars/Deepractice/PromptX?style=social" alt="Stars"/></a>
+    <a href="https://www.npmjs.com/package/dpml-prompt"><img src="https://img.shields.io/npm/v/dpml-prompt?color=orange&logo=npm" alt="npm version"/></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/Deepractice/PromptX?color=blue" alt="License"/></a>
+    <a href="https://github.com/Deepractice/PromptX/actions"><img src="https://img.shields.io/github/actions/workflow/status/Deepractice/PromptX/ci.yml?label=CI&logo=github" alt="CI Status"/></a>
+  </p>
 
   <p>
-    <strong><a href="README.md">中文</a ></strong> | 
-    <a href="README_EN.md">English</a > | 
-    <a href="https://github.com/Deepractice/PromptX/issues">Issues</a >
-  </p >
+    <strong><a href="README.md">中文</a></strong> | 
+    <a href="README_EN.md">English</a> | 
+    <a href="https://github.com/Deepractice/PromptX/issues">Issues</a>
+  </p>
 </div>
 
 ---
@@ -34,11 +34,11 @@ PromptX 能做什么？简单来说，它让你的 AI 助手拥有了"大脑"和
 
 #### **1. 发现并激活专业角色**
 *使用 `promptx_hello` 发现可用角色，再用 `promptx_action` 激活，AI即刻变身领域专家。*
-< img src="assets/role-discovery.png" alt="角色发现与激活" width="80%">
+<img src="assets/role-discovery.png" alt="角色发现与激活" width="80%">
 
 #### **2. 拥有智能记忆**
 *使用 `promptx_remember` 保存关键信息，AI将在后续的交流中主动运用这些知识。*
-< img src="assets/remember.png" alt="记忆功能" width="80%">
+<img src="assets/remember.png" alt="记忆功能" width="80%">
 
 ---
 
@@ -116,7 +116,7 @@ PromptX 作为您和AI应用之间的"专业能力中间件"，通过标准的 [
 
 ```mermaid
 graph TD
-    subgraph Your AI App (Claude, Cursor, etc.)
+    subgraph Your AI App(Claude, Cursor, etc.)
         A[👨‍💻 User Interaction]
     end
 
@@ -185,7 +185,7 @@ graph TD
 ## 📋 **实践案例: Legacy Lands Library**
 
 <div align="center">
-  < img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
+  <img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
 </div>
 
 **项目简介：** [legacy-lands-library](https://github.com/LegacyLands/legacy-lands-library) 是一个面向现代 Minecraft 服务端插件开发的工具库，由"遗迹之地制作组"开发并应用于实际生产。
@@ -218,7 +218,7 @@ graph TD
 
 扫码加入技术交流群：
 
-< img src="assets/qrcode.jpg" alt="技术交流群" width="200">
+<img src="assets/qrcode.jpg" alt="技术交流群" width="200">
 
 ---
 
