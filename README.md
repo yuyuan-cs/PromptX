@@ -167,7 +167,17 @@ graph TD
   <img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
 </div>
 
-**项目简介：** [legacy-lands-library](https://github.com/LegacyLands/legacy-lands-library) 是一个面向现代 Minecraft 服务端插件开发的工具库，由"遗迹之地制作组"开发并应用于实际生产。
+#### 📖 项目概述
+
+**项目名称：** Legacy Lands Library  
+**项目地址：** https://github.com/LegacyLands/legacy-lands-library  
+**项目简介：** legacy-lands-library 是一个面向现代 Minecraft 服务端插件开发的开发工具库。它旨在为开发者提供一个跨平台、生产就绪的基础设施。
+
+#### 🏢 组织信息
+
+**组织名称：** 遗迹之地制作组 (Legacy Lands)  
+**官方网站：** https://www.legacylands.cn/  
+**组织简介：** 遗迹之地 (Legacy Lands) 是一个专注于构建大型 Minecraft 文明模拟体验的创新团队。参与开源社区，为 Minecraft 服务端插件等领域开发提供优雅、高效且可靠的解决方案。
 
 > #### **💡 核心开发者使用心得**
 > "使用 PromptX 的开发体验真的非常不一样。我们团队基于 Claude Code 并结合 PromptX，**一位开发者仅三天内就完成了超过一万一千行的高质量 Java 代码。**
@@ -176,7 +186,6 @@ graph TD
 
 #### **📚 相关资源**
 
-- **项目地址：** https://github.com/LegacyLands/legacy-lands-library
 - **AI集成标准与实践指南：** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHCN.md
 
 ---
