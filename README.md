@@ -195,7 +195,6 @@ graph TD
 
 我们欢迎任何形式的贡献和反馈！
 
-- 📋 **[贡献流程](CONTRIBUTING.md)** - 详细的贡献指南和代码规范
 - 🌿 **[分支策略](docs/BRANCHING.md)** - 分支管理和发布流程  
 - 🚀 **[发布流程](docs/RELEASE.md)** - 版本管理和发布文档
 
