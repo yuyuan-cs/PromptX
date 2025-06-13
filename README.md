@@ -1,14 +1,36 @@
 <div align="center">
   <img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
-  <p><strong>AI应用原生的专业能力增强系统</strong></p>
+  <h1>PromptX · AI应用原生专业能力增强系统</h1>
   <p>通过MCP协议为Claude Desktop等AI应用提供专业角色、记忆管理和知识体系</p>
-  
+  <p>一行命令，让任何 AI 客户端秒变专业选手</p>
+
+  <!-- Badges -->
+  <p>
+    <a href="https://github.com/Deepractice/PromptX/stargazers"><img src="https://img.shields.io/github/stars/Deepractice/PromptX?style=social" alt="Stars"/></a>
+    <a href="https://www.npmjs.com/package/dpml-prompt"><img src="https://img.shields.io/npm/v/dpml-prompt?color=orange&logo=npm" alt="npm version"/></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/Deepractice/PromptX?color=blue" alt="License"/></a>
+    <a href="https://github.com/Deepractice/PromptX/actions"><img src="https://img.shields.io/github/actions/workflow/status/Deepractice/PromptX/ci.yml?label=CI&logo=github" alt="CI Status"/></a>
+  </p>
+
   <p>
     <strong><a href="README.md">中文</a></strong> | 
     <a href="README_EN.md">English</a> | 
     <a href="https://github.com/Deepractice/PromptX/issues">Issues</a>
   </p>
 </div>
+
+<details>
+<summary>📖 快速导航</summary>
+
+- [🚀 一键启动](#-一键启动---ai应用直连)
+- [🔌 MCP 标准化接入](#-mcp标准化接入)
+- [💡 支持的 AI 应用](#支持mcp的ai应用)
+- [📋 实践案例](#-实践案例)
+- [⭐ Star 趋势](#-star增长趋势)
+- [🤝 贡献指南](#贡献指南)
+- [📄 License](#-许可证)
+
+</details>
 
 <br/>
 
