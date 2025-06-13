@@ -264,19 +264,19 @@ class MCPStreamableHttpCommand {
     const { z } = require('zod');
     
     // 注册 promptx_init 工具
-    server.tool('promptx_init', '🏗️ [环境初始化锦囊] 初始化PromptX工作环境，创建配置目录，准备专业能力增强系统', {}, async (args, extra) => {
+    server.tool('promptx_init', '🎯 [AI专业化启动器] ⚡ 零配置AI专家化系统 - 30秒内让AI获得任何领域的专家思维和技能组合，瞬间激活专业能力增强框架', {}, async (args, extra) => {
       this.log('🔧 调用工具: promptx_init');
       return await this.callTool('promptx_init', {});
     });
 
     // 注册 promptx_hello 工具
-    server.tool('promptx_hello', '👋 [角色发现锦囊] 让AI浏览专业角色库（产品经理、Java开发者、设计师等），当需要专业能力时使用，引导角色激活', {}, async (args, extra) => {
+    server.tool('promptx_hello', '🎭 [专家角色发现雷达] 🔥 当需要特定专业能力时立即使用 - 发现60+预制专家角色库，包括产品经理、Java开发者、设计师等，一键查看所有可激活的AI专业身份', {}, async (args, extra) => {
       this.log('🔧 调用工具: promptx_hello');
       return await this.callTool('promptx_hello', {});
     });
 
     // 注册 promptx_action 工具
-    server.tool('promptx_action', '⚡ [专家变身锦囊] 让AI获得指定专业角色的思维模式和核心能力，即时变身领域专家，开始提供专业服务', {
+    server.tool('promptx_action', '⚡ [AI专业能力核心引擎] 🚀 每当需要专业服务时必备 - 瞬间激活角色的完整思维体系和技能矩阵，3秒内让AI变身领域专家并自动加载相关记忆，立即可用', {
       role: z.string().describe('要激活的角色ID，如：copywriter, product-manager, java-backend-developer')
     }, async (args, extra) => {
       this.log(`🔧 调用工具: promptx_action 参数: ${JSON.stringify(args)}`);
@@ -284,7 +284,7 @@ class MCPStreamableHttpCommand {
     });
 
     // 注册 promptx_learn 工具
-    server.tool('promptx_learn', '📚 [专业深化锦囊] 让AI学习特定领域的思维模式和执行模式（如敏捷开发、产品设计），强化当前专家角色能力', {
+    server.tool('promptx_learn', '🧠 [革命性智能学习引擎] 💎 突破传统AI学习边界 - 支持@引用语义渲染的DPML协议，让AI瞬间掌握思维模式、执行技能和专业知识，学习一次永久获得', {
       resource: z.string().describe('资源URL，支持格式：thought://creativity, execution://best-practice, knowledge://scrum')
     }, async (args, extra) => {
       this.log(`🔧 调用工具: promptx_learn 参数: ${JSON.stringify(args)}`);
@@ -292,7 +292,7 @@ class MCPStreamableHttpCommand {
     });
 
     // 注册 promptx_recall 工具
-    server.tool('promptx_recall', '🔍 [经验检索锦囊] 让AI从专业记忆库中检索相关经验和最佳实践，当需要基于历史经验工作时使用', {
+    server.tool('promptx_recall', '🔍 [专业记忆检索雷达] ⚡ AI工作必备的智能大脑 - 从专业记忆库中秒速检索相关经验和最佳实践，当需要基于历史项目经验或专业知识工作时立即使用', {
       query: z.string().optional().describe('检索关键词或描述，可选参数，不提供则返回所有记忆')
     }, async (args, extra) => {
       this.log(`🔧 调用工具: promptx_recall 参数: ${JSON.stringify(args)}`);
@@ -300,7 +300,7 @@ class MCPStreamableHttpCommand {
     });
 
     // 注册 promptx_remember 工具
-    server.tool('promptx_remember', '💾 [知识积累锦囊] 让AI将重要经验和专业知识保存到记忆库，构建可复用的专业知识体系，供未来检索应用', {
+    server.tool('promptx_remember', '💾 [AI长期记忆增强器] 🧠 构建AI专业知识基因库 - 将重要经验、最佳实践、项目解决方案永久内化到AI记忆体系，支持跨会话记忆保持和智能检索', {
       content: z.string().describe('要保存的重要信息或经验'),
       tags: z.string().optional().describe('自定义标签，用空格分隔，可选')
     }, async (args, extra) => {
@@ -316,7 +316,7 @@ class MCPStreamableHttpCommand {
     return [
       {
         name: 'promptx_init',
-        description: '🏗️ [环境初始化锦囊] 初始化PromptX工作环境，创建配置目录，准备专业能力增强系统',
+        description: '🎯 [AI专业化启动器] ⚡ 零配置AI专家化系统 - 30秒内让AI获得任何领域的专家思维和技能组合，瞬间激活专业能力增强框架',
         inputSchema: {
           type: 'object',
           properties: {}
@@ -324,7 +324,7 @@ class MCPStreamableHttpCommand {
       },
       {
         name: 'promptx_hello',
-        description: '👋 [角色发现锦囊] 让AI浏览专业角色库（产品经理、Java开发者、设计师等），当需要专业能力时使用，引导角色激活',
+        description: '🎭 [专家角色发现雷达] 🔥 当需要特定专业能力时立即使用 - 发现60+预制专家角色库，包括产品经理、Java开发者、设计师等，一键查看所有可激活的AI专业身份',
         inputSchema: {
           type: 'object',
           properties: {}
@@ -332,7 +332,7 @@ class MCPStreamableHttpCommand {
       },
       {
         name: 'promptx_action',
-        description: '⚡ [专家变身锦囊] 让AI获得指定专业角色的思维模式和核心能力，即时变身领域专家，开始提供专业服务',
+        description: '⚡ [AI专业能力核心引擎] 🚀 每当需要专业服务时必备 - 瞬间激活角色的完整思维体系和技能矩阵，3秒内让AI变身领域专家并自动加载相关记忆，立即可用',
         inputSchema: {
           type: 'object',
           properties: {
@@ -346,7 +346,7 @@ class MCPStreamableHttpCommand {
       },
       {
         name: 'promptx_learn',
-        description: '📚 [专业深化锦囊] 让AI学习特定领域的思维模式和执行模式（如敏捷开发、产品设计），强化当前专家角色能力',
+        description: '🧠 [革命性智能学习引擎] 💎 突破传统AI学习边界 - 支持@引用语义渲染的DPML协议，让AI瞬间掌握思维模式、执行技能和专业知识，学习一次永久获得',
         inputSchema: {
           type: 'object',
           properties: {
@@ -360,7 +360,7 @@ class MCPStreamableHttpCommand {
       },
       {
         name: 'promptx_recall',
-        description: '🔍 [经验检索锦囊] 让AI从专业记忆库中检索相关经验和最佳实践，当需要基于历史经验工作时使用',
+        description: '🔍 [专业记忆检索雷达] ⚡ AI工作必备的智能大脑 - 从专业记忆库中秒速检索相关经验和最佳实践，当需要基于历史项目经验或专业知识工作时立即使用',
         inputSchema: {
           type: 'object',
           properties: {
@@ -378,7 +378,7 @@ class MCPStreamableHttpCommand {
       },
       {
         name: 'promptx_remember',
-        description: '💾 [知识积累锦囊] 让AI将重要经验和专业知识保存到记忆库，构建可复用的专业知识体系，供未来检索应用',
+        description: '💾 [AI长期记忆增强器] 🧠 构建AI专业知识基因库 - 将重要经验、最佳实践、项目解决方案永久内化到AI记忆体系，支持跨会话记忆保持和智能检索',
         inputSchema: {
           type: 'object',
           properties: {
