@@ -1,8 +1,8 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
-const { COMMANDS, buildCommand } = require('../../../../constants')
-const ResourceManager = require('../../resource/resourceManager')
+const { COMMANDS } = require('../../../../constants')
+const { getGlobalResourceManager } = require('../../resource')
 const DPMLContentParser = require('../../resource/DPMLContentParser')
 const SemanticRenderer = require('../../resource/SemanticRenderer')
 const logger = require('../../../utils/logger')
@@ -16,7 +16,8 @@ class ActionCommand extends BasePouchCommand {
     super()
     // 获取HelloCommand的角色注册表
     this.helloCommand = null
-    this.resourceManager = new ResourceManager()
+    // 使用全局单例 ResourceManager
+    this.resourceManager = getGlobalResourceManager()
     this.dpmlParser = new DPMLContentParser()
     this.semanticRenderer = new SemanticRenderer()
   }
@@ -32,18 +33,19 @@ class ActionCommand extends BasePouchCommand {
       return `❌ 请指定要激活的角色ID
 
 🔍 使用方法：
-\`\`\`bash
-${buildCommand.action('<角色ID>')}
-\`\`\`
+通过 MCP PromptX 工具的 action 功能激活角色
 
 💡 查看可用角色：
-\`\`\`bash
-${COMMANDS.HELLO}
-\`\`\``
+使用 MCP PromptX 工具的 hello 功能`
     }
 
     try {
       logger.debug(`[ActionCommand] 开始激活角色: ${roleId}`)
+      
+      // 0. 初始化 ResourceManager（确保引用解析正常工作）
+      if (!this.resourceManager.initialized) {
+        await this.resourceManager.initializeWithNewArchitecture()
+      }
       
       // 1. 获取角色信息
       const roleInfo = await this.getRoleInfo(roleId)
@@ -53,10 +55,7 @@ ${COMMANDS.HELLO}
         logger.warn(`[ActionCommand] 角色 "${roleId}" 不存在！`)
         return `❌ 角色 "${roleId}" 不存在！
 
-🔍 请使用以下命令查看可用角色：
-\`\`\`bash
-${COMMANDS.HELLO}
-\`\`\``
+🔍 请使用 MCP PromptX 工具的 hello 功能查看可用角色`
       }
 
       // 2. 分析角色文件，提取依赖
@@ -65,7 +64,7 @@ ${COMMANDS.HELLO}
       // 3. 生成学习计划并直接加载所有内容
       return await this.generateLearningPlan(roleInfo.id, dependencies)
     } catch (error) {
-      console.error('Action command error:', error)
+      logger.error('Action command error:', error)
       return `❌ 激活角色 "${roleId}" 时发生错误。
 
 🔍 可能的原因：
@@ -73,7 +72,7 @@ ${COMMANDS.HELLO}
 - 权限不足
 - 系统资源问题
 
-💡 请使用 \`${COMMANDS.HELLO}\` 查看可用角色列表。`
+💡 请使用 MCP PromptX 工具的 hello 功能查看可用角色列表。`
     }
   }
 
@@ -158,7 +157,7 @@ ${COMMANDS.HELLO}
         }
       }
     } catch (error) {
-      console.error('Error analyzing role dependencies:', error)
+      logger.error('Error analyzing role dependencies:', error)
       // 如果分析失败，返回基础结构
       return {
         thoughts: [],
@@ -408,11 +407,11 @@ ${recallContent}
 ⚠️ **重要**: recall已自动执行完成，以上记忆将作为角色工作的重要参考依据
 `
     } catch (error) {
-      console.error('Auto recall error:', error)
+      logger.error('Auto recall error:', error)
       return `---
 ## 🧠 自动记忆检索结果
 ⚠️ **记忆检索出现问题**: ${error.message}
-💡 **建议**: 可手动执行 \`${buildCommand.recall()}\` 来检索相关记忆
+💡 **建议**: 可使用 MCP PromptX 工具的 recall 功能来检索相关记忆
 `
     }
   }
@@ -425,12 +424,12 @@ ${recallContent}
         currentState: 'action_awaiting_role',
         availableTransitions: ['hello'],
         nextActions: [
-          {
-            name: '查看可用角色',
-            description: '返回角色发现页面',
-            command: COMMANDS.HELLO,
-            priority: 'high'
-          }
+                  {
+          name: '查看可用角色',
+          description: '返回角色发现页面',
+          method: 'MCP PromptX hello 工具',
+          priority: 'high'
+        }
         ],
         metadata: {
           message: '需要指定角色ID'
@@ -445,25 +444,25 @@ ${recallContent}
         {
           name: '开始专业服务',
           description: '角色已激活并完成记忆检索，可直接提供专业服务',
-          command: '开始对话',
+          method: '开始对话',
           priority: 'high'
         },
         {
           name: '返回角色选择',
           description: '选择其他角色',
-          command: COMMANDS.HELLO,
+          method: 'MCP PromptX hello 工具',
           priority: 'medium'
         },
         {
           name: '记忆新知识',
           description: '内化更多专业知识',
-          command: buildCommand.remember('<新知识>'),
+          method: 'MCP PromptX remember 工具',
           priority: 'low'
         },
         {
           name: '学习新资源',
           description: '学习相关专业资源',
-          command: buildCommand.learn('<protocol>://<resource>'),
+          method: 'MCP PromptX learn 工具',
           priority: 'low'
         }
       ],

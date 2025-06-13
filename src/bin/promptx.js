@@ -3,6 +3,7 @@
 const { Command } = require('commander')
 const chalk = require('chalk')
 const packageJson = require('../../package.json')
+const logger = require('../lib/utils/logger')
 
 // 导入锦囊框架
 const { cli } = require('../lib/core/pouch')
@@ -92,14 +93,14 @@ program
           cors: options.cors
         };
         
-        console.error(chalk.green(`🚀 启动 ${options.transport.toUpperCase()} MCP Server 在 ${options.host}:${options.port}...`));
+        logger.info(chalk.green(`🚀 启动 ${options.transport.toUpperCase()} MCP Server 在 ${options.host}:${options.port}...`));
         await mcpHttpServer.execute(serverOptions);
       } else {
         throw new Error(`不支持的传输类型: ${options.transport}。支持的类型: stdio, http, sse`);
       }
     } catch (error) {
       // 输出到stderr，不污染MCP的stdout通信
-      console.error(chalk.red(`❌ MCP Server 启动失败: ${error.message}`));
+      logger.error(chalk.red(`❌ MCP Server 启动失败: ${error.message}`));
       process.exit(1);
     }
   })
@@ -174,8 +175,8 @@ ${chalk.cyan('更多信息:')}
 
 // 处理未知命令
 program.on('command:*', () => {
-  console.error(chalk.red(`错误: 未知命令 '${program.args.join(' ')}'`))
-  console.log('')
+  logger.error(chalk.red(`错误: 未知命令 '${program.args.join(' ')}'`))
+  logger.info('')
   program.help()
 })
 

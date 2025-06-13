@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const logger = require('./logger');
 
 /**
  * 执行上下文检测工具
@@ -37,7 +38,7 @@ function getMCPWorkingDirectory() {
     // 取第一个工作区路径（多工作区情况）
     const firstPath = workspacePaths.split(path.delimiter)[0];
     if (firstPath && isValidDirectory(firstPath)) {
-      console.error(`[执行上下文] 使用WORKSPACE_FOLDER_PATHS: ${firstPath}`);
+      logger.info(`[执行上下文] 使用WORKSPACE_FOLDER_PATHS: ${firstPath}`);
       return firstPath;
     }
   }
@@ -45,27 +46,27 @@ function getMCPWorkingDirectory() {
   // 策略2：PROMPTX_WORKSPACE（PromptX专用环境变量）
   const promptxWorkspace = process.env.PROMPTX_WORKSPACE;
   if (promptxWorkspace && isValidDirectory(promptxWorkspace)) {
-    console.error(`[执行上下文] 使用PROMPTX_WORKSPACE: ${promptxWorkspace}`);
+    logger.info(`[执行上下文] 使用PROMPTX_WORKSPACE: ${promptxWorkspace}`);
     return promptxWorkspace;
   }
 
   // 策略3：PWD环境变量（某些情况下可用）
   const pwd = process.env.PWD;
   if (pwd && isValidDirectory(pwd) && pwd !== process.cwd()) {
-    console.error(`[执行上下文] 使用PWD环境变量: ${pwd}`);
+    logger.info(`[执行上下文] 使用PWD环境变量: ${pwd}`);
     return pwd;
   }
 
   // 策略4：项目根目录智能推测（向上查找项目标识）
   const projectRoot = findProjectRoot(process.cwd());
   if (projectRoot && projectRoot !== process.cwd()) {
-    console.error(`[执行上下文] 智能推测项目根目录: ${projectRoot}`);
+    logger.info(`[执行上下文] 智能推测项目根目录: ${projectRoot}`);
     return projectRoot;
   }
 
   // 策略5：回退到process.cwd()
-  console.error(`[执行上下文] 回退到process.cwd(): ${process.cwd()}`);
-  console.error(`[执行上下文] 提示：建议在MCP配置中添加 "env": {"PROMPTX_WORKSPACE": "你的项目目录"}`);
+  logger.warn(`[执行上下文] 回退到process.cwd(): ${process.cwd()}`);
+  logger.warn(`[执行上下文] 提示：建议在MCP配置中添加 "env": {"PROMPTX_WORKSPACE": "你的项目目录"}`)
   return process.cwd();
 }
 

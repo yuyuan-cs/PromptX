@@ -1,5 +1,6 @@
 const PackageDiscovery = require('./PackageDiscovery')
 const ProjectDiscovery = require('./ProjectDiscovery')
+const logger = require('../../../utils/logger')
 
 /**
  * DiscoveryManager - 资源发现管理器
@@ -61,7 +62,7 @@ class DiscoveryManager {
         const resources = await discovery.discover()
         return Array.isArray(resources) ? resources : []
       } catch (error) {
-        console.warn(`[DiscoveryManager] ${discovery.source} discovery failed: ${error.message}`)
+        logger.warn(`[DiscoveryManager] ${discovery.source} discovery failed: ${error.message}`)
         return []
       }
     })
@@ -75,7 +76,7 @@ class DiscoveryManager {
       if (result.status === 'fulfilled') {
         allResources.push(...result.value)
       } else {
-        console.warn(`[DiscoveryManager] ${this.discoveries[index].source} discovery rejected: ${result.reason}`)
+        logger.warn(`[DiscoveryManager] ${this.discoveries[index].source} discovery rejected: ${result.reason}`)
       }
     })
 
@@ -88,13 +89,18 @@ class DiscoveryManager {
    * @returns {Promise<void>}
    */
   async discoverAndDirectRegister(registry) {
+    logger.info(`[DiscoveryManager] 🚀 开始直接注册，发现器数量: ${this.discoveries.length}`)
+    
     // 按优先级顺序直接注册，让高优先级的覆盖低优先级的
     for (const discovery of this.discoveries) {
       try {
+        logger.debug(`[DiscoveryManager] 🔍 处理发现器: ${discovery.source} (优先级: ${discovery.priority})`)
+        
         if (typeof discovery.discoverRegistry === 'function') {
           // 使用新的discoverRegistry方法
           const discoveredRegistry = await discovery.discoverRegistry()
           if (discoveredRegistry instanceof Map) {
+            logger.debug(`[DiscoveryManager] ✅ ${discovery.source} 发现 ${discoveredRegistry.size} 个资源`)
             for (const [resourceId, reference] of discoveredRegistry) {
               registry.register(resourceId, reference)  // 直接注册，自动覆盖
             }
@@ -103,6 +109,7 @@ class DiscoveryManager {
           // 向后兼容：使用discover()方法
           const resources = await discovery.discover()
           if (Array.isArray(resources)) {
+            logger.debug(`[DiscoveryManager] ✅ ${discovery.source} 发现 ${resources.length} 个资源 (兼容模式)`)
             resources.forEach(resource => {
               if (resource.id && resource.reference) {
                 registry.register(resource.id, resource.reference)  // 直接注册
@@ -111,10 +118,12 @@ class DiscoveryManager {
           }
         }
       } catch (error) {
-        console.warn(`[DiscoveryManager] ${discovery.source} direct registration failed: ${error.message}`)
+        logger.warn(`[DiscoveryManager] ❌ ${discovery.source} direct registration failed: ${error.message}`)
         // 单个发现器失败不影响其他发现器
       }
     }
+    
+    logger.info(`[DiscoveryManager] 🎯 注册完成，注册表总资源数: ${registry.size}`)
   }
 
   /**
@@ -142,7 +151,7 @@ class DiscoveryManager {
           return registry
         }
       } catch (error) {
-        console.warn(`[DiscoveryManager] ${discovery.source} registry discovery failed: ${error.message}`)
+        logger.warn(`[DiscoveryManager] ${discovery.source} registry discovery failed: ${error.message}`)
         return new Map()
       }
     })
@@ -156,7 +165,7 @@ class DiscoveryManager {
       if (result.status === 'fulfilled') {
         registries.push(result.value)
       } else {
-        console.warn(`[DiscoveryManager] ${this.discoveries[index].source} registry discovery rejected: ${result.reason}`)
+        logger.warn(`[DiscoveryManager] ${this.discoveries[index].source} registry discovery rejected: ${result.reason}`)
         registries.push(new Map())
       }
     })
@@ -245,7 +254,7 @@ class DiscoveryManager {
   }
 
   /**
-   * 合并多个注册表
+   * 合并多个注册表（支持分层级资源管理）
    * @param {Array<Map>} registries - 注册表数组，按优先级排序（数字越小优先级越高）
    * @returns {Map} 合并后的注册表
    * @private
@@ -253,19 +262,65 @@ class DiscoveryManager {
   _mergeRegistries(registries) {
     const mergedRegistry = new Map()
 
-    // 从后往前合并：先添加低优先级的，再让高优先级的覆盖
-    // registries按优先级升序排列 [high(0), med(1), low(2)]
-    // 我们从低优先级开始，让高优先级的覆盖
+    // 第一阶段：收集所有资源（包括带前缀的）
     for (let i = registries.length - 1; i >= 0; i--) {
       const registry = registries[i]
       if (registry instanceof Map) {
         for (const [key, value] of registry) {
-          mergedRegistry.set(key, value) // 直接设置，让高优先级的最终覆盖
+          mergedRegistry.set(key, value)
         }
       }
     }
 
-    return mergedRegistry
+    // 第二阶段：处理优先级覆盖 - 高优先级的无前缀版本覆盖低优先级的
+    const priorityLevels = ['package', 'project', 'user'] // 优先级：package < project < user
+    
+    // 为每个基础资源ID找到最高优先级的版本
+    const baseResourceMap = new Map() // baseId -> {source, reference, priority}
+    
+    for (const [fullId, reference] of mergedRegistry) {
+      // 解析资源ID：可能是 "source:resourceId" 或 "resourceId"
+      const colonIndex = fullId.indexOf(':')
+      let source = 'unknown'
+      let baseId = fullId
+      
+      if (colonIndex !== -1) {
+        const possibleSource = fullId.substring(0, colonIndex)
+        if (priorityLevels.includes(possibleSource)) {
+          source = possibleSource
+          baseId = fullId.substring(colonIndex + 1)
+        }
+      }
+      
+      const currentPriority = priorityLevels.indexOf(source)
+      const existing = baseResourceMap.get(baseId)
+      
+      if (!existing || currentPriority > existing.priority) {
+        baseResourceMap.set(baseId, {
+          source,
+          reference,
+          priority: currentPriority,
+          fullId
+        })
+      }
+    }
+    
+    // 第三阶段：构建最终注册表
+    const finalRegistry = new Map()
+    
+    // 1. 添加所有带前缀的资源（用于明确指定级别）
+    for (const [key, value] of mergedRegistry) {
+      if (key.includes(':') && priorityLevels.includes(key.split(':')[0])) {
+        finalRegistry.set(key, value)
+      }
+    }
+    
+    // 2. 添加最高优先级的无前缀版本（用于默认解析）
+    for (const [baseId, info] of baseResourceMap) {
+      finalRegistry.set(baseId, info.reference)
+    }
+
+    return finalRegistry
   }
 
   /**

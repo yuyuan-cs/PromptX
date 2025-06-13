@@ -1,5 +1,5 @@
 const BasePouchCommand = require('../BasePouchCommand')
-const { getGlobalResourceManager } = require('../../resource')
+const ResourceManager = require('../../resource/resourceManager')
 const DPMLContentParser = require('../../resource/DPMLContentParser')
 const SemanticRenderer = require('../../resource/SemanticRenderer')
 const { COMMANDS } = require('../../../../constants')
@@ -12,8 +12,7 @@ const { COMMANDS } = require('../../../../constants')
 class LearnCommand extends BasePouchCommand {
   constructor () {
     super()
-    // 使用全局单例 ResourceManager
-    this.resourceManager = getGlobalResourceManager()
+    this.resourceManager = new ResourceManager()
     this.dpmlParser = new DPMLContentParser()
     this.semanticRenderer = new SemanticRenderer()
   }
@@ -162,8 +161,9 @@ ${errorMessage}
     return `🎓 **Learn锦囊 - 智能学习系统**
 
 ## 📖 基本用法
-通过 MCP PromptX learn 工具学习资源：
-\`<protocol>://<resource-id>\`
+\`\`\`bash
+promptx learn <protocol>://<resource-id>
+\`\`\`
 
 ## 🎯 支持的协议
 
@@ -179,9 +179,9 @@ ${errorMessage}
 
 ## 📝 使用示例
 通过 MCP PromptX learn 工具学习各种资源：
-- 学习执行技能: \`execution://deal-at-reference\`
-- 学习思维模式: \`thought://prompt-developer\`  
-- 学习角色人格: \`personality://video-copywriter\`
+- 学习执行技能: `execution://deal-at-reference`
+- 学习思维模式: `thought://prompt-developer`  
+- 学习角色人格: `personality://video-copywriter`
 
 ## 🔍 发现可学习资源
 - 使用 MCP PromptX action 工具查看角色需要的所有资源
@@ -206,7 +206,7 @@ ${errorMessage}
           {
             name: '查看可用角色',
             description: '返回角色选择页面',
-            method: 'MCP PromptX hello 工具',
+            command: COMMANDS.HELLO,
             priority: 'high'
           },
           {
@@ -228,7 +228,7 @@ ${errorMessage}
           {
             name: '查看使用帮助',
             description: '重新学习命令使用方法',
-            method: 'MCP PromptX learn 工具',
+            command: COMMANDS.LEARN,
             priority: 'high'
           }
         ]
@@ -244,25 +244,25 @@ ${errorMessage}
         {
           name: '继续学习',
           description: '学习其他资源',
-          method: 'MCP PromptX learn 工具',
+          command: buildCommand.learn('<protocol>://<resource-id>'),
           priority: 'medium'
         },
         {
           name: '应用记忆',
           description: '检索相关经验',
-          method: 'MCP PromptX recall 工具',
+          command: COMMANDS.RECALL,
           priority: 'medium'
         },
         {
           name: '激活角色',
           description: '激活完整角色能力',
-          method: 'MCP PromptX action 工具',
+          command: buildCommand.action('<role-id>'),
           priority: 'high'
         },
         {
           name: '查看角色列表',
           description: '选择其他角色',
-          method: 'MCP PromptX hello 工具',
+          command: COMMANDS.HELLO,
           priority: 'low'
         }
       ],

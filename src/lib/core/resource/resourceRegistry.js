@@ -1,3 +1,5 @@
+const logger = require('../../utils/logger')
+
 /**
  * 资源注册表
  * 新架构中用于存储动态发现的资源映射关系
@@ -70,27 +72,27 @@ class ResourceRegistry {
    * @param {string} title - 可选标题
    */
   printAll(title = '注册表资源清单') {
-    console.log(`\n📋 ${title}`)
-    console.log('='.repeat(50))
+    logger.info(`\n📋 ${title}`)
+    logger.info('='.repeat(50))
     
     if (this.size === 0) {
-      console.log('🔍 注册表为空')
+      logger.info('🔍 注册表为空')
       return
     }
 
-    console.log(`📊 总计: ${this.size} 个资源\n`)
+    logger.info(`📊 总计: ${this.size} 个资源\n`)
 
     // 按协议分组显示
     const groupedResources = this.groupByProtocol()
     
     for (const [protocol, resources] of Object.entries(groupedResources)) {
-      console.log(`🔖 ${protocol.toUpperCase()} 协议 (${resources.length}个):`)
+      logger.info(`🔖 ${protocol.toUpperCase()} 协议 (${resources.length}个):`)
       resources.forEach(({ id, reference }) => {
         const resourceName = id.split(':')[1] || id
-        console.log(`   • ${resourceName}`)
-        console.log(`     └─ ${reference}`)
+        logger.info(`   • ${resourceName}`)
+        logger.info(`     └─ ${reference}`)
       })
-      console.log('')
+      logger.info('')
     }
   }
 

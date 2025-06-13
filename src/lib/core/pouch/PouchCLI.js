@@ -2,6 +2,7 @@ const PouchStateMachine = require('./state/PouchStateMachine')
 const PouchRegistry = require('./PouchRegistry')
 const commands = require('./commands')
 const { COMMANDS } = require('../../../constants')
+const logger = require('../../utils/logger')
 
 /**
  * 锦囊CLI主入口
@@ -70,9 +71,9 @@ class PouchCLI {
       if (!silent) {
         // 如果结果有 toString 方法，打印人类可读格式
         if (result && result.toString && typeof result.toString === 'function') {
-          console.log(result.toString())
+          logger.log(result.toString())
         } else {
-          console.log(JSON.stringify(result, null, 2))
+          logger.log(JSON.stringify(result, null, 2))
         }
       }
 
@@ -80,7 +81,7 @@ class PouchCLI {
     } catch (error) {
       // 错误输出始终使用stderr，不干扰MCP协议
       if (!silent) {
-        console.error(`执行命令出错: ${error.message}`)
+        logger.error(`执行命令出错: ${error.message}`)
       }
       throw error
     }
@@ -162,8 +163,8 @@ class PouchCLI {
    * 运行交互式CLI
    */
   async runInteractive () {
-    console.log('🎯 欢迎使用 PromptX 锦囊系统！')
-    console.log('输入 "help" 查看帮助，"exit" 退出\n')
+    logger.info('🎯 欢迎使用 PromptX 锦囊系统！')
+    logger.info('输入 "help" 查看帮助，"exit" 退出\n')
 
     const readline = require('readline')
     const rl = readline.createInterface({
@@ -178,21 +179,21 @@ class PouchCLI {
       const input = line.trim()
 
       if (input === 'exit' || input === 'quit') {
-        console.log('再见！')
+        logger.info('再见！')
         rl.close()
         return
       }
 
       if (input === 'help') {
-        console.log(this.getHelp())
+        logger.info(this.getHelp())
       } else if (input === 'status') {
-        console.log(JSON.stringify(this.getStatus(), null, 2))
+        logger.info(JSON.stringify(this.getStatus(), null, 2))
       } else if (input) {
         const { command, args } = this.parseCommand(input)
         try {
           await this.execute(command, args)
         } catch (error) {
-          console.error(error.message)
+          logger.error(error.message)
         }
       }
 

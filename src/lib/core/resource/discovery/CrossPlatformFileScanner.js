@@ -1,5 +1,6 @@
 const fs = require('fs-extra')
 const path = require('path')
+const logger = require('../../../utils/logger')
 
 /**
  * CrossPlatformFileScanner - 跨平台文件扫描器
@@ -111,7 +112,7 @@ class CrossPlatformFileScanner {
       }
     } catch (error) {
       // 忽略权限错误或其他文件系统错误
-      console.warn(`[CrossPlatformFileScanner] Failed to scan directory ${currentDir}: ${error.message}`)
+      logger.warn(`[CrossPlatformFileScanner] Failed to scan directory ${currentDir}: ${error.message}`)
     }
   }
 

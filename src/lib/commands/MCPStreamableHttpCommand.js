@@ -6,6 +6,7 @@ const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js'
 const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../adapters/MCPOutputAdapter');
+const logger = require('../utils/logger');
 
 /**
  * MCP Streamable HTTP Server Command
@@ -579,7 +580,7 @@ class MCPStreamableHttpCommand {
    */
   log(message, ...args) {
     if (this.debug) {
-      console.error(`[MCP DEBUG] ${message}`, ...args);
+      logger.debug(`[MCP DEBUG] ${message}`, ...args);
     }
   }
 

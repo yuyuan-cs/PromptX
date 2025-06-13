@@ -1,8 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
-const { buildCommand } = require('../../../../constants')
-const ResourceManager = require('../../resource/resourceManager')
+const { getGlobalResourceManager } = require('../../resource')
 const logger = require('../../../utils/logger')
 
 /**
@@ -12,8 +11,8 @@ const logger = require('../../../utils/logger')
 class HelloCommand extends BasePouchCommand {
   constructor () {
     super()
-    // 使用新的ResourceManager架构替代SimplifiedRoleDiscovery
-    this.resourceManager = new ResourceManager()
+    // 使用全局单例 ResourceManager
+    this.resourceManager = getGlobalResourceManager()
   }
 
   getPurpose () {
@@ -22,39 +21,80 @@ class HelloCommand extends BasePouchCommand {
 
   /**
    * 动态加载角色注册表 - 使用新的ResourceManager架构
-   * 移除缓存机制，每次都实时扫描，确保角色发现的一致性
+   * 直接使用现有资源注册表，避免重复刷新导致的死循环
    */
   async loadRoleRegistry () {
     try {
-      // 无状态资源刷新，确保能发现新创建的角色
-      await this.resourceManager.refreshResources()
-
-      // 获取所有角色相关的资源
+      // 确保ResourceManager已初始化
+      if (!this.resourceManager.initialized) {
+        await this.resourceManager.initializeWithNewArchitecture()
+      }
+      
       const roleRegistry = {}
       
-      // 从ResourceRegistry中获取所有role:开头的资源
-      const registry = this.resourceManager.registry
-      for (const [resourceId, reference] of registry.index) {
-        if (resourceId.startsWith('role:')) {
-          const roleId = resourceId.substring(5) // 移除 'role:' 前缀
+      // 使用新的RegistryData v2.0格式获取角色资源
+      const registryData = this.resourceManager.registryData
+      
+      // 检查是否有RegistryData（v2.0格式）
+      if (registryData && registryData.resources && registryData.resources.length > 0) {
+        // 使用v2.0格式：直接从RegistryData获取角色资源
+        const roleResources = registryData.getResourcesByProtocol('role')
+        
+        for (const resource of roleResources) {
+          const roleId = resource.id
           
-          try {
-            // 尝试加载角色内容以提取元数据
-            const result = await this.resourceManager.loadResource(resourceId)
-            if (result.success) {
-              const name = this.extractRoleNameFromContent(result.content) || roleId
-              const description = this.extractDescriptionFromContent(result.content) || `${name}专业角色`
-              
-              roleRegistry[roleId] = {
-                file: reference,
-                name,
-                description,
-                source: reference.startsWith('@package://') ? 'system' : 'user-generated'
-              }
+          // 避免重复角色（同一个ID可能有多个来源）
+          if (!roleRegistry[roleId]) {
+            roleRegistry[roleId] = {
+              id: resource.id,
+              name: resource.name,
+              description: resource.description,
+              source: resource.source,
+              file: resource.reference,
+              protocol: resource.protocol
             }
-          } catch (error) {
-            // 单个角色加载失败不影响其他角色
-            logger.warn(`角色${roleId}加载失败: ${error.message}`)
+          }
+        }
+      } else {
+        // 降级到旧格式处理（向后兼容）
+        const registry = this.resourceManager.registry
+        for (const [resourceId, reference] of registry.index) {
+          let roleId = null
+          let isRoleResource = false
+          
+          if (resourceId.startsWith('role:')) {
+            roleId = resourceId.substring(5)
+            isRoleResource = true
+          } else if (resourceId.startsWith('package:') || resourceId.startsWith('project:') || resourceId.startsWith('user:')) {
+            const parts = resourceId.split(':')
+            if (parts.length === 2 && !parts[1].includes(':')) {
+              roleId = parts[1]
+              isRoleResource = true
+            }
+          } else if (!resourceId.includes(':')) {
+            roleId = resourceId
+            isRoleResource = true
+          }
+          
+          if (isRoleResource && roleId && !roleRegistry[roleId]) {
+            try {
+              const result = await this.resourceManager.loadResource(resourceId)
+              if (result.success) {
+                const name = this.extractRoleNameFromContent(result.content) || roleId
+                const description = this.extractDescriptionFromContent(result.content) || `${name}专业角色`
+                
+                roleRegistry[roleId] = {
+                  id: roleId,
+                  name,
+                  description,
+                  source: reference.startsWith('@package://') ? 'package' : 'project',
+                  file: reference,
+                  protocol: 'role'
+                }
+              }
+            } catch (error) {
+              // 静默处理，避免干扰用户界面
+            }
           }
         }
       }
@@ -62,24 +102,26 @@ class HelloCommand extends BasePouchCommand {
       // 如果没有任何角色，使用基础角色
       if (Object.keys(roleRegistry).length === 0) {
         roleRegistry.assistant = {
-          file: '@package://prompt/domain/assistant/assistant.role.md',
+          id: 'assistant',
           name: '🙋 智能助手',
           description: '通用助理角色，提供基础的助理服务和记忆支持',
-          source: 'fallback'
+          source: 'fallback',
+          file: '@package://prompt/domain/assistant/assistant.role.md',
+          protocol: 'role'
         }
       }
       
       return roleRegistry
     } catch (error) {
-      logger.warn('角色注册表加载失败，使用基础角色:', error.message)
-      
       // 使用基础角色作为fallback
       return {
         assistant: {
-          file: '@package://prompt/domain/assistant/assistant.role.md',
+          id: 'assistant',
           name: '🙋 智能助手',
           description: '通用助理角色，提供基础的助理服务和记忆支持',
-          source: 'fallback'
+          source: 'fallback',
+          file: '@package://prompt/domain/assistant/assistant.role.md',
+          protocol: 'role'
         }
       }
     }
@@ -151,68 +193,79 @@ class HelloCommand extends BasePouchCommand {
    */
   getSourceLabel(source) {
     switch (source) {
-      case 'user-generated':
-        return '(用户生成)'
-      case 'system':
-        return '(系统角色)'
+      case 'package':
+        return '📦 系统角色'
+      case 'project':
+        return '🏗️ 项目角色'
+      case 'user':
+        return '�� 用户角色'
+      case 'merged':
+        return '📦 系统角色' // merged来源的资源主要来自package
       case 'fallback':
-        return '(默认角色)'
+        return '🔄 默认角色'
       default:
-        return ''
+        return '❓ 未知来源'
     }
   }
 
   async getContent (args) {
-    await this.loadRoleRegistry()
-    const allRoles = await this.getAllRoles()
+    const roleRegistry = await this.loadRoleRegistry()
+    const allRoles = Object.values(roleRegistry)
     const totalRoles = allRoles.length
 
     let content = `🤖 **AI专业角色服务清单** (共 ${totalRoles} 个专业角色可供选择)
 
-> 💡 **重要说明**：以下是可激活的AI专业角色。每个角色都有唯一的ID，使用action命令激活。
+> 💡 **重要说明**：以下是可激活的AI专业角色。每个角色都有唯一的ID，可通过MCP工具激活。
 
 ## 📋 可用角色列表
 
 `
 
-    // 清楚显示角色ID和激活命令
-    allRoles.forEach((role, index) => {
-      const sourceLabel = this.getSourceLabel(role.source)
-      content += `### ${index + 1}. ${role.name} ${sourceLabel}
+    // 按来源分组显示角色
+    const rolesBySource = {}
+    allRoles.forEach(role => {
+      const source = role.source || 'unknown'
+      if (!rolesBySource[source]) {
+        rolesBySource[source] = []
+      }
+      rolesBySource[source].push(role)
+    })
+
+    let roleIndex = 1
+    
+    // 优先显示系统角色
+    const sourceOrder = ['package', 'merged', 'project', 'user', 'fallback', 'unknown']
+    
+    for (const source of sourceOrder) {
+      if (!rolesBySource[source] || rolesBySource[source].length === 0) continue
+      
+      const sourceLabel = this.getSourceLabel(source)
+      content += `### ${sourceLabel}\n\n`
+      
+      rolesBySource[source].forEach(role => {
+        content += `#### ${roleIndex}. ${role.name}
 **角色ID**: \`${role.id}\`  
 **专业能力**: ${role.description}  
-**激活命令**: \`${buildCommand.action(role.id)}\`
+**来源**: ${sourceLabel}
 
 ---
 
 `
-    })
+        roleIndex++
+      })
+    }
 
     content += `
 ## 🎯 **角色激活指南**
 
-### 🔧 激活步骤
-1. **选择角色**: 从上述列表中选择需要的专业角色
-2. **使用角色ID**: 复制对应的角色ID（如：\`${allRoles[0]?.id || 'assistant'}\`）
-3. **执行命令**: 运行 \`${buildCommand.action('<角色ID>')}\`
-
-### 📝 激活示例
-\`\`\`bash
-# 激活智能助手角色
-${buildCommand.action(allRoles[0]?.id || 'assistant')}
-\`\`\`
+### 🔧 激活方式
+- 使用 **MCP PromptX 工具** 中的 \`action\` 功能
+- 选择需要的角色ID进行激活
 
 ### ⚡ 激活后效果
 - ✅ **获得专业能力** - AI将具备该角色的专业技能
 - ✅ **学习技能组合** - 自动学习角色需要的思维和行为模式
 - ✅ **即时专业化** - 立即可以提供该领域的专业服务
-
----
-
-⚠️ **AI执行指令**：
-📢 **向主人汇报角色选项，明确说明使用方法："请选择角色ID，然后我将执行对应的action命令"**
-🎯 **等待主人指定具体的角色ID后，立即执行 \`${buildCommand.action('<角色ID>')}\`**
-💡 **强调：action命令需要具体的角色ID，不是角色名称**
 `
 
     return content
@@ -223,7 +276,7 @@ ${buildCommand.action(allRoles[0]?.id || 'assistant')}
     const availableRoles = allRoles.map(role => ({
       roleId: role.id,
       name: role.name,
-      actionCommand: buildCommand.action(role.id)
+      source: role.source
     }))
 
     return {
@@ -233,7 +286,7 @@ ${buildCommand.action(allRoles[0]?.id || 'assistant')}
         {
           name: '向主人汇报服务选项',
           description: '将上述专业服务清单告知主人，并询问需求',
-          command: '等待主人选择后使用: ' + buildCommand.action('<选择的角色ID>'),
+          method: 'MCP PromptX action 工具',
           priority: 'critical',
           instruction: '必须先询问主人需求，不要自主选择角色'
         }
@@ -243,7 +296,7 @@ ${buildCommand.action(allRoles[0]?.id || 'assistant')}
         availableRoles,
         dataSource: 'resource.registry.json',
         systemVersion: '锦囊串联状态机 v1.0',
-        designPhilosophy: 'AI use CLI get prompt for AI'
+        designPhilosophy: 'AI use MCP tools for role activation'
       }
     }
   }
@@ -298,27 +351,27 @@ ${buildCommand.action(allRoles[0]?.id || 'assistant')}
   async debugRegistry() {
     await this.loadRoleRegistry()
     
-    console.log('\n🔍 HelloCommand - 注册表调试信息')
-    console.log('='.repeat(50))
+    logger.info('\n🔍 HelloCommand - 注册表调试信息')
+    logger.info('='.repeat(50))
     
     if (this.roleRegistry && Object.keys(this.roleRegistry).length > 0) {
-      console.log(`📊 发现 ${Object.keys(this.roleRegistry).length} 个角色资源:\n`)
+      logger.info(`📊 发现 ${Object.keys(this.roleRegistry).length} 个角色资源:\n`)
       
       Object.entries(this.roleRegistry).forEach(([id, roleInfo]) => {
-        console.log(`🎭 ${id}`)
-        console.log(`   名称: ${roleInfo.name || '未命名'}`)
-        console.log(`   描述: ${roleInfo.description || '无描述'}`)
-        console.log(`   文件: ${roleInfo.file}`)
-        console.log(`   来源: ${roleInfo.source || '未知'}`)
-        console.log('')
+        logger.info(`🎭 ${id}`)
+        logger.info(`   名称: ${roleInfo.name || '未命名'}`)
+        logger.info(`   描述: ${roleInfo.description || '无描述'}`)
+        logger.info(`   文件: ${roleInfo.file}`)
+        logger.info(`   来源: ${roleInfo.source || '未知'}`)
+        logger.info('')
       })
     } else {
-      console.log('🔍 没有发现任何角色资源')
+      logger.info('🔍 没有发现任何角色资源')
     }
     
     // 同时显示ResourceManager的注册表
-    console.log('\n📋 ResourceManager 注册表:')
-    console.log('-'.repeat(30))
+    logger.info('\n📋 ResourceManager 注册表:')
+    logger.info('-'.repeat(30))
     this.resourceManager.registry.printAll('底层资源注册表')
   }
 }

@@ -1,7 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
-const { COMMANDS, buildCommand } = require('../../../../constants')
+const { COMMANDS } = require('../../../../constants')
 
 /**
  * 记忆保存锦囊命令
@@ -153,12 +153,9 @@ ${memoryLine}
 - ✅ **支持跨会话记忆保持**
 
 ## 🔄 下一步行动：
-- 记忆检索: 验证知识内化效果
-  命令: \`${buildCommand.recall(value)}\`
-- 能力强化: 学习相关知识增强记忆
-  命令: \`${buildCommand.learn('<protocol>://<resource-id>')}\`
-- 应用实践: 在实际场景中运用记忆
-  命令: \`${buildCommand.action('<role-id>')}\`
+- 记忆检索: 使用 MCP PromptX recall 工具验证知识内化效果
+- 能力强化: 使用 MCP PromptX learn 工具学习相关知识增强记忆
+- 应用实践: 使用 MCP PromptX action 工具在实际场景中运用记忆
 
 📍 当前状态：memory_saved`
   }
@@ -170,32 +167,24 @@ ${memoryLine}
     return `🧠 **Remember锦囊 - AI记忆增强系统**
 
 ## 📖 基本用法
-\`\`\`bash
-${buildCommand.remember('<知识内容>')}
-\`\`\`
+通过 MCP PromptX remember 工具内化知识
 
 ## 💡 记忆内化示例
 
 ### 📝 AI记忆内化
-AI学习和内化各种专业知识
-\`\`\`bash
-${buildCommand.remember('"构建代码 → 运行测试 → 部署到staging → 验证功能 → 发布生产"')}
-${buildCommand.remember('"用户反馈视频加载慢，排查发现是CDN配置问题，修改后加载速度提升60%"')}
-${buildCommand.remember('"React Hooks允许在函数组件中使用state和其他React特性"')}
-${buildCommand.remember('"每个PR至少需要2个人review，必须包含测试用例"')}
-\`\`\`
+AI学习和内化各种专业知识：
+- "构建代码 → 运行测试 → 部署到staging → 验证功能 → 发布生产"
+- "用户反馈视频加载慢，排查发现是CDN配置问题，修改后加载速度提升60%"
+- "React Hooks允许在函数组件中使用state和其他React特性"
+- "每个PR至少需要2个人review，必须包含测试用例"
 
 ## 🔍 记忆检索与应用
-\`\`\`bash
-${buildCommand.recall('<关键词>')}    # AI主动检索记忆
-${buildCommand.action('<role-id>')}   # AI运用记忆激活角色
-\`\`\`
+- 使用 MCP PromptX recall 工具主动检索记忆
+- 使用 MCP PromptX action 工具运用记忆激活角色
 
 🔄 下一步行动：
-  - 开始记忆: 内化第一条知识
-    命令: ${buildCommand.remember('<content>')}
-  - 学习资源: 学习新知识再内化
-    命令: ${buildCommand.learn('<protocol>://<resource>')}`
+  - 开始记忆: 使用 MCP PromptX remember 工具内化第一条知识
+  - 学习资源: 使用 MCP PromptX learn 工具学习新知识再内化`
   }
 
   /**
@@ -212,13 +201,13 @@ ${buildCommand.action('<role-id>')}   # AI运用记忆激活角色
           {
             name: '查看角色',
             description: '选择角色获取专业知识',
-            command: COMMANDS.HELLO,
+            method: 'MCP PromptX hello 工具',
             priority: 'medium'
           },
           {
             name: '学习资源',
             description: '学习新知识然后保存',
-            command: buildCommand.learn('<protocol>://<resource>'),
+            method: 'MCP PromptX learn 工具',
             priority: 'high'
           }
         ]
@@ -232,25 +221,25 @@ ${buildCommand.action('<role-id>')}   # AI运用记忆激活角色
         {
           name: '检索记忆',
           description: '测试记忆是否可检索',
-          command: buildCommand.recall('<关键词>'),
+          method: 'MCP PromptX recall 工具',
           priority: 'high'
         },
         {
           name: '学习强化',
           description: '学习相关知识加强记忆',
-          command: buildCommand.learn('<protocol>://<resource>'),
+          method: 'MCP PromptX learn 工具',
           priority: 'medium'
         },
         {
           name: '应用记忆',
           description: '在实际场景中应用记忆',
-          command: buildCommand.action('<role-id>'),
+          method: 'MCP PromptX action 工具',
           priority: 'medium'
         },
         {
           name: '继续内化',
           description: 'AI继续内化更多知识',
-          command: buildCommand.remember('<content>'),
+          method: 'MCP PromptX remember 工具',
           priority: 'low'
         }
       ],

@@ -1,3 +1,5 @@
+const logger = require('../../utils/logger')
+
 /**
  * EnhancedResourceRegistry - 增强的资源注册表
  * 
@@ -64,7 +66,7 @@ class EnhancedResourceRegistry {
           this.register(resource)
         }
       } catch (error) {
-        console.warn(`[EnhancedResourceRegistry] Failed to register resource: ${error.message}`)
+        logger.warn(`[EnhancedResourceRegistry] Failed to register resource: ${error.message}`)
       }
     })
   }
@@ -212,7 +214,7 @@ class EnhancedResourceRegistry {
    */
   loadFromDiscoveryResults(discoveryResults) {
     if (!Array.isArray(discoveryResults)) {
-      console.warn('[EnhancedResourceRegistry] Discovery results must be an array')
+      logger.warn('[EnhancedResourceRegistry] Discovery results must be an array')
       return
     }
 

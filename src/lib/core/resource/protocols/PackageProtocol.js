@@ -3,6 +3,7 @@ const fs = require('fs')
 const fsPromises = require('fs').promises
 const ResourceProtocol = require('./ResourceProtocol')
 const { QueryParams } = require('../types')
+const logger = require('../../../utils/logger')
 
 /**
  * 包协议实现
@@ -477,7 +478,7 @@ class PackageProtocol extends ResourceProtocol {
         // 在生产环境严格检查，开发环境只警告
         const installMode = this.detectInstallMode()
         if (installMode === 'development' || installMode === 'npx') {
-          console.warn(`⚠️  Warning: Path '${relativePath}' not in package.json files field. This may cause issues after publishing.`)
+          logger.warn(`⚠️  Warning: Path '${relativePath}' not in package.json files field. This may cause issues after publishing.`)
         } else {
           throw new Error(`Access denied: Path '${relativePath}' is not included in package.json files field`)
         }
@@ -486,7 +487,7 @@ class PackageProtocol extends ResourceProtocol {
       // 如果读取package.json失败，在开发模式下允许访问
       const installMode = this.detectInstallMode()
       if (installMode === 'development' || installMode === 'npx') {
-        console.warn(`⚠️  Warning: Could not validate file access for '${relativePath}': ${error.message}`)
+        logger.warn(`⚠️  Warning: Could not validate file access for '${relativePath}': ${error.message}`)
       } else {
         throw error
       }
