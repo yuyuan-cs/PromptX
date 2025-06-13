@@ -10,7 +10,6 @@ const ResourceManager = require('./resourceManager')
 
 // 核心组件
 const ResourceProtocolParser = require('./resourceProtocolParser')
-const ResourceRegistry = require('./resourceRegistry')
 
 // 数据类型
 const {
@@ -58,7 +57,6 @@ module.exports = {
 
   // 核心组件
   ResourceProtocolParser,
-  ResourceRegistry,
 
   // 数据类型
   LoadingSemantics,

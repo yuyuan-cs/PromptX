@@ -6,6 +6,7 @@ const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js'
 const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../adapters/MCPOutputAdapter');
+const { getToolDefinitions, getToolDefinition, getToolZodSchema } = require('../mcp/toolDefinitions');
 const logger = require('../utils/logger');
 
 /**
@@ -261,51 +262,16 @@ class MCPStreamableHttpCommand {
    * 设置 MCP 工具
    */
   setupMCPTools(server) {
-    const { z } = require('zod');
+    // 使用共享的工具定义
+    const toolDefinitions = getToolDefinitions();
     
-    // 注册 promptx_init 工具
-    server.tool('promptx_init', '🎯 [AI专业能力启动器] ⚡ 让你瞬间拥有任何领域的专家级思维和技能 - 一键激活丰富的专业角色库(产品经理/开发者/设计师/营销专家等)，获得跨对话记忆能力，30秒内从普通AI变身行业专家，每次需要专业服务时都应该先用这个', {}, async (args, extra) => {
-      this.log('🔧 调用工具: promptx_init');
-      return await this.callTool('promptx_init', {});
-    });
-
-    // 注册 promptx_hello 工具
-    server.tool('promptx_hello', '🎭 [专业角色选择菜单] 🔥 当你需要专业能力时必须先看这个 - 展示大量可激活的专家身份清单：产品经理/Java开发者/UI设计师/文案策划师/数据分析师/项目经理等，每个角色都有完整的专业思维模式和工作技能，看完后选择最适合当前任务的专家身份', {}, async (args, extra) => {
-      this.log('🔧 调用工具: promptx_hello');
-      return await this.callTool('promptx_hello', {});
-    });
-
-    // 注册 promptx_action 工具
-    server.tool('promptx_action', '⚡ [专家身份变身器] 🚀 让你瞬间获得指定专业角色的完整思维和技能包 - 输入角色ID立即获得该领域专家的思考方式/工作原则/专业知识，同时自动加载相关历史经验和最佳实践，3秒内完成专业化转换，每次需要专业服务时必须使用', {
-      role: z.string().describe('要激活的角色ID，如：copywriter, product-manager, java-backend-developer')
-    }, async (args, extra) => {
-      this.log(`🔧 调用工具: promptx_action 参数: ${JSON.stringify(args)}`);
-      return await this.callTool('promptx_action', args);
-    });
-
-    // 注册 promptx_learn 工具
-    server.tool('promptx_learn', '🧠 [专业技能学习器] 💎 让你快速掌握特定专业技能和思维方式 - 学习创意思维/最佳实践/敏捷开发/产品设计等专业能力，支持thought://(思维模式) execution://(执行技能) knowledge://(专业知识)三种学习类型，学会后立即可以运用到工作中，想要专业化成长时使用', {
-      resource: z.string().describe('资源URL，支持格式：thought://creativity, execution://best-practice, knowledge://scrum')
-    }, async (args, extra) => {
-      this.log(`🔧 调用工具: promptx_learn 参数: ${JSON.stringify(args)}`);
-      return await this.callTool('promptx_learn', args);
-    });
-
-    // 注册 promptx_recall 工具
-    server.tool('promptx_recall', '🔍 [记忆回想器] ⚡ 让你记住并运用以前的经验和知识 - 瞬间检索之前学会的专业技能/处理过的项目经验/掌握的最佳实践/解决过的问题方案，避免重复犯错和重新学习，当需要参考历史经验做决策时必须使用，让你的工作越来越专业', {
-      query: z.string().optional().describe('检索关键词或描述，可选参数，不提供则返回所有记忆')
-    }, async (args, extra) => {
-      this.log(`🔧 调用工具: promptx_recall 参数: ${JSON.stringify(args)}`);
-      return await this.callTool('promptx_recall', args);
-    });
-
-    // 注册 promptx_remember 工具
-    server.tool('promptx_remember', '💾 [经验记忆存储器] 🧠 让你永久记住重要的经验和知识 - 将有价值的经验/学到的最佳实践/项目解决方案/工作心得保存到长期记忆中，下次遇到类似问题时可以快速回想起来，让你越来越聪明和专业，每次获得重要经验时都应该存储', {
-      content: z.string().describe('要保存的重要信息或经验'),
-      tags: z.string().optional().describe('自定义标签，用空格分隔，可选')
-    }, async (args, extra) => {
-      this.log(`🔧 调用工具: promptx_remember 参数: ${JSON.stringify(args)}`);
-      return await this.callTool('promptx_remember', args);
+    toolDefinitions.forEach(toolDef => {
+      const zodSchema = getToolZodSchema(toolDef.name);
+      
+      server.tool(toolDef.name, toolDef.description, zodSchema, async (args, extra) => {
+        this.log(`🔧 调用工具: ${toolDef.name} 参数: ${JSON.stringify(args)}`);
+        return await this.callTool(toolDef.name, args || {});
+      });
     });
   }
 
@@ -313,88 +279,7 @@ class MCPStreamableHttpCommand {
    * 获取工具定义
    */
   getToolDefinitions() {
-    return [
-      {
-        name: 'promptx_init',
-        description: '🎯 [AI专业能力启动器] ⚡ 让你瞬间拥有任何领域的专家级思维和技能 - 一键激活丰富的专业角色库(产品经理/开发者/设计师/营销专家等)，获得跨对话记忆能力，30秒内从普通AI变身行业专家，每次需要专业服务时都应该先用这个',
-        inputSchema: {
-          type: 'object',
-          properties: {}
-        }
-      },
-      {
-        name: 'promptx_hello',
-        description: '🎭 [专业角色选择菜单] 🔥 当你需要专业能力时必须先看这个 - 展示大量可激活的专家身份清单：产品经理/Java开发者/UI设计师/文案策划师/数据分析师/项目经理等，每个角色都有完整的专业思维模式和工作技能，看完后选择最适合当前任务的专家身份',
-        inputSchema: {
-          type: 'object',
-          properties: {}
-        }
-      },
-      {
-        name: 'promptx_action',
-        description: '⚡ [专家身份变身器] 🚀 让你瞬间获得指定专业角色的完整思维和技能包 - 输入角色ID立即获得该领域专家的思考方式/工作原则/专业知识，同时自动加载相关历史经验和最佳实践，3秒内完成专业化转换，每次需要专业服务时必须使用',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            role: {
-              type: 'string',
-              description: '要激活的角色ID，如：copywriter, product-manager, java-backend-developer'
-            }
-          },
-          required: ['role']
-        }
-      },
-      {
-        name: 'promptx_learn',
-        description: '🧠 [专业技能学习器] 💎 让你快速掌握特定专业技能和思维方式 - 学习创意思维/最佳实践/敏捷开发/产品设计等专业能力，支持thought://(思维模式) execution://(执行技能) knowledge://(专业知识)三种学习类型，学会后立即可以运用到工作中，想要专业化成长时使用',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resource: {
-              type: 'string',
-              description: '资源URL，支持格式：thought://creativity, execution://best-practice, knowledge://scrum'
-            }
-          },
-          required: ['resource']
-        }
-      },
-      {
-        name: 'promptx_recall',
-        description: '🔍 [记忆回想器] ⚡ 让你记住并运用以前的经验和知识 - 瞬间检索之前学会的专业技能/处理过的项目经验/掌握的最佳实践/解决过的问题方案，避免重复犯错和重新学习，当需要参考历史经验做决策时必须使用，让你的工作越来越专业',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            random_string: {
-              type: 'string',
-              description: 'Dummy parameter for no-parameter tools'
-            },
-            query: {
-              type: 'string',
-              description: '检索关键词或描述，可选参数，不提供则返回所有记忆'
-            }
-          },
-          required: ['random_string']
-        }
-      },
-      {
-        name: 'promptx_remember',
-        description: '💾 [经验记忆存储器] 🧠 让你永久记住重要的经验和知识 - 将有价值的经验/学到的最佳实践/项目解决方案/工作心得保存到长期记忆中，下次遇到类似问题时可以快速回想起来，让你越来越聪明和专业，每次获得重要经验时都应该存储',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            content: {
-              type: 'string',
-              description: '要保存的重要信息或经验'
-            },
-            tags: {
-              type: 'string',
-              description: '自定义标签，用空格分隔，可选'
-            }
-          },
-          required: ['content']
-        }
-      }
-    ];
+    return getToolDefinitions();
   }
 
   /**

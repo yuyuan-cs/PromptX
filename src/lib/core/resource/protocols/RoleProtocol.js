@@ -45,56 +45,38 @@ class RoleProtocol extends ResourceProtocol {
   }
 
   /**
-   * 解析资源路径
+   * 解析角色协议
+   * @param {string} rolePath - 角色路径，如 'java-developer'
+   * @param {Object} queryParams - 查询参数（暂未使用）
+   * @returns {Promise<string>} 角色文件内容
    */
-  async resolvePath (resourcePath, queryParams) {
-    const roleId = resourcePath.trim()
-    const fullResourceId = `role:${roleId}`
-
-    // 优先使用统一注册表管理器
-    if (this.registryManager) {
-      const reference = this.registryManager.registry.get(fullResourceId)
-      if (!reference) {
-        const availableRoles = this.registryManager.registry.keys()
-          .filter(id => id.startsWith('role:'))
-          .map(id => id.replace('role:', ''))
-        throw new Error(`角色 "${roleId}" 未在注册表中找到。可用角色：${availableRoles.join(', ')}`)
+  async resolve(rolePath, queryParams = {}) {
+    try {
+      // 构建可能的资源ID格式
+      const fullResourceId = `role:${rolePath}`
+      const shortResourceId = rolePath
+      
+      // 从RegistryData查找资源
+      let resourceData = this.registryManager.registryData.findResourceById(rolePath, 'role')
+      
+      if (!resourceData) {
+        // 如果没找到，尝试其他格式
+        resourceData = this.registryManager.registryData.findResourceById(fullResourceId)
       }
       
-      let resolvedPath = reference
-
-      // 处理 @package:// 前缀
-      if (resolvedPath.startsWith('@package://')) {
-        const PackageProtocol = require('./PackageProtocol')
-        const packageProtocol = new PackageProtocol()
-        const relativePath = resolvedPath.replace('@package://', '')
-        resolvedPath = await packageProtocol.resolvePath(relativePath)
-      } else if (resolvedPath.startsWith('@project://')) {
-        // 处理 @project:// 前缀，转换为绝对路径
-        const relativePath = resolvedPath.replace('@project://', '')
-        resolvedPath = path.join(process.cwd(), relativePath)
+      if (!resourceData) {
+        const availableRoles = this.registryManager.registryData.getResourcesByProtocol('role')
+          .map(r => r.id).join(', ')
+        throw new Error(`角色 '${rolePath}' 未找到。可用角色: ${availableRoles}`)
       }
 
-      return resolvedPath
+      // 通过ResourceManager加载实际内容
+      const result = await this.registryManager.loadResourceByProtocol(resourceData.reference)
+      
+      return result
+    } catch (error) {
+      throw new Error(`RoleProtocol.resolve failed: ${error.message}`)
     }
-
-    // 向后兼容：使用旧的registry
-    if (!this.registry[roleId]) {
-      throw new Error(`角色 "${roleId}" 未在注册表中找到。可用角色：${Object.keys(this.registry).join(', ')}`)
-    }
-
-    const roleInfo = this.registry[roleId]
-    let resolvedPath = typeof roleInfo === 'string' ? roleInfo : roleInfo.file
-
-    // 处理 @package:// 前缀
-    if (resolvedPath.startsWith('@package://')) {
-      const PackageProtocol = require('./PackageProtocol')
-      const packageProtocol = new PackageProtocol()
-      const relativePath = resolvedPath.replace('@package://', '')
-      resolvedPath = await packageProtocol.resolvePath(relativePath)
-    }
-
-    return resolvedPath
   }
 
   /**

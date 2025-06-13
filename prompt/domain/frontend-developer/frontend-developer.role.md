@@ -11,19 +11,15 @@
     
     # 技术架构与工程化
     @!execution://technical-architecture
-    @!execution://build-engineering
     
     # 用户体验与性能优化
     @!execution://user-experience
-    @!execution://performance-optimization
     
     # 代码质量与测试
     @!execution://code-quality
-    @!execution://testing-strategy
     
-    # 团队协作与项目管理
-    @!execution://team-collaboration
-    @!execution://project-delivery
+    # 微信小程序专项开发
+    @!execution://wechat-miniprogram-development
   </principle>
 
   <knowledge>

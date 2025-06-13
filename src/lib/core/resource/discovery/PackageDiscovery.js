@@ -201,18 +201,17 @@ class PackageDiscovery extends BaseDiscovery {
         if (await fs.pathExists(roleFile)) {
           const reference = `@package://prompt/domain/${item}/${item}.role.md`
           
-          const resourceData = new ResourceData({
-            id: item,
-            source: 'package',
-            protocol: 'role',
-            name: ResourceData._generateDefaultName(item, 'role'),
-            description: ResourceData._generateDefaultDescription(item, 'role'),
-            reference: reference,
-            metadata: {
-              filePath: roleFile,
-              scannedAt: new Date().toISOString()
-            }
-          })
+                      const resourceData = new ResourceData({
+              id: item,
+              source: 'package',
+              protocol: 'role',
+              name: ResourceData._generateDefaultName(item, 'role'),
+              description: ResourceData._generateDefaultDescription(item, 'role'),
+              reference: reference,
+              metadata: {
+                scannedAt: new Date().toISOString()
+              }
+            })
           
           registryData.addResource(resourceData)
         }
@@ -232,7 +231,6 @@ class PackageDiscovery extends BaseDiscovery {
               description: ResourceData._generateDefaultDescription(item, 'thought'),
               reference: reference,
               metadata: {
-                filePath: thoughtFile,
                 scannedAt: new Date().toISOString()
               }
             })
@@ -258,7 +256,6 @@ class PackageDiscovery extends BaseDiscovery {
                 description: ResourceData._generateDefaultDescription(execId, 'execution'),
                 reference: reference,
                 metadata: {
-                  filePath: path.join(executionDir, execFile),
                   scannedAt: new Date().toISOString()
                 }
               })
@@ -304,7 +301,6 @@ class PackageDiscovery extends BaseDiscovery {
                 description: ResourceData._generateDefaultDescription(id, protocol),
                 reference: reference,
                 metadata: {
-                  filePath: path.join(itemPath, file),
                   scannedAt: new Date().toISOString()
                 }
               })
@@ -328,7 +324,6 @@ class PackageDiscovery extends BaseDiscovery {
             description: ResourceData._generateDefaultDescription(id, protocol),
             reference: reference,
             metadata: {
-              filePath: path.join(coreDir, item),
               scannedAt: new Date().toISOString()
             }
           })
@@ -557,24 +552,50 @@ class PackageDiscovery extends BaseDiscovery {
    * @returns {Promise<string|null>} 包根目录路径或null
    */
   async _findDevelopmentRoot() {
+    // 策略1：检查当前工作目录
     const cwd = process.cwd()
-    const hasPackageJson = await fs.pathExists(path.join(cwd, 'package.json'))
-    const hasPromptDir = await fs.pathExists(path.join(cwd, 'prompt'))
-
-    if (!hasPackageJson || !hasPromptDir) {
-      return null
+    if (await this._isValidDevelopmentRoot(cwd)) {
+      return fs.realpathSync(cwd)
     }
 
-    try {
-      const packageJson = await fs.readJSON(path.join(cwd, 'package.json'))
-      if (packageJson.name === 'dpml-prompt') {
-        return fs.realpathSync(cwd) // 解析符号链接
+    // 策略2：检查启动脚本的目录（适用于通过脚本启动的情况）
+    const scriptDir = path.dirname(process.argv[1])
+    let searchDir = scriptDir
+    
+    // 向上查找最多5级目录
+    for (let i = 0; i < 5; i++) {
+      if (await this._isValidDevelopmentRoot(searchDir)) {
+        return fs.realpathSync(searchDir)
       }
-    } catch (error) {
-      // Ignore JSON parsing errors
+      
+      const parentDir = path.dirname(searchDir)
+      if (parentDir === searchDir) break // 已到根目录
+      searchDir = parentDir
     }
 
     return null
+  }
+
+  /**
+   * 检查目录是否为有效的开发环境根目录
+   * @param {string} dir - 要检查的目录
+   * @returns {Promise<boolean>} 是否为有效的开发根目录
+   * @private
+   */
+  async _isValidDevelopmentRoot(dir) {
+    const hasPackageJson = await fs.pathExists(path.join(dir, 'package.json'))
+    const hasPromptDir = await fs.pathExists(path.join(dir, 'prompt'))
+
+    if (!hasPackageJson || !hasPromptDir) {
+      return false
+    }
+
+    try {
+      const packageJson = await fs.readJSON(path.join(dir, 'package.json'))
+      return packageJson.name === 'dpml-prompt'
+    } catch (error) {
+      return false
+    }
   }
 
   /**

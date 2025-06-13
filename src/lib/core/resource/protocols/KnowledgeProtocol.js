@@ -43,59 +43,37 @@ class KnowledgeProtocol extends ResourceProtocol {
   }
 
   /**
-   * 解析资源路径
+   * 解析知识协议
+   * @param {string} knowledgePath - 知识路径，如 'scrum'
+   * @param {Object} queryParams - 查询参数（暂未使用）
+   * @returns {Promise<string>} 知识文件内容
    */
-  async resolvePath (resourcePath, queryParams) {
-    const knowledgeId = resourcePath.trim()
-    const fullResourceId = `knowledge:${knowledgeId}`
-
-    // 优先使用统一注册表管理器
-    if (this.registryManager) {
-      const reference = this.registryManager.registry.get(fullResourceId)
-      if (!reference) {
-        const availableKnowledge = this.registryManager.registry.keys()
-          .filter(id => id.startsWith('knowledge:'))
-          .map(id => id.replace('knowledge:', ''))
-        throw new Error(`知识资源 "${knowledgeId}" 未在注册表中找到。可用知识资源：${availableKnowledge.join(', ')}`)
+  async resolve(knowledgePath, queryParams = {}) {
+    try {
+      // 构建可能的资源ID格式
+      const fullResourceId = `knowledge:${knowledgePath}`
+      
+      // 从RegistryData查找资源
+      let resourceData = this.registryManager.registryData.findResourceById(knowledgePath, 'knowledge')
+      
+      if (!resourceData) {
+        // 如果没找到，尝试其他格式
+        resourceData = this.registryManager.registryData.findResourceById(fullResourceId)
+      }
+      
+      if (!resourceData) {
+        const availableKnowledge = this.registryManager.registryData.getResourcesByProtocol('knowledge')
+          .map(r => r.id).join(', ')
+        throw new Error(`知识模块 '${knowledgePath}' 未找到。可用知识模块: ${availableKnowledge}`)
       }
 
-      let resolvedPath = reference
-
-      // 处理 @package:// 前缀
-      if (resolvedPath.startsWith('@package://')) {
-        const PackageProtocol = require('./PackageProtocol')
-        const packageProtocol = new PackageProtocol()
-        const relativePath = resolvedPath.replace('@package://', '')
-        resolvedPath = await packageProtocol.resolvePath(relativePath)
-      } else if (resolvedPath.startsWith('@project://')) {
-        // 处理 @project:// 前缀，转换为绝对路径
-        const relativePath = resolvedPath.replace('@project://', '')
-        resolvedPath = path.join(process.cwd(), relativePath)
-      }
-
-      return resolvedPath
+      // 通过ResourceManager加载实际内容
+      const result = await this.registryManager.loadResourceByProtocol(resourceData.reference)
+      
+      return result
+    } catch (error) {
+      throw new Error(`KnowledgeProtocol.resolve failed: ${error.message}`)
     }
-
-    // 向后兼容：使用旧的registry
-    if (!this.registry[knowledgeId]) {
-      throw new Error(`知识资源 "${knowledgeId}" 未在注册表中找到`)
-    }
-
-    let resolvedPath = this.registry[knowledgeId]
-
-    // 处理 @package:// 前缀
-    if (resolvedPath.startsWith('@package://')) {
-      const PackageProtocol = require('./PackageProtocol')
-      const packageProtocol = new PackageProtocol()
-      const relativePath = resolvedPath.replace('@package://', '')
-      resolvedPath = await packageProtocol.resolvePath(relativePath)
-    } else if (resolvedPath.startsWith('@project://')) {
-      // 处理 @project:// 前缀，转换为绝对路径
-      const relativePath = resolvedPath.replace('@project://', '')
-      resolvedPath = path.join(process.cwd(), relativePath)
-    }
-
-    return resolvedPath
   }
 
   /**

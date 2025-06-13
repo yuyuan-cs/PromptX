@@ -374,7 +374,6 @@ class ProjectDiscovery extends BaseDiscovery {
             description: ResourceData._generateDefaultDescription(item, 'role'),
             reference: reference,
             metadata: {
-              filePath: roleFile,
               scannedAt: new Date().toISOString()
             }
           })
@@ -399,7 +398,6 @@ class ProjectDiscovery extends BaseDiscovery {
                 description: ResourceData._generateDefaultDescription(thoughtId, 'thought'),
                 reference: reference,
                 metadata: {
-                  filePath: path.join(thoughtDir, thoughtFile),
                   scannedAt: new Date().toISOString()
                 }
               })
@@ -426,7 +424,6 @@ class ProjectDiscovery extends BaseDiscovery {
                 description: ResourceData._generateDefaultDescription(execId, 'execution'),
                 reference: reference,
                 metadata: {
-                  filePath: path.join(executionDir, execFile),
                   scannedAt: new Date().toISOString()
                 }
               })
@@ -453,7 +450,6 @@ class ProjectDiscovery extends BaseDiscovery {
                 description: ResourceData._generateDefaultDescription(knowledgeId, 'knowledge'),
                 reference: reference,
                 metadata: {
-                  filePath: path.join(knowledgeDir, knowledgeFile),
                   scannedAt: new Date().toISOString()
                 }
               })

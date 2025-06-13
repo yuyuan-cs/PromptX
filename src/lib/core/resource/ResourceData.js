@@ -46,7 +46,7 @@ class ResourceData {
 
   /**
    * 从文件路径和协议推断创建ResourceData
-   * @param {string} filePath - 文件路径
+   * @param {string} filePath - 文件路径（仅用于提取ID，不保存）
    * @param {string} source - 资源来源
    * @param {string} protocol - 资源协议
    * @param {string} reference - 资源引用
@@ -64,7 +64,6 @@ class ResourceData {
       description: ResourceData._generateDefaultDescription(fileName, protocol),
       reference,
       metadata: {
-        filePath,
         inferredFromFile: true
       }
     })
@@ -186,6 +185,23 @@ class ResourceData {
       description: this.description,
       source: this.source,
       protocol: this.protocol
+    }
+  }
+
+  /**
+   * 动态获取文件路径
+   * 通过解析 reference 动态计算实际的文件路径
+   * @returns {Promise<string>} 文件路径
+   */
+  async getFilePath() {
+    const ProtocolResolver = require('./ProtocolResolver')
+    const resolver = new ProtocolResolver()
+    
+    try {
+      const resolvedPath = await resolver.resolve(this.reference)
+      return resolvedPath
+    } catch (error) {
+      throw new Error(`无法解析资源路径 ${this.reference}: ${error.message}`)
     }
   }
 

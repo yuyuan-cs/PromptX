@@ -1,5 +1,4 @@
 const fs = require('fs')
-const ResourceRegistry = require('./resourceRegistry')
 const RegistryData = require('./RegistryData')
 const ResourceProtocolParser = require('./resourceProtocolParser') 
 const DiscoveryManager = require('./discovery/DiscoveryManager')
@@ -15,12 +14,15 @@ const KnowledgeProtocol = require('./protocols/KnowledgeProtocol')
 
 class ResourceManager {
   constructor() {
-    // 使用新的RegistryData替代旧的ResourceRegistry
-    this.registry = new ResourceRegistry() // 保持向后兼容
-    this.registryData = RegistryData.createEmpty('merged', null) // 新的v2.0注册表
+    // 新架构：统一的资源注册表
+    this.registryData = RegistryData.createEmpty('merged', null)
+    
+    // 协议解析器
     this.protocolParser = new ResourceProtocolParser()
     this.parser = new ResourceProtocolParser() // 向后兼容别名
-    this.discoveryManager = new DiscoveryManager() // 新发现管理器
+    
+    // 资源发现管理器
+    this.discoveryManager = new DiscoveryManager()
     
     // 初始化协议处理器
     this.protocols = new Map()
@@ -47,8 +49,7 @@ class ResourceManager {
    */
   async initializeWithNewArchitecture() {
     try {
-      // 1. 清空现有注册表（支持重新初始化）
-      this.registry.clear()
+      // 1. 清空现有注册表
       this.registryData.clear()
 
       // 2. 清除发现器缓存
@@ -56,16 +57,13 @@ class ResourceManager {
         this.discoveryManager.clearCache()
       }
 
-      // 3. 直接发现并注册资源到旧的ResourceRegistry（保持向后兼容）
-      await this.discoveryManager.discoverAndDirectRegister(this.registry)
-
-      // 4. 同时填充新的RegistryData
+      // 3. 填充新的RegistryData
       await this.populateRegistryData()
 
-      // 5. 为逻辑协议设置注册表引用
+      // 4. 为逻辑协议设置注册表引用
       this.setupLogicalProtocols()
 
-      // 6. 设置初始化状态
+      // 5. 设置初始化状态
       this.initialized = true
 
       // 初始化完成，不输出日志避免干扰用户界面
@@ -155,13 +153,16 @@ class ResourceManager {
 
   async loadResource(resourceId) {
     try {
-      // 不再每次刷新资源，依赖初始化时的资源发现
+      // 确保ResourceManager已初始化
+      if (!this.initialized) {
+        await this.initializeWithNewArchitecture()
+      }
       
       // 处理@!开头的DPML格式（如 @!role://java-developer）
       if (resourceId.startsWith('@!')) {
         const parsed = this.protocolParser.parse(resourceId)
         
-        // 从新的RegistryData查找资源
+        // 从RegistryData查找资源
         const resourceData = this.registryData.findResourceById(parsed.path, parsed.protocol)
         if (!resourceData) {
           throw new Error(`Resource not found: ${parsed.protocol}:${parsed.path}`)
@@ -179,7 +180,6 @@ class ResourceManager {
       }
       
       // 处理传统格式（如 role:java-developer）
-      // 先尝试从新的RegistryData查找
       let reference = null
       
       // 如果包含协议前缀（如 thought:remember）
@@ -197,11 +197,6 @@ class ResourceManager {
         }
       }
       
-      // 如果新的RegistryData中没找到，回退到旧的registry
-      if (!reference) {
-        reference = this.registry.get(resourceId)
-      }
-      
       if (!reference) {
         throw new Error(`Resource not found: ${resourceId}`)
       }
@@ -216,34 +211,40 @@ class ResourceManager {
         reference
       }
     } catch (error) {
+      logger.debug(`ResourceManager.loadResource failed for ${resourceId}: ${error.message}`)
       return {
         success: false,
-        error: error,
-        message: error.message
+        error: error,  // 返回完整的Error对象，而不是message字符串
+        resourceId
       }
     }
   }
 
   /**
-   * 统一协议解析入口点 - 按照架构文档设计
+   * 解析协议引用并返回相关信息
    */
   async resolveProtocolReference(reference) {
-    // 1. 使用ResourceProtocolParser解析DPML语法
-    const parsed = this.parser.parse(reference)
-    
-    // 2. 获取对应的协议处理器
-    const protocol = this.protocols.get(parsed.protocol)
-    if (!protocol) {
-      throw new Error(`不支持的协议: ${parsed.protocol}`)
+    try {
+      const parsed = this.protocolParser.parse(reference)
+      
+      return {
+        success: true,
+        protocol: parsed.protocol,
+        path: parsed.path,
+        queryParams: parsed.queryParams,
+        reference
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        reference
+      }
     }
-
-    // 3. 委托给协议处理器解析
-    return await protocol.resolve(parsed.path, parsed.queryParams)
   }
 
   /**
-   * 获取所有已注册的协议
-   * @returns {Array<string>} 协议名称列表
+   * 获取所有可用的协议列表
    */
   getAvailableProtocols() {
     return Array.from(this.protocols.keys())
@@ -251,8 +252,6 @@ class ResourceManager {
 
   /**
    * 检查是否支持指定协议
-   * @param {string} protocol - 协议名称
-   * @returns {boolean} 是否支持
    */
   supportsProtocol(protocol) {
     return this.protocols.has(protocol)
@@ -272,77 +271,49 @@ class ResourceManager {
     return this._initialized || false
   }
 
-  // 向后兼容方法
+  /**
+   * 解析资源URL（向后兼容接口）
+   * 返回格式：{success: boolean, content?: string, error?: Error}
+   */
   async resolve(resourceUrl) {
-    try {
-      // 不再每次刷新资源，依赖初始化时的资源发现
-      
-      // Handle old format: role:java-backend-developer or @package://...
-      if (resourceUrl.startsWith('@')) {
-        // Parse the reference to check if it's a custom protocol
-        const parsed = this.protocolParser.parse(resourceUrl)
-        
-        // Check if it's a basic protocol that can be handled directly
-        const basicProtocols = ['package', 'project', 'file']
-        if (basicProtocols.includes(parsed.protocol)) {
-          // Direct protocol format - use protocol resolution
-          const content = await this.loadResourceByProtocol(resourceUrl)
-          return {
-            success: true,
-            content,
-            path: resourceUrl,
-            reference: resourceUrl
-          }
-        } else {
-          // Custom protocol - extract resource ID and use ResourceRegistry
-          const resourceId = `${parsed.protocol}:${parsed.path}`
-          return await this.loadResource(resourceId)
-        }
-      } else {
-        // Legacy format: treat as resource ID
-        return await this.loadResource(resourceUrl)
-      }
-    } catch (error) {
-      return {
-        success: false,
-        error: error,
-        message: error.message
-      }
+    return await this.loadResource(resourceUrl)
+  }
+
+  /**
+   * 获取注册表统计信息
+   */
+  getStats() {
+    return {
+      totalResources: this.registryData.size,
+      protocols: this.getAvailableProtocols(),
+      initialized: this.initialized
     }
   }
 
   /**
-   * 无状态资源刷新（推荐方法）
-   * 每次都重新发现并注册资源，无需维护初始化状态
+   * 刷新资源（重新发现并注册）
    */
   async refreshResources() {
     try {
-      // 1. 清空当前注册表
-      this.registry.clear()
+      // 1. 标记为未初始化
+      this.initialized = false
       
-      // 2. 清除发现器缓存
+      // 2. 清空注册表
+      this.registryData.clear()
+      
+      // 3. 清除发现器缓存
       if (this.discoveryManager && typeof this.discoveryManager.clearCache === 'function') {
         this.discoveryManager.clearCache()
       }
       
-      // 3. 重新发现并直接注册
-      await this.discoveryManager.discoverAndDirectRegister(this.registry)
+      // 4. 重新初始化
+      await this.initializeWithNewArchitecture()
       
-      // 4. 更新协议引用
-      this.setupLogicalProtocols()
-      
-      // 无状态设计：不设置initialized标志
     } catch (error) {
       logger.warn(`ResourceManager resource refresh failed: ${error.message}`)
       // 失败时保持注册表为空状态，下次调用时重试
     }
   }
-
-  /**
-   * 强制重新初始化资源发现（清除缓存）
-   * 用于解决新创建角色无法被发现的问题
-   * @deprecated 推荐使用 refreshResources() 方法
-   */
 }
 
 module.exports = ResourceManager

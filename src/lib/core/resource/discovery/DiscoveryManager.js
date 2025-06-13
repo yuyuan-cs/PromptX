@@ -84,50 +84,7 @@ class DiscoveryManager {
   }
 
   /**
-   * 发现资源并直接注册到指定注册表（新的简化方法）
-   * @param {ResourceRegistry} registry - 目标注册表
-   * @returns {Promise<void>}
-   */
-  async discoverAndDirectRegister(registry) {
-    logger.info(`[DiscoveryManager] 🚀 开始直接注册，发现器数量: ${this.discoveries.length}`)
-    
-    // 按优先级顺序直接注册，让高优先级的覆盖低优先级的
-    for (const discovery of this.discoveries) {
-      try {
-        logger.debug(`[DiscoveryManager] 🔍 处理发现器: ${discovery.source} (优先级: ${discovery.priority})`)
-        
-        if (typeof discovery.discoverRegistry === 'function') {
-          // 使用新的discoverRegistry方法
-          const discoveredRegistry = await discovery.discoverRegistry()
-          if (discoveredRegistry instanceof Map) {
-            logger.debug(`[DiscoveryManager] ✅ ${discovery.source} 发现 ${discoveredRegistry.size} 个资源`)
-            for (const [resourceId, reference] of discoveredRegistry) {
-              registry.register(resourceId, reference)  // 直接注册，自动覆盖
-            }
-          }
-        } else {
-          // 向后兼容：使用discover()方法
-          const resources = await discovery.discover()
-          if (Array.isArray(resources)) {
-            logger.debug(`[DiscoveryManager] ✅ ${discovery.source} 发现 ${resources.length} 个资源 (兼容模式)`)
-            resources.forEach(resource => {
-              if (resource.id && resource.reference) {
-                registry.register(resource.id, resource.reference)  // 直接注册
-              }
-            })
-          }
-        }
-      } catch (error) {
-        logger.warn(`[DiscoveryManager] ❌ ${discovery.source} direct registration failed: ${error.message}`)
-        // 单个发现器失败不影响其他发现器
-      }
-    }
-    
-    logger.info(`[DiscoveryManager] 🎯 注册完成，注册表总资源数: ${registry.size}`)
-  }
-
-  /**
-   * 发现并合并所有注册表（新架构方法）
+   * 发现并合并所有注册表（RegistryData架构）
    * @returns {Promise<Map>} 合并后的资源注册表 Map<resourceId, reference>
    */
   async discoverRegistries() {

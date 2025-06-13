@@ -3,6 +3,7 @@ const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../adapters/MCPOutputAdapter');
 const { getExecutionContext, getDebugInfo } = require('../utils/executionContext');
+const { getToolDefinitions } = require('../mcp/toolDefinitions');
 
 /**
  * MCP Server 适配器 - 函数调用架构
@@ -131,88 +132,7 @@ class MCPServerCommand {
    * 获取工具定义
    */
   getToolDefinitions() {
-    return [
-      {
-        name: 'promptx_init',
-        description: '🏗️ [环境初始化锦囊] 初始化PromptX工作环境，创建配置目录，准备专业能力增强系统',
-        inputSchema: {
-          type: 'object',
-          properties: {}
-        }
-      },
-      {
-        name: 'promptx_hello',
-        description: '👋 [角色发现锦囊] 让AI浏览专业角色库（产品经理、Java开发者、设计师等），当需要专业能力时使用，引导角色激活',
-        inputSchema: {
-          type: 'object',
-          properties: {}
-        }
-      },
-      {
-        name: 'promptx_action',
-        description: '⚡ [专家变身锦囊] 让AI获得指定专业角色的思维模式和核心能力，即时变身领域专家，开始提供专业服务',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            role: {
-              type: 'string',
-              description: '要激活的角色ID，如：copywriter, product-manager, java-backend-developer'
-            }
-          },
-          required: ['role']
-        }
-      },
-      {
-        name: 'promptx_learn',
-        description: '📚 [专业深化锦囊] 让AI学习特定领域的思维模式和执行模式（如敏捷开发、产品设计），强化当前专家角色能力',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            resource: {
-              type: 'string',
-              description: '资源URL，支持格式：thought://creativity, execution://best-practice, knowledge://scrum'
-            }
-          },
-          required: ['resource']
-        }
-      },
-      {
-        name: 'promptx_recall',
-        description: '🔍 [经验检索锦囊] 让AI从专业记忆库中检索相关经验和最佳实践，当需要基于历史经验工作时使用',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            random_string: {
-              type: 'string',
-              description: 'Dummy parameter for no-parameter tools'
-            },
-            query: {
-              type: 'string',
-              description: '检索关键词或描述，可选参数，不提供则返回所有记忆'
-            }
-          },
-          required: ['random_string']
-        }
-      },
-      {
-        name: 'promptx_remember',
-        description: '💾 [知识积累锦囊] 让AI将重要经验和专业知识保存到记忆库，构建可复用的专业知识体系，供未来检索应用',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            content: {
-              type: 'string',
-              description: '要保存的重要信息或经验'
-            },
-            tags: {
-              type: 'string',
-              description: '自定义标签，用空格分隔，可选'
-            }
-          },
-          required: ['content']
-        }
-      }
-    ];
+    return getToolDefinitions();
   }
   
   /**

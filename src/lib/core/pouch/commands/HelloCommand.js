@@ -20,8 +20,7 @@ class HelloCommand extends BasePouchCommand {
   }
 
   /**
-   * 动态加载角色注册表 - 使用新的ResourceManager架构
-   * 直接使用现有资源注册表，避免重复刷新导致的死循环
+   * 动态加载角色注册表 - 使用新的RegistryData架构
    */
   async loadRoleRegistry () {
     try {
@@ -32,12 +31,10 @@ class HelloCommand extends BasePouchCommand {
       
       const roleRegistry = {}
       
-      // 使用新的RegistryData v2.0格式获取角色资源
+      // 使用新的RegistryData获取角色资源
       const registryData = this.resourceManager.registryData
       
-      // 检查是否有RegistryData（v2.0格式）
       if (registryData && registryData.resources && registryData.resources.length > 0) {
-        // 使用v2.0格式：直接从RegistryData获取角色资源
         const roleResources = registryData.getResourcesByProtocol('role')
         
         for (const resource of roleResources) {
@@ -52,48 +49,6 @@ class HelloCommand extends BasePouchCommand {
               source: resource.source,
               file: resource.reference,
               protocol: resource.protocol
-            }
-          }
-        }
-      } else {
-        // 降级到旧格式处理（向后兼容）
-        const registry = this.resourceManager.registry
-        for (const [resourceId, reference] of registry.index) {
-          let roleId = null
-          let isRoleResource = false
-          
-          if (resourceId.startsWith('role:')) {
-            roleId = resourceId.substring(5)
-            isRoleResource = true
-          } else if (resourceId.startsWith('package:') || resourceId.startsWith('project:') || resourceId.startsWith('user:')) {
-            const parts = resourceId.split(':')
-            if (parts.length === 2 && !parts[1].includes(':')) {
-              roleId = parts[1]
-              isRoleResource = true
-            }
-          } else if (!resourceId.includes(':')) {
-            roleId = resourceId
-            isRoleResource = true
-          }
-          
-          if (isRoleResource && roleId && !roleRegistry[roleId]) {
-            try {
-              const result = await this.resourceManager.loadResource(resourceId)
-              if (result.success) {
-                const name = this.extractRoleNameFromContent(result.content) || roleId
-                const description = this.extractDescriptionFromContent(result.content) || `${name}专业角色`
-                
-                roleRegistry[roleId] = {
-                  id: roleId,
-                  name,
-                  description,
-                  source: reference.startsWith('@package://') ? 'package' : 'project',
-                  file: reference,
-                  protocol: 'role'
-                }
-              }
-            } catch (error) {
-              // 静默处理，避免干扰用户界面
             }
           }
         }
@@ -217,6 +172,7 @@ class HelloCommand extends BasePouchCommand {
 
 > 💡 **重要说明**：以下是可激活的AI专业角色。每个角色都有唯一的ID，可通过MCP工具激活。
 
+
 ## 📋 可用角色列表
 
 `
@@ -246,6 +202,7 @@ class HelloCommand extends BasePouchCommand {
         content += `#### ${roleIndex}. ${role.name}
 **角色ID**: \`${role.id}\`  
 **专业能力**: ${role.description}  
+**文件路径**: ${role.file}  
 **来源**: ${sourceLabel}
 
 ---
@@ -294,7 +251,7 @@ class HelloCommand extends BasePouchCommand {
       metadata: {
         totalRoles: allRoles.length,
         availableRoles,
-        dataSource: 'resource.registry.json',
+        dataSource: 'RegistryData v2.0',
         systemVersion: '锦囊串联状态机 v1.0',
         designPhilosophy: 'AI use MCP tools for role activation'
       }
@@ -369,10 +326,16 @@ class HelloCommand extends BasePouchCommand {
       logger.info('🔍 没有发现任何角色资源')
     }
     
-    // 同时显示ResourceManager的注册表
-    logger.info('\n📋 ResourceManager 注册表:')
-    logger.info('-'.repeat(30))
-    this.resourceManager.registry.printAll('底层资源注册表')
+    // 显示RegistryData统计信息
+    logger.info('\n📋 RegistryData 统计信息:')
+    if (this.resourceManager && this.resourceManager.registryData) {
+      const stats = this.resourceManager.registryData.getStats()
+      logger.info(`总资源数: ${stats.totalResources}`)
+      logger.info(`按协议分布: ${JSON.stringify(stats.byProtocol, null, 2)}`)
+      logger.info(`按来源分布: ${JSON.stringify(stats.bySource, null, 2)}`)
+    } else {
+      logger.info('❌ RegistryData 不可用')
+    }
   }
 }
 
