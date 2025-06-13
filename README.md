@@ -95,7 +95,7 @@ PromptX 作为您和AI应用之间的"专业能力中间件"，通过标准的 [
 
 ```mermaid
 graph TD
-    subgraph "Your AI App (Claude, Cursor, etc.)"
+    subgraph "Your AI App (Claude,Cursor,etc.)"
         A[👨‍💻 User Interaction]
     end
 
