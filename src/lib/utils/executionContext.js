@@ -44,31 +44,73 @@ function getMCPWorkingDirectory() {
     }
   }
 
-  // 策略2：PROMPTX_WORKSPACE（PromptX专用环境变量）
-  const promptxWorkspace = normalizePath(expandHome(process.env.PROMPTX_WORKSPACE || ''));
-  if (promptxWorkspace && isValidDirectory(promptxWorkspace)) {
-    console.error(`[执行上下文] 使用PROMPTX_WORKSPACE: ${promptxWorkspace}`);
-    return promptxWorkspace;
+  // 策略2：PROMPTX_WORKSPACE（PromptX专用环境变量，仅当明确配置且非空时使用）
+  const promptxWorkspaceEnv = process.env.PROMPTX_WORKSPACE;
+  if (promptxWorkspaceEnv && promptxWorkspaceEnv.trim() !== '') {
+    const promptxWorkspace = normalizePath(expandHome(promptxWorkspaceEnv));
+    if (isValidDirectory(promptxWorkspace)) {
+      console.error(`[执行上下文] 使用PROMPTX_WORKSPACE: ${promptxWorkspace}`);
+      return promptxWorkspace;
+    }
   }
 
-  // 策略3：PWD环境变量（某些情况下可用）
+  // 策略3：向上查找现有.promptx目录（复用现有项目配置）
+  const existingPrompxRoot = findExistingPromptxDirectory(process.cwd());
+  if (existingPrompxRoot) {
+    console.error(`[执行上下文] 发现现有.promptx目录: ${existingPrompxRoot}`);
+    return existingPrompxRoot;
+  }
+
+  // 策略4：PWD环境变量（某些情况下可用）
   const pwd = process.env.PWD;
   if (pwd && isValidDirectory(pwd) && pwd !== process.cwd()) {
     console.error(`[执行上下文] 使用PWD环境变量: ${pwd}`);
     return pwd;
   }
 
-  // 策略4：项目根目录智能推测（向上查找项目标识）
+  // 策略5：项目根目录智能推测（向上查找项目标识）
   const projectRoot = findProjectRoot(process.cwd());
   if (projectRoot && projectRoot !== process.cwd()) {
     console.error(`[执行上下文] 智能推测项目根目录: ${projectRoot}`);
     return projectRoot;
   }
 
-  // 策略5：回退到process.cwd()
+  // 策略6：回退到process.cwd()
   console.error(`[执行上下文] 回退到process.cwd(): ${process.cwd()}`);
   console.error(`[执行上下文] 提示：建议在MCP配置中添加 "env": {"PROMPTX_WORKSPACE": "你的项目目录"}`)
   return process.cwd();
+}
+
+/**
+ * 向上查找现有的.promptx目录
+ * @param {string} startDir 开始查找的目录
+ * @returns {string|null} 包含.promptx目录的父目录路径或null
+ */
+function findExistingPromptxDirectory(startDir) {
+  let currentDir = path.resolve(startDir);
+  const root = path.parse(currentDir).root;
+
+  while (currentDir !== root) {
+    // 检查当前目录是否包含.promptx目录
+    const promptxPath = path.join(currentDir, '.promptx');
+    if (fs.existsSync(promptxPath)) {
+      try {
+        const stat = fs.statSync(promptxPath);
+        if (stat.isDirectory()) {
+          return currentDir;
+        }
+      } catch {
+        // 忽略权限错误等，继续查找
+      }
+    }
+
+    // 向上一级目录
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) break; // 防止无限循环
+    currentDir = parentDir;
+  }
+
+  return null;
 }
 
 /**
@@ -78,7 +120,6 @@ function getMCPWorkingDirectory() {
  */
 function findProjectRoot(startDir) {
   const projectMarkers = [
-    '.promptx',
     'package.json',
     '.git',
     'pyproject.toml',
@@ -167,5 +208,7 @@ function expandHome(filepath) {
 module.exports = {
   getExecutionContext,
   isValidDirectory,
-  getDebugInfo
+  getDebugInfo,
+  findExistingPromptxDirectory,
+  findProjectRoot
 }; 
