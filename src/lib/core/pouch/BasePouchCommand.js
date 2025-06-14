@@ -95,7 +95,7 @@ class BasePouchCommand {
       toString () {
         const divider = '='.repeat(60)
         const nextSteps = (pateoas.nextActions || [])
-          .map(action => `  - ${action.name}: ${action.description}\n    命令: ${action.command}`)
+          .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
           .join('\n')
 
         return `

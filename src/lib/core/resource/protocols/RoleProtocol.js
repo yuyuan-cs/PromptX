@@ -10,6 +10,14 @@ class RoleProtocol extends ResourceProtocol {
   constructor () {
     super('role')
     this.registry = {}
+    this.registryManager = null // 统一注册表管理器
+  }
+
+  /**
+   * 设置注册表管理器
+   */
+  setRegistryManager(manager) {
+    this.registryManager = manager
   }
 
   /**
@@ -37,27 +45,38 @@ class RoleProtocol extends ResourceProtocol {
   }
 
   /**
-   * 解析资源路径
+   * 解析角色协议
+   * @param {string} rolePath - 角色路径，如 'java-developer'
+   * @param {Object} queryParams - 查询参数（暂未使用）
+   * @returns {Promise<string>} 角色文件内容
    */
-  async resolvePath (resourcePath, queryParams) {
-    const roleId = resourcePath.trim()
+  async resolve(rolePath, queryParams = {}) {
+    try {
+      // 构建可能的资源ID格式
+      const fullResourceId = `role:${rolePath}`
+      const shortResourceId = rolePath
+      
+      // 从RegistryData查找资源
+      let resourceData = this.registryManager.registryData.findResourceById(rolePath, 'role')
+      
+      if (!resourceData) {
+        // 如果没找到，尝试其他格式
+        resourceData = this.registryManager.registryData.findResourceById(fullResourceId)
+      }
+      
+      if (!resourceData) {
+        const availableRoles = this.registryManager.registryData.getResourcesByProtocol('role')
+          .map(r => r.id).join(', ')
+        throw new Error(`角色 '${rolePath}' 未找到。可用角色: ${availableRoles}`)
+      }
 
-    if (!this.registry[roleId]) {
-      throw new Error(`角色 "${roleId}" 未在注册表中找到。可用角色：${Object.keys(this.registry).join(', ')}`)
+      // 通过ResourceManager加载实际内容
+      const result = await this.registryManager.loadResourceByProtocol(resourceData.reference)
+      
+      return result
+    } catch (error) {
+      throw new Error(`RoleProtocol.resolve failed: ${error.message}`)
     }
-
-    const roleInfo = this.registry[roleId]
-    let resolvedPath = typeof roleInfo === 'string' ? roleInfo : roleInfo.file
-
-    // 处理 @package:// 前缀
-    if (resolvedPath.startsWith('@package://')) {
-      const PackageProtocol = require('./PackageProtocol')
-      const packageProtocol = new PackageProtocol()
-      const relativePath = resolvedPath.replace('@package://', '')
-      resolvedPath = await packageProtocol.resolvePath(relativePath)
-    }
-
-    return resolvedPath
   }
 
   /**

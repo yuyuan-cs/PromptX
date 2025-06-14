@@ -10,6 +10,14 @@ class ExecutionProtocol extends ResourceProtocol {
   constructor () {
     super('execution')
     this.registry = {}
+    this.registryManager = null // 统一注册表管理器
+  }
+
+  /**
+   * 设置注册表管理器
+   */
+  setRegistryManager(manager) {
+    this.registryManager = manager
   }
 
   /**
@@ -36,30 +44,37 @@ class ExecutionProtocol extends ResourceProtocol {
   }
 
   /**
-   * 解析资源路径
+   * 解析执行协议
+   * @param {string} executionPath - 执行路径，如 'best-practice'
+   * @param {Object} queryParams - 查询参数（暂未使用）
+   * @returns {Promise<string>} 执行文件内容
    */
-  async resolvePath (resourcePath, queryParams) {
-    const executionId = resourcePath.trim()
+  async resolve(executionPath, queryParams = {}) {
+    try {
+      // 构建可能的资源ID格式
+      const fullResourceId = `execution:${executionPath}`
+      
+      // 从RegistryData查找资源
+      let resourceData = this.registryManager.registryData.findResourceById(executionPath, 'execution')
+      
+      if (!resourceData) {
+        // 如果没找到，尝试其他格式
+        resourceData = this.registryManager.registryData.findResourceById(fullResourceId)
+      }
+      
+      if (!resourceData) {
+        const availableExecutions = this.registryManager.registryData.getResourcesByProtocol('execution')
+          .map(r => r.id).join(', ')
+        throw new Error(`执行模式 '${executionPath}' 未找到。可用执行模式: ${availableExecutions}`)
+      }
 
-    if (!this.registry[executionId]) {
-      throw new Error(`执行模式 "${executionId}" 未在注册表中找到`)
+      // 通过ResourceManager加载实际内容
+      const result = await this.registryManager.loadResourceByProtocol(resourceData.reference)
+      
+      return result
+    } catch (error) {
+      throw new Error(`ExecutionProtocol.resolve failed: ${error.message}`)
     }
-
-    let resolvedPath = this.registry[executionId]
-
-    // 处理 @package:// 前缀
-    if (resolvedPath.startsWith('@package://')) {
-      const PackageProtocol = require('./PackageProtocol')
-      const packageProtocol = new PackageProtocol()
-      const relativePath = resolvedPath.replace('@package://', '')
-      resolvedPath = await packageProtocol.resolvePath(relativePath)
-    } else if (resolvedPath.startsWith('@project://')) {
-      // 处理 @project:// 前缀，转换为绝对路径
-      const relativePath = resolvedPath.replace('@project://', '')
-      resolvedPath = path.join(process.cwd(), relativePath)
-    }
-
-    return resolvedPath
   }
 
   /**

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const logger = require('./logger');
 
 /**
  * 执行上下文检测工具
@@ -66,7 +67,7 @@ function getMCPWorkingDirectory() {
 
   // 策略5：回退到process.cwd()
   console.error(`[执行上下文] 回退到process.cwd(): ${process.cwd()}`);
-  console.error(`[执行上下文] 提示：建议在MCP配置中添加 "env": {"PROMPTX_WORKSPACE": "你的项目目录"}`);
+  console.error(`[执行上下文] 提示：建议在MCP配置中添加 "env": {"PROMPTX_WORKSPACE": "你的项目目录"}`)
   return process.cwd();
 }
 

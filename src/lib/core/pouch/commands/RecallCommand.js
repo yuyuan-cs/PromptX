@@ -1,7 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
-const { COMMANDS, buildCommand } = require('../../../../constants')
+const { COMMANDS } = require('../../../../constants')
 
 /**
  * 记忆检索锦囊命令
@@ -25,8 +25,8 @@ class RecallCommand extends BasePouchCommand {
       if (memories.length === 0) {
         return `🧠 AI记忆体系中暂无内容。
 💡 建议：
-1. 使用 ${COMMANDS.REMEMBER} 内化新知识
-2. 使用 ${COMMANDS.LEARN} 学习后再内化
+1. 使用 MCP PromptX remember 工具内化新知识
+2. 使用 MCP PromptX learn 工具学习后再内化
 3. 开始构建AI的专业知识体系`
       }
 
@@ -54,22 +54,22 @@ ${formattedMemories}
         {
           name: '选择角色',
           description: '选择专业角色来应用检索到的知识',
-          command: COMMANDS.HELLO
+          method: 'MCP PromptX hello 工具'
         },
         {
           name: '记忆新知识',
           description: '继续内化更多专业知识',
-          command: COMMANDS.REMEMBER + ' "<新的知识内容>"'
+          method: 'MCP PromptX remember 工具'
         },
         {
           name: '学习资源',
           description: '学习相关专业资源',
-          command: COMMANDS.LEARN + ' <protocol>://<resource>'
+          method: 'MCP PromptX learn 工具'
         },
         {
           name: '继续检索',
           description: '检索其他相关记忆',
-          command: COMMANDS.RECALL + ' <关键词>'
+          method: 'MCP PromptX recall 工具'
         }
       ],
       metadata: {

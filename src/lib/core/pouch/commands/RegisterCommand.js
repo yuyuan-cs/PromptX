@@ -2,7 +2,6 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const PackageProtocol = require('../../resource/protocols/PackageProtocol')
-const { buildCommand } = require('../../../../constants')
 
 /**
  * 角色注册锦囊命令
@@ -25,14 +24,10 @@ class RegisterCommand extends BasePouchCommand {
       return `❌ 请指定要注册的角色ID
 
 🔍 使用方法：
-\`\`\`bash
-${buildCommand.register('<角色ID>')}
-\`\`\`
+通过 MCP PromptX register 工具注册角色
 
 💡 例如：
-\`\`\`bash
-${buildCommand.register('my-custom-role')}
-\`\`\``
+注册角色ID: 'my-custom-role'`
     }
 
     try {
@@ -47,9 +42,7 @@ ${buildCommand.register('my-custom-role')}
 - prompt/domain/${roleId}/execution/${roleId}.execution.md
 
 💡 您可以使用女娲来创建完整的角色套件：
-\`\`\`bash
-${buildCommand.action('nuwa')}
-\`\`\``
+使用 MCP PromptX action 工具激活 'nuwa' 角色`
       }
 
       // 2. 提取角色元数据
@@ -67,9 +60,7 @@ ${buildCommand.action('nuwa')}
 - 文件路径：${roleMetadata.filePath}
 
 🎯 **下一步操作**：
-\`\`\`bash
-${buildCommand.action(roleId)}
-\`\`\`
+使用 MCP PromptX action 工具激活角色: ${roleId}
 
 💡 现在您可以激活这个角色了！`
       } else {
@@ -188,13 +179,13 @@ ${buildCommand.action(roleId)}
           {
             name: '查看可用角色',
             description: '查看已注册的角色',
-            command: buildCommand.hello(),
+            method: 'MCP PromptX hello 工具',
             priority: 'medium'
           },
           {
             name: '创建新角色',
             description: '使用女娲创建新角色',
-            command: buildCommand.action('nuwa'),
+            method: 'MCP PromptX action 工具 (nuwa)',
             priority: 'high'
           }
         ],
@@ -211,13 +202,13 @@ ${buildCommand.action(roleId)}
         {
           name: '激活角色',
           description: '激活刚注册的角色',
-          command: buildCommand.action(roleId),
+          method: `MCP PromptX action 工具 (${roleId})`,
           priority: 'high'
         },
         {
           name: '查看所有角色',
           description: '查看角色列表',
-          command: buildCommand.hello(),
+          method: 'MCP PromptX hello 工具',
           priority: 'medium'
         }
       ],

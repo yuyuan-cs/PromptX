@@ -3,11 +3,13 @@
 const { Command } = require('commander')
 const chalk = require('chalk')
 const packageJson = require('../../package.json')
+const logger = require('../lib/utils/logger')
 
 // 导入锦囊框架
 const { cli } = require('../lib/core/pouch')
 // 导入MCP Server命令
 const { MCPServerCommand } = require('../lib/commands/MCPServerCommand')
+const { MCPStreamableHttpCommand } = require('../lib/commands/MCPStreamableHttpCommand')
 
 // 创建主程序
 const program = new Command()
@@ -66,13 +68,39 @@ program
 program
   .command('mcp-server')
   .description('🔌 启动MCP Server，支持Claude Desktop等AI应用接入')
+  .option('-t, --transport <type>', '传输类型 (stdio|http|sse)', 'stdio')
+  .option('-p, --port <number>', 'HTTP端口号 (仅http/sse传输)', '3000')
+  .option('--host <address>', '绑定地址 (仅http/sse传输)', 'localhost')
+  .option('--cors', '启用CORS (仅http/sse传输)', false)
+  .option('--debug', '启用调试模式', false)
   .action(async (options) => {
     try {
-      const mcpServer = new MCPServerCommand();
-      await mcpServer.execute();
+      // 设置调试模式
+      if (options.debug) {
+        process.env.MCP_DEBUG = 'true';
+      }
+
+      // 根据传输类型选择命令
+      if (options.transport === 'stdio') {
+        const mcpServer = new MCPServerCommand();
+        await mcpServer.execute();
+      } else if (options.transport === 'http' || options.transport === 'sse') {
+        const mcpHttpServer = new MCPStreamableHttpCommand();
+        const serverOptions = {
+          transport: options.transport,
+          port: parseInt(options.port),
+          host: options.host,
+          cors: options.cors
+        };
+        
+        logger.info(chalk.green(`🚀 启动 ${options.transport.toUpperCase()} MCP Server 在 ${options.host}:${options.port}...`));
+        await mcpHttpServer.execute(serverOptions);
+      } else {
+        throw new Error(`不支持的传输类型: ${options.transport}。支持的类型: stdio, http, sse`);
+      }
     } catch (error) {
       // 输出到stderr，不污染MCP的stdout通信
-      console.error(chalk.red(`❌ MCP Server 启动失败: ${error.message}`));
+      logger.error(chalk.red(`❌ MCP Server 启动失败: ${error.message}`));
       process.exit(1);
     }
   })
@@ -121,7 +149,9 @@ ${chalk.cyan('示例:')}
   promptx remember "测试→预发布→生产"
 
   ${chalk.gray('# 7️⃣ 启动MCP服务')}
-  promptx mcp-server
+  promptx mcp-server                    # stdio传输(默认)
+  promptx mcp-server -t http -p 3000    # HTTP传输
+  promptx mcp-server -t sse -p 3001     # SSE传输
 
 ${chalk.cyan('🔄 PATEOAS状态机:')}
   每个锦囊输出都包含 PATEOAS 导航，引导 AI 发现下一步操作
@@ -145,8 +175,8 @@ ${chalk.cyan('更多信息:')}
 
 // 处理未知命令
 program.on('command:*', () => {
-  console.error(chalk.red(`错误: 未知命令 '${program.args.join(' ')}'`))
-  console.log('')
+  logger.error(chalk.red(`错误: 未知命令 '${program.args.join(' ')}'`))
+  logger.info('')
   program.help()
 })
 

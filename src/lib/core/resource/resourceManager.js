@@ -1,481 +1,318 @@
-const ResourceProtocolParser = require('./resourceProtocolParser')
-const ResourceRegistry = require('./resourceRegistry')
-const { ResourceResult } = require('./types')
+const fs = require('fs')
+const RegistryData = require('./RegistryData')
+const ResourceProtocolParser = require('./resourceProtocolParser') 
+const DiscoveryManager = require('./discovery/DiscoveryManager')
 const logger = require('../../utils/logger')
-const fs = require('fs-extra')
-const path = require('path')
 
-// 导入协议实现
+// 导入协议处理器
 const PackageProtocol = require('./protocols/PackageProtocol')
 const ProjectProtocol = require('./protocols/ProjectProtocol')
-const UserProtocol = require('./protocols/UserProtocol')
-const PromptProtocol = require('./protocols/PromptProtocol')
+const RoleProtocol = require('./protocols/RoleProtocol')
+const ThoughtProtocol = require('./protocols/ThoughtProtocol')
+const ExecutionProtocol = require('./protocols/ExecutionProtocol')
+const KnowledgeProtocol = require('./protocols/KnowledgeProtocol')
 
-// 常量定义
-const USER_RESOURCE_DIR = '.promptx'
-const RESOURCE_DOMAIN_PATH = ['resource', 'domain']
-const SUPPORTED_RESOURCE_TYPES = ['role', 'thought', 'execution']
-const DPML_TAGS = {
-  role: { start: '<role>', end: '</role>' },
-  thought: { start: '<thought>', end: '</thought>' },
-  execution: { start: '<execution>', end: '</execution>' }
-}
-
-/**
- * 资源管理器 - 统一管理各种协议的资源加载
- */
 class ResourceManager {
-  constructor () {
-    this.protocolHandlers = new Map()
-    this.registry = null
-    this.initialized = false
+  constructor() {
+    // 新架构：统一的资源注册表
+    this.registryData = RegistryData.createEmpty('merged', null)
+    
+    // 协议解析器
+    this.protocolParser = new ResourceProtocolParser()
+    this.parser = new ResourceProtocolParser() // 向后兼容别名
+    
+    // 资源发现管理器
+    this.discoveryManager = new DiscoveryManager()
+    
+    // 初始化协议处理器
+    this.protocols = new Map()
+    this.initializeProtocols()
   }
 
   /**
-   * 初始化资源管理器
+   * 初始化所有协议处理器
    */
-  async initialize () {
-    if (this.initialized) return
+  initializeProtocols() {
+    // 基础协议 - 直接文件系统映射
+    this.protocols.set('package', new PackageProtocol())
+    this.protocols.set('project', new ProjectProtocol()) 
 
+    // 逻辑协议 - 需要注册表查询
+    this.protocols.set('role', new RoleProtocol())
+    this.protocols.set('thought', new ThoughtProtocol())
+    this.protocols.set('execution', new ExecutionProtocol())
+    this.protocols.set('knowledge', new KnowledgeProtocol())
+  }
+
+  /**
+   * 新架构初始化方法
+   */
+  async initializeWithNewArchitecture() {
     try {
-      // 从统一注册表加载所有协议信息
-      await this.loadUnifiedRegistry()
+      // 1. 清空现有注册表
+      this.registryData.clear()
 
-      // 注册协议处理器
-      await this.registerProtocolHandlers()
+      // 2. 清除发现器缓存
+      if (this.discoveryManager && typeof this.discoveryManager.clearCache === 'function') {
+        this.discoveryManager.clearCache()
+      }
 
+      // 3. 填充新的RegistryData
+      await this.populateRegistryData()
+
+      // 4. 为逻辑协议设置注册表引用
+      this.setupLogicalProtocols()
+
+      // 5. 设置初始化状态
       this.initialized = true
+
+      // 初始化完成，不输出日志避免干扰用户界面
     } catch (error) {
-      throw new Error(`ResourceManager初始化失败: ${error.message}`)
+      logger.warn(`ResourceManager new architecture initialization failed: ${error.message}`)
+      logger.warn('ResourceManager continuing with empty registry')
+      this.initialized = true // 即使失败也标记为已初始化，避免重复尝试
     }
   }
 
   /**
-   * 加载统一资源注册表（合并系统和用户资源）
+   * 填充新的RegistryData
    */
-  async loadUnifiedRegistry () {
-    try {
-      // 加载系统资源注册表
-      const registryPath = path.resolve(__dirname, '../../../resource.registry.json')
-
-      if (!await fs.pathExists(registryPath)) {
-        throw new Error(`统一资源注册表文件不存在: ${registryPath}`)
-      }
-
-      const systemRegistry = await fs.readJSON(registryPath)
-      
-      // 发现用户资源
-      const userResources = await this.discoverUserResources()
-      
-      // 从系统注册表中提取资源数据
-      const extractedSystemResources = {}
-      for (const resourceType of SUPPORTED_RESOURCE_TYPES) {
-        const protocolConfig = systemRegistry.protocols[resourceType]
-        if (protocolConfig && protocolConfig.registry) {
-          extractedSystemResources[resourceType] = protocolConfig.registry
-        }
-      }
-      
-      // 合并资源，用户资源覆盖系统资源
-      const mergedRegistry = { ...systemRegistry }
-      
-      // 合并各种资源类型
-      for (const resourceType of SUPPORTED_RESOURCE_TYPES) {
-        // 确保有基础结构
-        if (!mergedRegistry[resourceType]) {
-          mergedRegistry[resourceType] = {}
-        }
-        
-        // 先添加系统资源
-        if (extractedSystemResources[resourceType]) {
-          if (!mergedRegistry[resourceType]) mergedRegistry[resourceType] = {}
-          for (const [id, resourceInfo] of Object.entries(extractedSystemResources[resourceType])) {
-            // 对于role资源，resourceInfo是对象；对于thought/execution，resourceInfo是字符串
-            if (resourceType === 'role') {
-              mergedRegistry[resourceType][id] = {
-                ...resourceInfo,
-                source: 'system'
-              }
-            } else {
-              // 对于thought和execution，resourceInfo直接是路径字符串
-              mergedRegistry[resourceType][id] = resourceInfo
-            }
-          }
-        }
-        
-        // 再添加用户资源（覆盖同名的系统资源）
-        if (userResources[resourceType]) {
-          for (const [id, resourceInfo] of Object.entries(userResources[resourceType])) {
-            let filePath = resourceInfo.file || resourceInfo
-            
-            // 将绝对路径转换为@project://相对路径格式
-            if (path.isAbsolute(filePath)) {
-              // 简单的路径转换：去掉项目根目录前缀
-              const projectRoot = process.cwd()
-              if (filePath.startsWith(projectRoot)) {
-                const relativePath = path.relative(projectRoot, filePath)
-                filePath = `@project://${relativePath}`
-              }
-            }
-            
-            // 对于role资源类型，需要保持对象格式以包含name和description
-            if (resourceType === 'role') {
-              mergedRegistry[resourceType][id] = {
-                file: filePath,
-                name: resourceInfo.name || id,
-                description: resourceInfo.description || `${resourceInfo.name || id}专业角色`,
-                source: 'user-generated',
-                format: resourceInfo.format,
-                type: resourceInfo.type
-              }
-            } else {
-              // 对于thought和execution，协议处理器期望的是文件路径字符串
-              if (!mergedRegistry[resourceType]) mergedRegistry[resourceType] = {}
-              mergedRegistry[resourceType][id] = filePath
-            }
-          }
-        }
-      }
-      
-      this.registry = mergedRegistry
-      return mergedRegistry
-    } catch (error) {
-      // 如果加载失败，至少返回一个基本结构
-      logger.warn(`加载统一注册表失败: ${error.message}`)
-      const fallbackRegistry = { role: {} }
-      this.registry = fallbackRegistry
-      return fallbackRegistry
-    }
-  }
-
-  /**
-   * 注册协议处理器
-   */
-  async registerProtocolHandlers () {
-    // 动态导入协议处理器
-    const protocolsDir = path.join(__dirname, 'protocols')
-    const protocolFiles = await fs.readdir(protocolsDir)
-
-    // 首先创建所有协议处理器实例
-    const handlers = new Map()
-
-    for (const file of protocolFiles) {
-      if (file.endsWith('.js') && file !== 'ResourceProtocol.js') {
-        // 将文件名映射到协议名：ExecutionProtocol.js -> execution
-        const protocolName = file.replace('Protocol.js', '').toLowerCase()
-        const ProtocolClass = require(path.join(protocolsDir, file))
-        const protocolHandler = new ProtocolClass()
-
-        // 从统一注册表获取协议配置
-        // 对于基础协议(thought, execution等)，直接从registry中获取
-        const protocolRegistry = this.registry[protocolName]
-        if (protocolRegistry) {
-          protocolHandler.setRegistry(protocolRegistry)
-        } else {
-          // 对于复杂协议配置，从protocols配置中获取  
-          const protocolConfig = this.registry.protocols && this.registry.protocols[protocolName]
-          if (protocolConfig && protocolConfig.registry) {
-            protocolHandler.setRegistry(protocolConfig.registry)
-          }
-        }
-
-        handlers.set(protocolName, protocolHandler)
-      }
-    }
-
-    // 设置协议依赖关系
-    const packageProtocol = handlers.get('package')
-    const promptProtocol = handlers.get('prompt')
-
-    if (promptProtocol && packageProtocol) {
-      promptProtocol.setPackageProtocol(packageProtocol)
-    }
-
-    // 将所有处理器注册到管理器
-    this.protocolHandlers = handlers
-  }
-
-  /**
-   * 解析资源路径并获取内容
-   */
-  async resolveResource (resourceUrl) {
-    await this.initialize()
-
-    try {
-      // 支持DPML资源引用语法: @protocol://path, @!protocol://path, @?protocol://path
-      // 同时向后兼容标准URL格式: protocol://path
-      const urlMatch = resourceUrl.match(/^(@[!?]?)?([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$/)
-      if (!urlMatch) {
-        throw new Error(`无效的资源URL格式: ${resourceUrl}。支持格式: @protocol://path, @!protocol://path, @?protocol://path`)
-      }
-
-      const [, loadingSemantic, protocol, resourcePath] = urlMatch
-      const handler = this.protocolHandlers.get(protocol)
-
-      if (!handler) {
-        throw new Error(`未注册的协议: ${protocol}`)
-      }
-
-      // 解析查询参数（如果有的话）
-      const { QueryParams, ResourceResult } = require('./types')
-      let path = resourcePath
-      const queryParams = new QueryParams()
-
-      if (resourcePath.includes('?')) {
-        const [pathPart, queryString] = resourcePath.split('?', 2)
-        path = pathPart
-
-        // 解析查询字符串
-        const params = new URLSearchParams(queryString)
-        for (const [key, value] of params) {
-          queryParams.set(key, value)
-        }
-      }
-
-      // 将加载语义信息添加到查询参数中（如果有的话）
-      if (loadingSemantic) {
-        queryParams.set('loadingSemantic', loadingSemantic)
-      }
-
-      const content = await handler.resolve(path, queryParams)
-
-      // 返回ResourceResult格式
-      return ResourceResult.success(content, {
-        protocol,
-        path,
-        loadingSemantic,
-        loadTime: Date.now()
-      })
-    } catch (error) {
-      // 返回错误结果
-      const { ResourceResult } = require('./types')
-      return ResourceResult.error(error, {
-        resourceUrl,
-        loadTime: Date.now()
-      })
-    }
-  }
-
-  /**
-   * resolve方法的别名，保持向后兼容
-   */
-  async resolve (resourceUrl) {
-    return await this.resolveResource(resourceUrl)
-  }
-
-  /**
-   * 获取协议的注册表信息
-   */
-  getProtocolRegistry (protocol) {
-    if (!this.registry) {
-      throw new Error('ResourceManager未初始化')
-    }
-
-    const protocolConfig = this.registry.protocols[protocol]
-    return protocolConfig ? protocolConfig.registry : null
-  }
-
-  /**
-   * 获取所有已注册的协议
-   */
-  getAvailableProtocols () {
-    return this.registry ? Object.keys(this.registry.protocols) : []
-  }
-
-  /**
-   * 获取协议的描述信息
-   */
-  getProtocolInfo (protocol) {
-    if (!this.registry) {
-      throw new Error('ResourceManager未初始化')
-    }
-
-    const handler = this.protocolHandlers.get(protocol)
-    if (handler && typeof handler.getProtocolInfo === 'function') {
-      return handler.getProtocolInfo()
-    }
-
-    const protocolConfig = this.registry.protocols[protocol]
-    if (protocolConfig) {
-      return {
-        name: protocol,
-        ...protocolConfig
-      }
-    }
-
-    return null
-  }
-
-  /**
-   * 发现用户资源
-   * @returns {Promise<Object>} 用户资源注册表
-   */
-  async discoverUserResources() {
-    try {
-      const PackageProtocol = require('./protocols/PackageProtocol')
-      const packageProtocol = new PackageProtocol()
-      const packageRoot = await packageProtocol.getPackageRoot()
-      
-      const userResourcePath = path.join(packageRoot, USER_RESOURCE_DIR, ...RESOURCE_DOMAIN_PATH)
-      
-      // 检查用户资源目录是否存在
-      if (!await fs.pathExists(userResourcePath)) {
-        return {}
-      }
-      
-      return await this.scanResourceDirectory(userResourcePath)
-    } catch (error) {
-      // 出错时返回空对象，不抛出异常
-      logger.warn(`用户资源发现失败: ${error.message}`)
-      return {}
-    }
-  }
-
-  /**
-   * 扫描资源目录
-   * @param {string} basePath - 基础路径
-   * @returns {Promise<Object>} 发现的资源
-   */
-  async scanResourceDirectory(basePath) {
-    const resources = {}
+  async populateRegistryData() {
+    // 清空现有数据
+    this.registryData.clear()
     
-    try {
-      const directories = await fs.readdir(basePath)
-      
-      for (const roleDir of directories) {
-        const rolePath = path.join(basePath, roleDir)
-        
-        try {
-          const stat = await fs.stat(rolePath)
-          
-          if (stat.isDirectory()) {
-            // 扫描角色文件
-            await this.scanRoleResources(rolePath, roleDir, resources)
-            
-            // 扫描其他资源类型（thought, execution）
-            await this.scanOtherResources(rolePath, roleDir, resources)
-          }
-        } catch (dirError) {
-          // 跳过无法访问的目录
-          logger.debug(`跳过目录 ${roleDir}: ${dirError.message}`)
-        }
-      }
-    } catch (error) {
-      logger.warn(`扫描资源目录失败 ${basePath}: ${error.message}`)
-    }
-    
-    return resources
-  }
-
-  /**
-   * 扫描角色资源
-   * @param {string} rolePath - 角色目录路径
-   * @param {string} roleId - 角色ID
-   * @param {Object} resources - 资源容器
-   */
-  async scanRoleResources(rolePath, roleId, resources) {
-    const roleFile = path.join(rolePath, `${roleId}.role.md`)
-    
-    if (await fs.pathExists(roleFile)) {
+    // 从各个发现器获取RegistryData并合并
+    for (const discovery of this.discoveryManager.discoveries) {
       try {
-        const content = await fs.readFile(roleFile, 'utf8')
-        
-        // 验证DPML格式
-        if (this.validateDPMLFormat(content, 'role')) {
-          const name = this.extractRoleName(content)
-          
-          if (!resources.role) resources.role = {}
-          resources.role[roleId] = {
-            file: roleFile,
-            name: name || roleId,
-            source: 'user-generated',
-            format: 'dpml',
-            type: 'role'
+        if (typeof discovery.getRegistryData === 'function') {
+          const registryData = await discovery.getRegistryData()
+          if (registryData && registryData.resources) {
+            // 合并资源到主注册表
+            this.registryData.merge(registryData, true) // 允许覆盖
           }
         }
       } catch (error) {
-        // 忽略单个文件的错误
+        logger.warn(`Failed to get RegistryData from ${discovery.source}: ${error.message}`)
       }
     }
   }
 
   /**
-   * 扫描其他资源类型
-   * @param {string} rolePath - 角色目录路径
-   * @param {string} roleId - 角色ID
-   * @param {Object} resources - 资源容器
+   * 为逻辑协议设置注册表引用
    */
-  async scanOtherResources(rolePath, roleId, resources) {
-    for (const resourceType of SUPPORTED_RESOURCE_TYPES.filter(type => type !== 'role')) {
-      const resourceDir = path.join(rolePath, resourceType)
-      
-      if (await fs.pathExists(resourceDir)) {
-        try {
-          const files = await fs.readdir(resourceDir)
-          
-          for (const file of files) {
-            if (file.endsWith(`.${resourceType}.md`)) {
-              const resourceName = file.replace(`.${resourceType}.md`, '')
-              const filePath = path.join(resourceDir, file)
-              const content = await fs.readFile(filePath, 'utf8')
-              
-              if (this.validateDPMLFormat(content, resourceType)) {
-                if (!resources[resourceType]) resources[resourceType] = {}
-                resources[resourceType][resourceName] = {
-                  file: filePath,
-                  name: resourceName,
-                  source: 'user-generated',
-                  format: 'dpml',
-                  type: resourceType
-                }
-              }
-            }
-          }
-        } catch (error) {
-          logger.debug(`扫描${resourceType}资源失败: ${error.message}`)
-        }
-      }
+  setupLogicalProtocols() {
+    // 将统一注册表传递给逻辑协议处理器
+    const roleProtocol = this.protocols.get('role')
+    const executionProtocol = this.protocols.get('execution')
+    const thoughtProtocol = this.protocols.get('thought')
+    const knowledgeProtocol = this.protocols.get('knowledge')
+    
+    if (roleProtocol) {
+      roleProtocol.setRegistryManager(this)
     }
-  }
-
-  /**
-   * 验证DPML格式
-   * @param {string} content - 文件内容
-   * @param {string} type - 资源类型
-   * @returns {boolean} 是否为有效格式
-   */
-  validateDPMLFormat(content, type) {
-    const tags = DPML_TAGS[type]
-    if (!tags) {
-      return false
+    if (executionProtocol) {
+      executionProtocol.setRegistryManager(this)
+    }
+    if (thoughtProtocol) {
+      thoughtProtocol.setRegistryManager(this)
+    }
+    if (knowledgeProtocol) {
+      knowledgeProtocol.setRegistryManager(this)
     }
     
-    return content.includes(tags.start) && content.includes(tags.end)
+    // 逻辑协议设置完成，不输出日志避免干扰用户界面
   }
 
   /**
-   * 从角色内容中提取名称
-   * @param {string} content - 角色文件内容
-   * @returns {string} 角色名称
+   * 通过协议解析加载资源内容
+   * @param {string} reference - 资源引用
+   * @returns {Promise<string>} 资源内容
    */
-  extractRoleName(content) {
-    // 简单的名称提取逻辑
-    const match = content.match(/#\s*([^\n]+)/)
-    return match ? match[1].trim() : null
-  }
-
-  /**
-   * 加载系统资源注册表（兼容现有方法）
-   * @returns {Promise<Object>} 系统资源注册表
-   */
-  async loadSystemRegistry() {
-    const registryPath = path.resolve(__dirname, '../../../resource.registry.json')
-
-    if (!await fs.pathExists(registryPath)) {
-      throw new Error(`统一资源注册表文件不存在: ${registryPath}`)
+  async loadResourceByProtocol(reference) {
+    // 1. 使用ResourceProtocolParser解析DPML语法
+    const parsed = this.protocolParser.parse(reference)
+    
+    // 2. 获取对应的协议处理器
+    const protocol = this.protocols.get(parsed.protocol)
+    if (!protocol) {
+      throw new Error(`不支持的协议: ${parsed.protocol}`)
     }
 
-    return await fs.readJSON(registryPath)
+    // 3. 委托给协议处理器解析并加载内容
+    const result = await protocol.resolve(parsed.path, parsed.queryParams)
+    
+    // 4. 确保返回字符串内容，解包可能的对象格式
+    if (typeof result === 'string') {
+      return result
+    } else if (result && typeof result === 'object' && result.content) {
+      return result.content
+    } else {
+      throw new Error(`协议${parsed.protocol}返回了无效的内容格式`)
+    }
+  }
+
+  async loadResource(resourceId) {
+    try {
+      // 确保ResourceManager已初始化
+      if (!this.initialized) {
+        await this.initializeWithNewArchitecture()
+      }
+      
+      // 处理@!开头的DPML格式（如 @!role://java-developer）
+      if (resourceId.startsWith('@!')) {
+        const parsed = this.protocolParser.parse(resourceId)
+        
+        // 从RegistryData查找资源
+        const resourceData = this.registryData.findResourceById(parsed.path, parsed.protocol)
+        if (!resourceData) {
+          throw new Error(`Resource not found: ${parsed.protocol}:${parsed.path}`)
+        }
+        
+        // 通过协议解析加载内容
+        const content = await this.loadResourceByProtocol(resourceData.reference)
+        
+        return {
+          success: true,
+          content,
+          resourceId,
+          reference: resourceData.reference
+        }
+      }
+      
+      // 处理传统格式（如 role:java-developer）
+      let reference = null
+      
+      // 如果包含协议前缀（如 thought:remember）
+      if (resourceId.includes(':')) {
+        const [protocol, id] = resourceId.split(':', 2)
+        const resourceData = this.registryData.findResourceById(id, protocol)
+        if (resourceData) {
+          reference = resourceData.reference
+        }
+      } else {
+        // 如果没有协议前缀，尝试查找任意协议的资源
+        const resourceData = this.registryData.findResourceById(resourceId)
+        if (resourceData) {
+          reference = resourceData.reference
+        }
+      }
+      
+      if (!reference) {
+        throw new Error(`Resource not found: ${resourceId}`)
+      }
+      
+      // 通过协议解析加载内容
+      const content = await this.loadResourceByProtocol(reference)
+
+      return {
+        success: true,
+        content,
+        resourceId,
+        reference
+      }
+    } catch (error) {
+      logger.debug(`ResourceManager.loadResource failed for ${resourceId}: ${error.message}`)
+      return {
+        success: false,
+        error: error,  // 返回完整的Error对象，而不是message字符串
+        resourceId
+      }
+    }
+  }
+
+  /**
+   * 解析协议引用并返回相关信息
+   */
+  async resolveProtocolReference(reference) {
+    try {
+      const parsed = this.protocolParser.parse(reference)
+      
+      return {
+        success: true,
+        protocol: parsed.protocol,
+        path: parsed.path,
+        queryParams: parsed.queryParams,
+        reference
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        reference
+      }
+    }
+  }
+
+  /**
+   * 获取所有可用的协议列表
+   */
+  getAvailableProtocols() {
+    return Array.from(this.protocols.keys())
+  }
+
+  /**
+   * 检查是否支持指定协议
+   */
+  supportsProtocol(protocol) {
+    return this.protocols.has(protocol)
+  }
+
+  /**
+   * 设置初始化状态
+   */
+  set initialized(value) {
+    this._initialized = value
+  }
+
+  /**
+   * 获取初始化状态
+   */
+  get initialized() {
+    return this._initialized || false
+  }
+
+  /**
+   * 解析资源URL（向后兼容接口）
+   * 返回格式：{success: boolean, content?: string, error?: Error}
+   */
+  async resolve(resourceUrl) {
+    return await this.loadResource(resourceUrl)
+  }
+
+  /**
+   * 获取注册表统计信息
+   */
+  getStats() {
+    return {
+      totalResources: this.registryData.size,
+      protocols: this.getAvailableProtocols(),
+      initialized: this.initialized
+    }
+  }
+
+  /**
+   * 刷新资源（重新发现并注册）
+   */
+  async refreshResources() {
+    try {
+      // 1. 标记为未初始化
+      this.initialized = false
+      
+      // 2. 清空注册表
+      this.registryData.clear()
+      
+      // 3. 清除发现器缓存
+      if (this.discoveryManager && typeof this.discoveryManager.clearCache === 'function') {
+        this.discoveryManager.clearCache()
+      }
+      
+      // 4. 重新初始化
+      await this.initializeWithNewArchitecture()
+      
+    } catch (error) {
+      logger.warn(`ResourceManager resource refresh failed: ${error.message}`)
+      // 失败时保持注册表为空状态，下次调用时重试
+    }
   }
 }
 

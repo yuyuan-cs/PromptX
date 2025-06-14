@@ -32,24 +32,8 @@ module.exports = {
   // 设置文件
   setupFilesAfterEnv: ['<rootDir>/src/tests/setup.js'],
   
-  // 项目配置 - 分离不同类型的测试
-  projects: [
-    {
-      displayName: 'unit',
-      testMatch: ['<rootDir>/src/tests/**/*.unit.test.js'],
-      testEnvironment: 'node'
-    },
-    {
-      displayName: 'integration',
-      testMatch: ['<rootDir>/src/tests/**/*.integration.test.js'],
-      testEnvironment: 'node'
-    },
-    {
-      displayName: 'e2e',
-      testMatch: ['<rootDir>/src/tests/**/*.e2e.test.js'],
-      testEnvironment: 'node'
-    }
-  ],
+  // 全局超时设置
+  testTimeout: 15000,
   
   // 模块路径映射
   moduleNameMapper: {
@@ -57,25 +41,18 @@ module.exports = {
     '^@tests/(.*)$': '<rootDir>/src/tests/$1'
   },
   
-  // 全局变量
-  globals: {
-    TEST_TIMEOUT: 30000
-  },
-  
   // 详细输出
-  verbose: true,
+  verbose: false,  // 减少输出噪音
   
-  // 并发测试 - 减少并发以避免资源竞争
-  maxWorkers: 1,
+  // 并发测试
+  maxWorkers: '50%',
   
-  // 增加超时时间 - 移到项目配置中
+  // 清理模式
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
   
-  // 失败重试 - Jest 29不支持，移除此配置
-  // jest: {
-  //   retries: 2
-  // },
-  
-  // CI环境优化
-  detectOpenHandles: true,
+  // 简化错误处理
+  detectOpenHandles: false,  // 关闭句柄检测以提高速度
   forceExit: true
 }; 

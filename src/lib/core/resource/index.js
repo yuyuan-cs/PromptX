@@ -10,7 +10,6 @@ const ResourceManager = require('./resourceManager')
 
 // 核心组件
 const ResourceProtocolParser = require('./resourceProtocolParser')
-const ResourceRegistry = require('./resourceRegistry')
 
 // 数据类型
 const {
@@ -25,14 +24,39 @@ const {
   ProtocolInfo
 } = require('./types')
 
+// 全局单例 ResourceManager 实例
+let globalResourceManager = null
+
+/**
+ * 获取全局单例 ResourceManager 实例
+ * 确保整个应用程序使用同一个 ResourceManager 实例
+ */
+function getGlobalResourceManager() {
+  if (!globalResourceManager) {
+    globalResourceManager = new ResourceManager()
+  }
+  return globalResourceManager
+}
+
+/**
+ * 重置全局 ResourceManager 实例
+ * 主要用于测试或需要完全重新初始化的场景
+ */
+function resetGlobalResourceManager() {
+  globalResourceManager = null
+}
+
 // 导出主接口
 module.exports = {
-  // 主管理器
+  // 主管理器类
   ResourceManager,
+
+  // 全局单例实例
+  getGlobalResourceManager,
+  resetGlobalResourceManager,
 
   // 核心组件
   ResourceProtocolParser,
-  ResourceRegistry,
 
   // 数据类型
   LoadingSemantics,
@@ -45,7 +69,7 @@ module.exports = {
   ResourceResult,
   ProtocolInfo,
 
-  // 便捷方法 - 创建默认实例
+  // 便捷方法 - 创建默认实例（保持向后兼容）
   createManager: (options) => new ResourceManager(options),
 
   // 便捷方法 - 快速解析

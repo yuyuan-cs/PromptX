@@ -1,19 +1,25 @@
 const BasePouchCommand = require('../BasePouchCommand')
-const ResourceManager = require('../../resource/resourceManager')
-const { COMMANDS, buildCommand } = require('../../../../constants')
+const { getGlobalResourceManager } = require('../../resource')
+const DPMLContentParser = require('../../resource/DPMLContentParser')
+const SemanticRenderer = require('../../resource/SemanticRenderer')
+const { COMMANDS } = require('../../../../constants')
 
 /**
  * 智能学习锦囊命令
  * 支持加载thought、execution、memory等协议资源，以及角色的personality、principle、knowledge
+ * 支持语义占位符渲染，将@引用展开为完整的语义内容
  */
 class LearnCommand extends BasePouchCommand {
   constructor () {
     super()
-    this.resourceManager = new ResourceManager()
+    // 使用全局单例 ResourceManager
+    this.resourceManager = getGlobalResourceManager()
+    this.dpmlParser = new DPMLContentParser()
+    this.semanticRenderer = new SemanticRenderer()
   }
 
   getPurpose () {
-    return '智能学习指定协议的资源内容，支持thought、execution、memory等DPML协议以及角色组件'
+    return '智能学习指定协议的资源内容，支持thought、execution、memory等DPML协议以及角色组件，支持@引用的语义渲染'
   }
 
   async getContent (args) {
@@ -24,13 +30,6 @@ class LearnCommand extends BasePouchCommand {
     }
 
     try {
-      // 直接使用ResourceManager解析资源
-      const result = await this.resourceManager.resolve(resourceUrl)
-
-      if (!result.success) {
-        return this.formatErrorResponse(resourceUrl, result.error.message)
-      }
-
       // 解析协议信息
       const urlMatch = resourceUrl.match(/^(@[!?]?)?([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$/)
       if (!urlMatch) {
@@ -39,10 +38,60 @@ class LearnCommand extends BasePouchCommand {
       
       const [, loadingSemantic, protocol, resourceId] = urlMatch
 
-      return this.formatSuccessResponse(protocol, resourceId, result.content)
+      // 使用ResourceManager解析资源
+      const result = await this.resourceManager.resolve(resourceUrl)
+
+      if (!result.success) {
+        return this.formatErrorResponse(resourceUrl, result.error.message)
+      }
+
+      // 检查内容是否包含@引用，如果包含则进行语义渲染
+      let finalContent = result.content
+
+      if (this.containsReferences(result.content)) {
+        // 对于完整的DPML标签（如<execution>...</execution>），提取标签内容进行渲染
+        const innerContent = this.extractTagInnerContent(result.content, protocol)
+        
+        if (innerContent) {
+          // 解析标签内的混合内容（@引用 + 直接内容）
+          const tagSemantics = this.dpmlParser.parseTagContent(innerContent, protocol)
+          
+          // 使用SemanticRenderer进行语义占位符渲染
+          const renderedInnerContent = await this.semanticRenderer.renderSemanticContent(tagSemantics, this.resourceManager)
+          
+          // 如果渲染成功，重新包装为完整的DPML标签
+          if (renderedInnerContent && renderedInnerContent.trim()) {
+            finalContent = `<${protocol}>\n${renderedInnerContent}\n</${protocol}>`
+          }
+        }
+      }
+
+      return this.formatSuccessResponse(protocol, resourceId, finalContent)
     } catch (error) {
       return this.formatErrorResponse(resourceUrl, error.message)
     }
+  }
+
+  /**
+   * 检查内容是否包含@引用
+   * @param {string} content - 要检查的内容
+   * @returns {boolean} 是否包含@引用
+   */
+  containsReferences(content) {
+    const resourceRegex = /@([!?]?)([a-zA-Z][a-zA-Z0-9_-]*):\/\/([a-zA-Z0-9_\/.,-]+)/g
+    return resourceRegex.test(content)
+  }
+
+  /**
+   * 提取完整的DPML标签内容
+   * @param {string} content - 要提取的内容
+   * @param {string} protocol - 协议
+   * @returns {string} 提取的完整DPML标签内容
+   */
+  extractTagInnerContent(content, protocol) {
+    const tagRegex = new RegExp(`<${protocol}>([\\s\\S]*?)<\\/${protocol}>`, 'i')
+    const match = content.match(tagRegex)
+    return match ? match[1].trim() : null
   }
 
   /**
@@ -72,12 +121,9 @@ ${content}
 - ✅ **可立即应用于实际场景**
 
 ## 🔄 下一步行动：
-- 继续学习: 学习其他相关资源
-  命令: \`${buildCommand.learn('<protocol>://<resource-id>')}\`
-- 应用记忆: 检索相关经验
-  命令: \`${COMMANDS.RECALL}\`
-- 激活角色: 激活完整角色能力
-  命令: \`${buildCommand.action('<role-id>')}\`
+- 继续学习: 使用 MCP PromptX learn 工具学习其他相关资源
+- 应用记忆: 使用 MCP PromptX recall 工具检索相关经验
+- 激活角色: 使用 MCP PromptX action 工具激活完整角色能力
 
 📍 当前状态：learned_${protocol}`
   }
@@ -100,19 +146,13 @@ ${errorMessage}
 - \`knowledge://role-id\` - 学习角色知识
 
 🔍 查看可用资源：
-\`\`\`bash
-${buildCommand.action('<role-id>')}  # 查看角色的所有依赖
-\`\`\`
+使用 MCP PromptX action 工具查看角色的所有依赖
 
 🔄 下一步行动：
-  - 继续学习: 学习其他资源
-    命令: ${buildCommand.learn('<protocol>://<resource-id>')}
-  - 应用记忆: 检索相关经验
-    命令: ${COMMANDS.RECALL}
-  - 激活角色: 激活完整角色能力
-    命令: ${buildCommand.action('<role-id>')}
-  - 查看角色列表: 选择其他角色
-    命令: ${COMMANDS.HELLO}`
+  - 继续学习: 使用 MCP PromptX learn 工具学习其他资源
+  - 应用记忆: 使用 MCP PromptX recall 工具检索相关经验
+  - 激活角色: 使用 MCP PromptX action 工具激活完整角色能力
+  - 查看角色列表: 使用 MCP PromptX hello 工具选择其他角色`
   }
 
   /**
@@ -122,9 +162,8 @@ ${buildCommand.action('<role-id>')}  # 查看角色的所有依赖
     return `🎓 **Learn锦囊 - 智能学习系统**
 
 ## 📖 基本用法
-\`\`\`bash
-promptx learn <protocol>://<resource-id>
-\`\`\`
+通过 MCP PromptX learn 工具学习资源：
+\`<protocol>://<resource-id>\`
 
 ## 🎯 支持的协议
 
@@ -139,28 +178,18 @@ promptx learn <protocol>://<resource-id>
 - **\`knowledge://\`** - 专业知识
 
 ## 📝 使用示例
-\`\`\`bash
-# 学习执行技能
-${buildCommand.learn('execution://deal-at-reference')}
-
-# 学习思维模式  
-${buildCommand.learn('thought://prompt-developer')}
-
-# 学习角色人格
-${buildCommand.learn('personality://video-copywriter')}
-\`\`\`
+通过 MCP PromptX learn 工具学习各种资源：
+- 学习执行技能: \`execution://deal-at-reference\`
+- 学习思维模式: \`thought://prompt-developer\`  
+- 学习角色人格: \`personality://video-copywriter\`
 
 ## 🔍 发现可学习资源
-\`\`\`bash
-${buildCommand.action('<role-id>')}  # 查看角色需要的所有资源
-${COMMANDS.HELLO}            # 查看可用角色列表
-\`\`\`
+- 使用 MCP PromptX action 工具查看角色需要的所有资源
+- 使用 MCP PromptX hello 工具查看可用角色列表
 
 🔄 下一步行动：
-  - 激活角色: 分析角色依赖
-    命令: ${buildCommand.action('<role-id>')}
-  - 查看角色: 选择感兴趣的角色  
-    命令: ${COMMANDS.HELLO}`
+  - 激活角色: 使用 MCP PromptX action 工具分析角色依赖
+  - 查看角色: 使用 MCP PromptX hello 工具选择感兴趣的角色`
   }
 
   /**
@@ -177,13 +206,13 @@ ${COMMANDS.HELLO}            # 查看可用角色列表
           {
             name: '查看可用角色',
             description: '返回角色选择页面',
-            command: COMMANDS.HELLO,
+            method: 'MCP PromptX hello 工具',
             priority: 'high'
           },
           {
             name: '生成学习计划',
             description: '为特定角色生成学习计划',
-            command: buildCommand.action('<role-id>'),
+            method: 'MCP PromptX action 工具',
             priority: 'high'
           }
         ]
@@ -199,7 +228,7 @@ ${COMMANDS.HELLO}            # 查看可用角色列表
           {
             name: '查看使用帮助',
             description: '重新学习命令使用方法',
-            command: COMMANDS.LEARN,
+            method: 'MCP PromptX learn 工具',
             priority: 'high'
           }
         ]
@@ -215,25 +244,25 @@ ${COMMANDS.HELLO}            # 查看可用角色列表
         {
           name: '继续学习',
           description: '学习其他资源',
-          command: buildCommand.learn('<protocol>://<resource-id>'),
+          method: 'MCP PromptX learn 工具',
           priority: 'medium'
         },
         {
           name: '应用记忆',
           description: '检索相关经验',
-          command: COMMANDS.RECALL,
+          method: 'MCP PromptX recall 工具',
           priority: 'medium'
         },
         {
           name: '激活角色',
           description: '激活完整角色能力',
-          command: buildCommand.action('<role-id>'),
+          method: 'MCP PromptX action 工具',
           priority: 'high'
         },
         {
           name: '查看角色列表',
           description: '选择其他角色',
-          command: COMMANDS.HELLO,
+          method: 'MCP PromptX hello 工具',
           priority: 'low'
         }
       ],

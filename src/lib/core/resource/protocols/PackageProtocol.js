@@ -3,6 +3,7 @@ const fs = require('fs')
 const fsPromises = require('fs').promises
 const ResourceProtocol = require('./ResourceProtocol')
 const { QueryParams } = require('../types')
+const logger = require('../../../utils/logger')
 
 /**
  * 包协议实现
@@ -105,20 +106,56 @@ class PackageProtocol extends ResourceProtocol {
    * 检测是否是npx执行
    */
   _isNpxExecution () {
-    // 检查环境变量
-    if (process.env.npm_execpath && process.env.npm_execpath.includes('npx')) {
-      return true
+    // 标准化环境变量路径（处理Windows反斜杠）
+    const normalizeEnvPath = (envPath) => {
+      return envPath ? envPath.replace(/\\/g, '/').toLowerCase() : ''
     }
 
-    // 检查npm_config_cache路径
-    if (process.env.npm_config_cache && process.env.npm_config_cache.includes('_npx')) {
-      return true
+    // 检查环境变量 - Windows和Unix兼容
+    if (process.env.npm_execpath) {
+      const normalizedExecPath = normalizeEnvPath(process.env.npm_execpath)
+      if (normalizedExecPath.includes('npx')) {
+        return true
+      }
     }
 
-    // 检查执行路径
+    // 检查npm_config_cache路径 - Windows和Unix兼容
+    if (process.env.npm_config_cache) {
+      const normalizedCachePath = normalizeEnvPath(process.env.npm_config_cache)
+      if (normalizedCachePath.includes('_npx')) {
+        return true
+      }
+    }
+
+    // 检查执行路径 - Windows和Unix兼容
     const scriptPath = process.argv[1]
-    if (scriptPath && scriptPath.includes('_npx')) {
-      return true
+    if (scriptPath) {
+      const normalizedScriptPath = normalizeEnvPath(scriptPath)
+      if (normalizedScriptPath.includes('_npx')) {
+        return true
+      }
+    }
+
+    // Windows特定检查：检查.cmd或.bat文件
+    if (process.platform === 'win32') {
+      // 检查是否通过npx.cmd执行
+      if (process.env.npm_execpath && 
+          (process.env.npm_execpath.endsWith('npx.cmd') || 
+           process.env.npm_execpath.endsWith('npx.bat'))) {
+        return true
+      }
+      
+      // Windows NPX缓存目录通常包含_npx
+      const windowsNpxPaths = [
+        process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'npm-cache', '_npx'),
+        process.env.APPDATA && path.join(process.env.APPDATA, 'npm', '_npx'),
+        process.env.TEMP && path.join(process.env.TEMP, '_npx')
+      ].filter(Boolean)
+      
+      const currentPath = __dirname
+      if (windowsNpxPaths.some(npxPath => currentPath.includes(npxPath))) {
+        return true
+      }
     }
 
     return false
@@ -222,12 +259,17 @@ class PackageProtocol extends ResourceProtocol {
   findPackageJson (startPath = __dirname) {
     let currentPath = path.resolve(startPath)
 
-    while (currentPath !== path.parse(currentPath).root) {
+    let maxIterations = 50 // Prevent infinite loops
+    while (currentPath !== path.parse(currentPath).root && maxIterations-- > 0) {
       const packageJsonPath = path.join(currentPath, 'package.json')
       if (require('fs').existsSync(packageJsonPath)) {
         return packageJsonPath
       }
-      currentPath = path.dirname(currentPath)
+      const parentPath = path.dirname(currentPath)
+      if (parentPath === currentPath) {
+        break // Additional protection
+      }
+      currentPath = parentPath
     }
 
     return null
@@ -239,13 +281,18 @@ class PackageProtocol extends ResourceProtocol {
   findRootPackageJson () {
     let currentPath = process.cwd()
     let lastValidPackageJson = null
+    let maxIterations = 50 // Prevent infinite loops
 
-    while (currentPath !== path.parse(currentPath).root) {
+    while (currentPath !== path.parse(currentPath).root && maxIterations-- > 0) {
       const packageJsonPath = path.join(currentPath, 'package.json')
       if (require('fs').existsSync(packageJsonPath)) {
         lastValidPackageJson = packageJsonPath
       }
-      currentPath = path.dirname(currentPath)
+      const parentPath = path.dirname(currentPath)
+      if (parentPath === currentPath) {
+        break // Additional protection
+      }
+      currentPath = parentPath
     }
 
     return lastValidPackageJson
@@ -391,13 +438,13 @@ class PackageProtocol extends ResourceProtocol {
         return
       }
 
-      // 标准化路径
-      const normalizedPath = relativePath.replace(/^\/+/, '').replace(/\\/g, '/')
+      // 使用Node.js原生API进行跨平台路径规范化
+      const normalizedPath = this.normalizePathForComparison(relativePath)
 
       // 检查是否匹配files字段中的任何模式
       const isAllowed = packageJson.files.some(filePattern => {
         // 标准化文件模式
-        const normalizedPattern = filePattern.replace(/^\/+/, '').replace(/\\/g, '/')
+        const normalizedPattern = this.normalizePathForComparison(filePattern)
 
         // 精确匹配
         if (normalizedPattern === normalizedPath) {
@@ -430,8 +477,8 @@ class PackageProtocol extends ResourceProtocol {
       if (!isAllowed) {
         // 在生产环境严格检查，开发环境只警告
         const installMode = this.detectInstallMode()
-        if (installMode === 'development') {
-          console.warn(`⚠️  Warning: Path '${relativePath}' not in package.json files field. This may cause issues after publishing.`)
+        if (installMode === 'development' || installMode === 'npx') {
+          logger.warn(`⚠️  Warning: Path '${relativePath}' not in package.json files field. This may cause issues after publishing.`)
         } else {
           throw new Error(`Access denied: Path '${relativePath}' is not included in package.json files field`)
         }
@@ -439,12 +486,34 @@ class PackageProtocol extends ResourceProtocol {
     } catch (error) {
       // 如果读取package.json失败，在开发模式下允许访问
       const installMode = this.detectInstallMode()
-      if (installMode === 'development') {
-        console.warn(`⚠️  Warning: Could not validate file access for '${relativePath}': ${error.message}`)
+      if (installMode === 'development' || installMode === 'npx') {
+        logger.warn(`⚠️  Warning: Could not validate file access for '${relativePath}': ${error.message}`)
       } else {
         throw error
       }
     }
+  }
+
+  /**
+   * 跨平台路径规范化函数
+   * @param {string} inputPath - 输入路径
+   * @returns {string} 规范化后的路径
+   */
+  normalizePathForComparison (inputPath) {
+    if (!inputPath || typeof inputPath !== 'string') {
+      return ''
+    }
+    
+    // 使用Node.js原生API进行路径规范化
+    let normalized = path.normalize(inputPath)
+    
+    // 统一使用正斜杠进行比较（但不破坏实际的文件系统操作）
+    normalized = normalized.replace(/\\/g, '/')
+    
+    // 移除开头的斜杠
+    normalized = normalized.replace(/^\/+/, '')
+    
+    return normalized
   }
 
   /**
@@ -462,23 +531,27 @@ class PackageProtocol extends ResourceProtocol {
 
   /**
    * 加载资源内容
+   * @param {string} resolvedPath - 已解析的路径
+   * @param {QueryParams} [queryParams] - 查询参数
+   * @returns {Object} 包含内容和元数据的对象
    */
   async loadContent (resolvedPath, queryParams) {
     try {
       await fsPromises.access(resolvedPath)
       const content = await fsPromises.readFile(resolvedPath, 'utf8')
       const stats = await fsPromises.stat(resolvedPath)
-
+      const packageRoot = await this.getPackageRoot()
+      
       return {
         content,
         path: resolvedPath,
-        protocol: this.name,
+        protocol: 'package',
         installMode: this.detectInstallMode(),
         metadata: {
           size: content.length,
           lastModified: stats.mtime,
           absolutePath: resolvedPath,
-          relativePath: path.relative(await this.getPackageRoot(), resolvedPath)
+          relativePath: path.relative(packageRoot, resolvedPath)
         }
       }
     } catch (error) {
