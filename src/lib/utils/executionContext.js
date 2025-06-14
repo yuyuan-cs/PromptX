@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const logger = require('./logger');
 
 /**
@@ -38,35 +39,35 @@ function getMCPWorkingDirectory() {
     // 取第一个工作区路径（多工作区情况）
     const firstPath = workspacePaths.split(path.delimiter)[0];
     if (firstPath && isValidDirectory(firstPath)) {
-      logger.info(`[执行上下文] 使用WORKSPACE_FOLDER_PATHS: ${firstPath}`);
+      console.error(`[执行上下文] 使用WORKSPACE_FOLDER_PATHS: ${firstPath}`);
       return firstPath;
     }
   }
 
   // 策略2：PROMPTX_WORKSPACE（PromptX专用环境变量）
-  const promptxWorkspace = process.env.PROMPTX_WORKSPACE;
+  const promptxWorkspace = normalizePath(expandHome(process.env.PROMPTX_WORKSPACE || ''));
   if (promptxWorkspace && isValidDirectory(promptxWorkspace)) {
-    logger.info(`[执行上下文] 使用PROMPTX_WORKSPACE: ${promptxWorkspace}`);
+    console.error(`[执行上下文] 使用PROMPTX_WORKSPACE: ${promptxWorkspace}`);
     return promptxWorkspace;
   }
 
   // 策略3：PWD环境变量（某些情况下可用）
   const pwd = process.env.PWD;
   if (pwd && isValidDirectory(pwd) && pwd !== process.cwd()) {
-    logger.info(`[执行上下文] 使用PWD环境变量: ${pwd}`);
+    console.error(`[执行上下文] 使用PWD环境变量: ${pwd}`);
     return pwd;
   }
 
   // 策略4：项目根目录智能推测（向上查找项目标识）
   const projectRoot = findProjectRoot(process.cwd());
   if (projectRoot && projectRoot !== process.cwd()) {
-    logger.info(`[执行上下文] 智能推测项目根目录: ${projectRoot}`);
+    console.error(`[执行上下文] 智能推测项目根目录: ${projectRoot}`);
     return projectRoot;
   }
 
   // 策略5：回退到process.cwd()
-  logger.warn(`[执行上下文] 回退到process.cwd(): ${process.cwd()}`);
-  logger.warn(`[执行上下文] 提示：建议在MCP配置中添加 "env": {"PROMPTX_WORKSPACE": "你的项目目录"}`)
+  console.error(`[执行上下文] 回退到process.cwd(): ${process.cwd()}`);
+  console.error(`[执行上下文] 提示：建议在MCP配置中添加 "env": {"PROMPTX_WORKSPACE": "你的项目目录"}`)
   return process.cwd();
 }
 
@@ -149,6 +150,18 @@ function getDebugInfo() {
     nodeVersion: process.version,
     platform: process.platform
   };
+}
+
+
+function normalizePath(p) {
+  return path.normalize(p);
+}
+
+function expandHome(filepath) {
+  if (filepath.startsWith('~/') || filepath === '~') {
+    return path.join(os.homedir(), filepath.slice(1));
+  }
+  return filepath;
 }
 
 module.exports = {
