@@ -40,6 +40,12 @@ npx dpml-prompt@snapshot mcp-server
 }
 ```
 
+### 3. Claude Code 命令
+
+```bash
+claude mcp add-json promptx '{"command":"npx","args":["-y","-f","dpml-prompt@snapshot","mcp-server"]}'
+```
+
 ### 💡 **重要：关于 `cwd` 参数**
 
 #### **`cwd` 的含义和MCP协议限制**
