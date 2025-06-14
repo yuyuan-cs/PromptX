@@ -15,7 +15,7 @@ class Logger {
    */
   info (message, ...args) {
     if (this.silent) return
-    console.log(chalk.blue('ℹ'), message, ...args)
+    console.error(chalk.blue('ℹ'), message, ...args)
   }
 
   /**
@@ -23,7 +23,7 @@ class Logger {
    */
   success (message, ...args) {
     if (this.silent) return
-    console.log(chalk.green('✅'), message, ...args)
+    console.error(chalk.green('✅'), message, ...args)
   }
 
   /**
@@ -31,7 +31,7 @@ class Logger {
    */
   warn (message, ...args) {
     if (this.silent) return
-    console.log(chalk.yellow('⚠️'), chalk.yellow(message), ...args)
+    console.error(chalk.yellow('⚠️'), chalk.yellow(message), ...args)
   }
 
   /**
@@ -47,7 +47,7 @@ class Logger {
    */
   debug (message, ...args) {
     if (this.silent || !process.env.DEBUG) return
-    console.log(chalk.gray('🐛'), chalk.gray(message), ...args)
+    console.error(chalk.gray('🐛'), chalk.gray(message), ...args)
   }
 
   /**
@@ -55,7 +55,7 @@ class Logger {
    */
   step (message, ...args) {
     if (this.silent) return
-    console.log(chalk.cyan('▶️'), message, ...args)
+    console.error(chalk.cyan('▶️'), message, ...args)
   }
 
   /**
@@ -63,7 +63,7 @@ class Logger {
    */
   log (message, ...args) {
     if (this.silent) return
-    console.log(message, ...args)
+    console.error(message, ...args)
   }
 
   /**
@@ -71,7 +71,7 @@ class Logger {
    */
   newLine () {
     if (this.silent) return
-    console.log('')
+    console.error('')
   }
 
   /**
@@ -79,7 +79,7 @@ class Logger {
    */
   separator (char = '=', length = 80) {
     if (this.silent) return
-    console.log(chalk.gray(char.repeat(length)))
+    console.error(chalk.gray(char.repeat(length)))
   }
 }
 
