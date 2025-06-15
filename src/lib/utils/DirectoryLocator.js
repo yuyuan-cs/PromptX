@@ -330,7 +330,7 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
       {
         name: 'Claude IDE',
         vars: ['WORKSPACE_FOLDER_PATHS'],
-        parse: (value) => {
+        parse: (value, varName) => {
           try {
             const folders = JSON.parse(value)
             return Array.isArray(folders) && folders.length > 0 ? folders[0] : null
@@ -344,42 +344,64 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
       {
         name: 'VSCode',
         vars: ['VSCODE_WORKSPACE_FOLDER', 'VSCODE_CWD'],
-        parse: (value) => value
+        parse: (value, varName) => value
       },
       
       // IntelliJ IDEA / WebStorm / PhpStorm
       {
         name: 'JetBrains IDEs',
         vars: ['PROJECT_ROOT', 'IDEA_INITIAL_DIRECTORY', 'WEBSTORM_PROJECT_PATH'],
-        parse: (value) => value
+        parse: (value, varName) => value
       },
       
       // Sublime Text
       {
         name: 'Sublime Text',
         vars: ['SUBLIME_PROJECT_PATH', 'SUBL_PROJECT_DIR'],
-        parse: (value) => value
+        parse: (value, varName) => value
       },
       
       // Atom
       {
         name: 'Atom',
         vars: ['ATOM_PROJECT_PATH', 'ATOM_HOME_PROJECT'],
-        parse: (value) => value
+        parse: (value, varName) => value
       },
       
       // Vim/Neovim
       {
         name: 'Vim/Neovim',
         vars: ['VIM_PROJECT_ROOT', 'NVIM_PROJECT_ROOT'],
-        parse: (value) => value
+        parse: (value, varName) => value
+      },
+      
+      // 字节跳动 Trae 和其他基于PWD的IDE
+      {
+        name: 'ByteDance Trae & PWD-based IDEs',
+        vars: ['PWD', 'TRAE_WORKSPACE', 'BYTEDANCE_WORKSPACE'],
+        parse: (value, varName) => {
+          // 对于专用环境变量，直接使用
+          if (varName === 'TRAE_WORKSPACE' || varName === 'BYTEDANCE_WORKSPACE') {
+            return value
+          }
+          
+          // 对于PWD，只有当它与process.cwd()不同时，才认为是IDE设置的项目路径
+          if (varName === 'PWD') {
+            const currentCwd = process.cwd()
+            if (value && value !== currentCwd) {
+              return value
+            }
+          }
+          
+          return null
+        }
       },
       
       // 通用工作目录
       {
         name: 'Generic',
         vars: ['WORKSPACE_ROOT', 'PROJECT_DIR', 'WORKING_DIRECTORY'],
-        parse: (value) => value
+        parse: (value, varName) => value
       }
     ]
 
@@ -388,7 +410,8 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
       for (const varName of strategy.vars) {
         const envValue = process.env[varName]
         if (envValue && envValue.trim() !== '') {
-          const parsedPath = strategy.parse(envValue.trim())
+          // 传递varName给parse函数，支持变量名相关的解析逻辑
+          const parsedPath = strategy.parse(envValue.trim(), varName)
           if (parsedPath) {
             const normalizedPath = this.normalizePath(this.expandHome(parsedPath))
             if (normalizedPath && await this.isValidDirectory(normalizedPath)) {
@@ -509,8 +532,9 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
       'SUBLIME_PROJECT_PATH', 'SUBL_PROJECT_DIR',
       'ATOM_PROJECT_PATH', 'ATOM_HOME_PROJECT',
       'VIM_PROJECT_ROOT', 'NVIM_PROJECT_ROOT',
+      'PWD', 'TRAE_WORKSPACE', 'BYTEDANCE_WORKSPACE',
       'WORKSPACE_ROOT', 'PROJECT_DIR', 'WORKING_DIRECTORY',
-      'PROMPTX_WORKSPACE', 'PWD'
+      'PROMPTX_WORKSPACE'
     ]
     
     const available = {}
