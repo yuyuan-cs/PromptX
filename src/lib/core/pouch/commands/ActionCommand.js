@@ -105,11 +105,11 @@ class ActionCommand extends BasePouchCommand {
         const relativePath = filePath.replace('@package://', '')
         filePath = await packageProtocol.resolvePath(relativePath)
       } else if (filePath.startsWith('@project://')) {
-        // 对于@project://路径，使用当前工作目录作为基础路径
+        // 对于@project://路径，使用ProjectProtocol解析
         const ProjectProtocol = require('../../resource/protocols/ProjectProtocol')
         const projectProtocol = new ProjectProtocol()
         const relativePath = filePath.replace('@project://', '')
-        filePath = path.join(process.cwd(), relativePath)
+        filePath = await projectProtocol.resolvePath(relativePath)
       }
 
       // 读取角色文件内容

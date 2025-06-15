@@ -128,33 +128,15 @@ class ProjectDiscovery extends BaseDiscovery {
 
   /**
    * 查找项目根目录
+   * @deprecated 使用 DirectoryService.getProjectRoot() 替代
    * @returns {Promise<string>} 项目根目录路径
    */
   async _findProjectRoot() {
-    const cacheKey = 'projectRoot'
-    const cached = this.getFromCache(cacheKey)
-    if (cached) {
-      return cached
-    }
-
-    let currentDir = process.cwd()
-
-    // 向上查找包含package.json的目录
-    while (currentDir !== path.dirname(currentDir)) {
-      const packageJsonPath = path.join(currentDir, 'package.json')
-      
-      if (await this._fsExists(packageJsonPath)) {
-        this.setCache(cacheKey, currentDir)
-        return currentDir
-      }
-      
-      currentDir = path.dirname(currentDir)
-    }
-
-    // 如果没找到package.json，返回当前工作目录
-    const fallbackRoot = process.cwd()
-    this.setCache(cacheKey, fallbackRoot)
-    return fallbackRoot
+    // 使用新的统一目录服务
+    const { getDirectoryService } = require('../../../utils/DirectoryService')
+    const directoryService = getDirectoryService()
+    
+    return await directoryService.getProjectRoot()
   }
 
   /**

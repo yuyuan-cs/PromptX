@@ -1,7 +1,7 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
 const { COMMANDS } = require('../../../../constants')
-const PromptXConfig = require('../../../utils/promptxConfig')
+const { getDirectoryService } = require('../../../utils/DirectoryService')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
 const logger = require('../../../utils/logger')
@@ -18,6 +18,7 @@ class InitCommand extends BasePouchCommand {
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
     this.projectDiscovery = new ProjectDiscovery()
+    this.directoryService = getDirectoryService()
   }
 
   getPurpose () {
@@ -27,14 +28,27 @@ class InitCommand extends BasePouchCommand {
   async getContent (args) {
     const [workspacePath = '.'] = args
 
+    // 构建统一的查找上下文
+    // 对于init命令，我们优先使用当前目录，不向上查找现有.promptx
+    const context = {
+      startDir: workspacePath === '.' ? process.cwd() : path.resolve(workspacePath),
+      platform: process.platform,
+      avoidUserHome: true,  // 特别是Windows环境下避免用户家目录
+      // init命令特有：优先当前目录，不查找现有.promptx
+      strategies: [
+        'currentWorkingDirectoryIfHasMarkers',
+        'currentWorkingDirectory'  // 如果当前目录没有项目标识，就直接使用当前目录
+      ]
+    }
+
     // 1. 获取版本信息
     const version = await this.getVersionInfo()
 
-    // 2. 基础环境准备 - 只创建 .promptx 目录
-    await this.ensurePromptXDirectory(workspacePath)
+    // 2. 基础环境准备 - 创建 .promptx 目录
+    await this.ensurePromptXDirectory(context)
 
     // 3. 生成项目级资源注册表
-    const registryStats = await this.generateProjectRegistry(workspacePath)
+    const registryStats = await this.generateProjectRegistry(context)
 
     // 4. 刷新全局 ResourceManager（确保新资源立即可用）
     await this.refreshGlobalResourceManager()
@@ -62,18 +76,17 @@ ${registryStats.message}
 
   /**
    * 生成项目级资源注册表
-   * @param {string} workspacePath - 工作目录路径
+   * @param {Object} context - 查找上下文
    * @returns {Promise<Object>} 注册表生成统计信息
    */
-  async generateProjectRegistry(workspacePath) {
+  async generateProjectRegistry(context) {
     try {
-      // 1. 获取项目根目录
-      const projectRoot = await this.projectDiscovery._findProjectRoot()
-      
-      // 2. 确保 .promptx/resource/domain 目录结构存在
-      const resourceDir = path.join(projectRoot, '.promptx', 'resource')
+      // 1. 使用统一的目录服务获取项目根目录
+      const projectRoot = await this.directoryService.getProjectRoot(context)
+      const resourceDir = await this.directoryService.getResourceDirectory(context)
       const domainDir = path.join(resourceDir, 'domain')
       
+      // 2. 确保目录结构存在
       await fs.ensureDir(domainDir)
       logger.debug(`[InitCommand] 确保目录结构存在: ${domainDir}`)
 
@@ -83,7 +96,7 @@ ${registryStats.message}
       
       // 4. 生成统计信息
       const stats = registryData.getStats()
-      const registryPath = path.join(projectRoot, '.promptx', 'resource', 'project.registry.json')
+      const registryPath = await this.directoryService.getRegistryPath(context)
 
       if (registryData.size === 0) {
         return {
@@ -114,12 +127,12 @@ ${registryStats.message}
 
   /**
    * 确保 .promptx 基础目录存在
-   * 这是 init 的唯一职责 - 创建基础环境标识
+   * 使用统一的目录服务创建基础环境
    */
-  async ensurePromptXDirectory (workspacePath) {
-    const config = new PromptXConfig(workspacePath)
-    // 利用 PromptXConfig 的统一目录管理
-    await config.ensureDir()
+  async ensurePromptXDirectory (context) {
+    const promptxDir = await this.directoryService.getPromptXDirectory(context)
+    await fs.ensureDir(promptxDir)
+    logger.debug(`[InitCommand] 确保.promptx目录存在: ${promptxDir}`)
   }
 
   /**

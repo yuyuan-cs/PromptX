@@ -1,21 +1,43 @@
 const fs = require('fs-extra')
 const path = require('path')
+const { getDirectoryService } = require('./DirectoryService')
 
 /**
  * PromptX配置文件管理工具
  * 统一管理.promptx目录下的所有配置文件
  */
 class PromptXConfig {
-  constructor(baseDir = process.cwd()) {
+  constructor(baseDir = null) {
     this.baseDir = baseDir
-    this.promptxDir = path.join(baseDir, '.promptx')
+    this.directoryService = getDirectoryService()
+    this.promptxDir = null // 将在需要时动态计算
+  }
+
+  /**
+   * 获取.promptx目录路径
+   */
+  async getPromptXDir() {
+    if (!this.promptxDir) {
+      if (this.baseDir) {
+        this.promptxDir = path.join(this.baseDir, '.promptx')
+      } else {
+        const context = {
+          startDir: process.cwd(),
+          platform: process.platform,
+          avoidUserHome: true
+        }
+        this.promptxDir = await this.directoryService.getPromptXDirectory(context)
+      }
+    }
+    return this.promptxDir
   }
 
   /**
    * 确保.promptx目录存在
    */
   async ensureDir() {
-    await fs.ensureDir(this.promptxDir)
+    const promptxDir = await this.getPromptXDir()
+    await fs.ensureDir(promptxDir)
   }
 
   /**
@@ -25,7 +47,8 @@ class PromptXConfig {
    * @returns {Promise<*>} 配置对象
    */
   async readJson(filename, defaultValue = {}) {
-    const filePath = path.join(this.promptxDir, filename)
+    const promptxDir = await this.getPromptXDir()
+    const filePath = path.join(promptxDir, filename)
     try {
       if (await fs.pathExists(filePath)) {
         return await fs.readJson(filePath)
@@ -45,7 +68,8 @@ class PromptXConfig {
    */
   async writeJson(filename, data, options = { spaces: 2 }) {
     await this.ensureDir()
-    const filePath = path.join(this.promptxDir, filename)
+    const promptxDir = await this.getPromptXDir()
+    const filePath = path.join(promptxDir, filename)
     await fs.writeJson(filePath, data, options)
   }
 
