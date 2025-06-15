@@ -70,9 +70,10 @@ class RememberCommand extends BasePouchCommand {
    * 确保AI记忆体系目录存在
    */
   async ensureMemoryDirectory () {
-    const promptxDir = path.join(process.cwd(), '.promptx')
-    const memoryDir = path.join(promptxDir, 'memory')
-
+    const { getDirectoryService } = require('../../../utils/DirectoryService')
+    const directoryService = getDirectoryService()
+    
+    const memoryDir = await directoryService.getMemoryDirectory()
     await fs.ensureDir(memoryDir)
 
     return memoryDir

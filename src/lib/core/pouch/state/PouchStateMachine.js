@@ -107,7 +107,9 @@ class PouchStateMachine {
    * 保存状态到文件
    */
   async saveState () {
-    const promptxDir = path.join(process.cwd(), '.promptx')
+    const { getDirectoryService } = require('../../../utils/DirectoryService')
+    const directoryService = getDirectoryService()
+    const promptxDir = await directoryService.getPromptXDirectory()
     const configPath = path.join(promptxDir, 'pouch.json')
 
     try {
@@ -133,7 +135,10 @@ class PouchStateMachine {
    * 从文件加载状态
    */
   async loadState () {
-    const configPath = path.join(process.cwd(), '.promptx', 'pouch.json')
+    const { getDirectoryService } = require('../../../utils/DirectoryService')
+    const directoryService = getDirectoryService()
+    const promptxDir = await directoryService.getPromptXDirectory()
+    const configPath = path.join(promptxDir, 'pouch.json')
 
     try {
       if (await fs.pathExists(configPath)) {

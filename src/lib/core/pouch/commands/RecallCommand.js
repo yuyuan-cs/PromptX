@@ -89,7 +89,10 @@ ${formattedMemories}
     const memories = []
 
     // 读取单一记忆文件
-    const memoryFile = path.join(process.cwd(), '.promptx/memory/declarative.md')
+    const { getDirectoryService } = require('../../../utils/DirectoryService')
+    const directoryService = getDirectoryService()
+    const memoryDir = await directoryService.getMemoryDirectory()
+    const memoryFile = path.join(memoryDir, 'declarative.md')
 
     try {
       if (await fs.pathExists(memoryFile)) {
