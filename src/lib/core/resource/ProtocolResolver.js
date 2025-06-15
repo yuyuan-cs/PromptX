@@ -1,10 +1,12 @@
 const path = require('path')
 const fs = require('fs')
+const { getDirectoryService } = require('../../utils/DirectoryService')
 
 class ProtocolResolver {
   constructor() {
     this.packageRoot = null
     this.__dirname = __dirname
+    this.directoryService = getDirectoryService()
   }
 
   parseReference(reference) {
@@ -31,11 +33,11 @@ class ProtocolResolver {
     
     switch (protocol) {
       case 'package':
-        return this.resolvePackage(resourcePath)
+        return await this.resolvePackage(resourcePath)
       case 'project':
-        return this.resolveProject(resourcePath)
+        return await this.resolveProject(resourcePath)
       case 'file':
-        return this.resolveFile(resourcePath)
+        return await this.resolveFile(resourcePath)
       default:
         throw new Error(`Unsupported protocol: ${protocol}`)
     }
@@ -48,12 +50,38 @@ class ProtocolResolver {
     return path.resolve(this.packageRoot, relativePath)
   }
 
-  resolveProject(relativePath) {
-    return path.resolve(process.cwd(), relativePath)
+  async resolveProject(relativePath) {
+    try {
+      const context = {
+        startDir: process.cwd(),
+        platform: process.platform,
+        avoidUserHome: true
+      }
+      const projectRoot = await this.directoryService.getProjectRoot(context)
+      return path.resolve(projectRoot, relativePath)
+    } catch (error) {
+      // 回退到原始逻辑
+      return path.resolve(process.cwd(), relativePath)
+    }
   }
 
-  resolveFile(filePath) {
-    return path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath)
+  async resolveFile(filePath) {
+    if (path.isAbsolute(filePath)) {
+      return filePath
+    }
+    
+    try {
+      const context = {
+        startDir: process.cwd(),
+        platform: process.platform,
+        avoidUserHome: true
+      }
+      const projectRoot = await this.directoryService.getProjectRoot(context)
+      return path.resolve(projectRoot, filePath)
+    } catch (error) {
+      // 回退到原始逻辑
+      return path.resolve(process.cwd(), filePath)
+    }
   }
 
   async findPackageRoot() {

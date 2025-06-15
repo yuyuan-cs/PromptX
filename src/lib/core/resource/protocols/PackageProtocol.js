@@ -4,6 +4,7 @@ const fsPromises = require('fs').promises
 const ResourceProtocol = require('./ResourceProtocol')
 const { QueryParams } = require('../types')
 const logger = require('../../../utils/logger')
+const { getDirectoryService } = require('../../../utils/DirectoryService')
 
 /**
  * 包协议实现
@@ -16,6 +17,7 @@ class PackageProtocol extends ResourceProtocol {
 
     // 包安装模式检测缓存
     this.installModeCache = new Map()
+    this.directoryService = getDirectoryService()
   }
 
   /**
@@ -54,13 +56,13 @@ class PackageProtocol extends ResourceProtocol {
   /**
    * 检测当前包安装模式
    */
-  detectInstallMode () {
+  async detectInstallMode () {
     const cacheKey = 'currentInstallMode'
     if (this.installModeCache.has(cacheKey)) {
       return this.installModeCache.get(cacheKey)
     }
 
-    const mode = this._performInstallModeDetection()
+    const mode = await this._performInstallModeDetection()
     this.installModeCache.set(cacheKey, mode)
     return mode
   }
@@ -68,8 +70,19 @@ class PackageProtocol extends ResourceProtocol {
   /**
    * 执行安装模式检测
    */
-  _performInstallModeDetection () {
-    const cwd = process.cwd()
+  async _performInstallModeDetection () {
+    let cwd
+    try {
+      const context = {
+        startDir: process.cwd(),
+        platform: process.platform,
+        avoidUserHome: true
+      }
+      cwd = await this.directoryService.getProjectRoot(context)
+    } catch (error) {
+      cwd = process.cwd()
+    }
+    
     const execPath = process.argv[0]
     const scriptPath = process.argv[1]
 

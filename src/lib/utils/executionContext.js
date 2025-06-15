@@ -11,6 +11,9 @@ const { getDirectoryService } = require('./DirectoryService');
  * 保持向后兼容的API，但内部使用新的架构
  * 
  * @deprecated 推荐直接使用 DirectoryService
+ * 
+ * 注意：此文件主要保留向后兼容的同步API
+ * 新代码请直接使用 DirectoryService 的异步API
  */
 
 /**
