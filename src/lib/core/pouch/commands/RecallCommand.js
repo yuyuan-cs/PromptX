@@ -82,7 +82,7 @@ ${formattedMemories}
   }
 
   /**
-   * 获取所有记忆（紧凑格式）
+   * 获取所有记忆（支持多行格式）
    */
   async getAllMemories (query) {
     this.lastSearchCount = 0
@@ -97,15 +97,12 @@ ${formattedMemories}
     try {
       if (await fs.pathExists(memoryFile)) {
         const content = await fs.readFile(memoryFile, 'utf-8')
-        const lines = content.split('\n')
+        const memoryBlocks = this.parseMemoryBlocks(content)
 
-        for (const line of lines) {
-          if (line.startsWith('- ')) {
-            // 解析记忆行
-            const memory = this.parseMemoryLine(line)
-            if (memory && (!query || this.matchesMemory(memory, query))) {
-              memories.push(memory)
-            }
+        for (const memoryBlock of memoryBlocks) {
+          const memory = this.parseMemoryBlock(memoryBlock)
+          if (memory && (!query || this.matchesMemory(memory, query))) {
+            memories.push(memory)
           }
         }
       }
@@ -118,7 +115,90 @@ ${formattedMemories}
   }
 
   /**
-   * 解析记忆行（紧凑格式）
+   * 解析记忆块（新多行格式）
+   */
+  parseMemoryBlocks (content) {
+    const blocks = []
+    const lines = content.split('\n')
+    let currentBlock = []
+    let inBlock = false
+
+    for (const line of lines) {
+      if (line.match(/^- \d{4}\/\d{2}\/\d{2} \d{2}:\d{2} START$/)) {
+        // 开始新的记忆块
+        if (inBlock && currentBlock.length > 0) {
+          blocks.push(currentBlock.join('\n'))
+        }
+        currentBlock = [line]
+        inBlock = true
+      } else if (line === '- END' && inBlock) {
+        // 结束当前记忆块
+        currentBlock.push(line)
+        blocks.push(currentBlock.join('\n'))
+        currentBlock = []
+        inBlock = false
+      } else if (inBlock) {
+        // 记忆块内容
+        currentBlock.push(line)
+      }
+    }
+
+    // 处理未结束的块
+    if (inBlock && currentBlock.length > 0) {
+      blocks.push(currentBlock.join('\n'))
+    }
+
+    return blocks
+  }
+
+  /**
+   * 解析单个记忆块
+   */
+  parseMemoryBlock (blockContent) {
+    const lines = blockContent.split('\n')
+    
+    // 解析开始行：- 2025/06/15 15:58 START
+    const startLine = lines[0]
+    const startMatch = startLine.match(/^- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}) START$/)
+    if (!startMatch) return null
+
+    const timestamp = startMatch[1]
+    
+    // 查找标签行：--tags xxx
+    let tagsLine = ''
+    let contentLines = []
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i]
+      if (line.startsWith('--tags ')) {
+        tagsLine = line
+      } else if (line !== '- END') {
+        contentLines.push(line)
+      }
+    }
+
+    // 提取内容（去除空行）
+    const content = contentLines.join('\n').trim()
+    
+    // 解析标签
+    let tags = []
+    if (tagsLine) {
+      const tagsContent = tagsLine.replace('--tags ', '')
+      const hashTags = tagsContent.match(/#[^\s]+/g) || []
+      const regularTags = tagsContent.replace(/#[^\s]+/g, '').trim().split(/\s+/).filter(t => t)
+      tags = [...regularTags, ...hashTags]
+    }
+
+    return {
+      timestamp,
+      content,
+      tags,
+      source: 'memory'
+    }
+  }
+
+  /**
+   * 解析记忆行（向下兼容旧格式）
    */
   parseMemoryLine (line) {
     // 修复正则表达式，适配实际的记忆格式
@@ -179,13 +259,28 @@ ${formattedMemories}
   }
 
   /**
-   * 格式化检索到的记忆（紧凑格式）
+   * 格式化检索到的记忆（支持多行显示）
    */
   formatRetrievedKnowledge (memories, query) {
     return memories.map((memory, index) => {
-      const content = memory.content.length > 120
-        ? memory.content.substring(0, 120) + '...'
-        : memory.content
+      // 多行内容处理：如果内容包含换行，保持原始格式，但限制总长度
+      let content = memory.content
+      if (content.length > 200) {
+        // 保持换行结构但截断过长内容
+        const lines = content.split('\n')
+        let truncated = ''
+        let currentLength = 0
+        
+        for (const line of lines) {
+          if (currentLength + line.length + 1 > 180) {
+            truncated += '...'
+            break
+          }
+          truncated += (truncated ? '\n' : '') + line
+          currentLength += line.length + 1
+        }
+        content = truncated
+      }
 
       return `📝 ${index + 1}. **记忆** (${memory.timestamp})
 ${content}
