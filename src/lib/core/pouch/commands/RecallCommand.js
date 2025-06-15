@@ -121,12 +121,37 @@ ${formattedMemories}
    * 解析记忆行（紧凑格式）
    */
   parseMemoryLine (line) {
-    // 格式：- 2025/05/31 14:30 内容 #tag1 #tag2 #评分:8 #有效期:长期
-    const match = line.match(/^- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}) (.*?) (#.*?)$/)
+    // 修复正则表达式，适配实际的记忆格式
+    // 格式：- 2025/05/31 14:30 内容 --tags 标签 ##分类 #评分:8 #有效期:长期
+    const match = line.match(/^- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}) (.+)$/)
     if (!match) return null
 
-    const [, timestamp, content, tagsStr] = match
-    const tags = tagsStr.split(' ').filter(t => t.startsWith('#'))
+    const [, timestamp, contentAndTags] = match
+    
+    // 分离内容和标签
+    let content = contentAndTags
+    let tags = []
+    
+    // 提取 --tags 后面的内容
+    const tagsMatch = contentAndTags.match(/--tags\s+(.*)/)
+    if (tagsMatch) {
+      const beforeTags = contentAndTags.substring(0, contentAndTags.indexOf('--tags')).trim()
+      content = beforeTags
+      
+      // 解析标签部分，包括 --tags 后的内容和 # 开头的标签
+      const tagsContent = tagsMatch[1]
+      const hashTags = tagsContent.match(/#[^\s]+/g) || []
+      const regularTags = tagsContent.replace(/#[^\s]+/g, '').trim().split(/\s+/).filter(t => t)
+      
+      tags = [...regularTags, ...hashTags]
+    } else {
+      // 如果没有 --tags，检查是否有直接的 # 标签
+      const hashTags = contentAndTags.match(/#[^\s]+/g) || []
+      if (hashTags.length > 0) {
+        content = contentAndTags.replace(/#[^\s]+/g, '').trim()
+        tags = hashTags
+      }
+    }
 
     return {
       timestamp,
