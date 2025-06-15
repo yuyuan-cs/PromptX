@@ -90,13 +90,13 @@ class ProjectRootLocator extends DirectoryLocator {
   constructor(options = {}) {
     super(options)
     
-    // 可配置的查找策略优先级
+    // 可配置的查找策略优先级（按可靠性和准确性排序）
     this.strategies = options.strategies || [
-      'existingPromptxDirectory',
-      'currentWorkingDirectoryIfHasMarkers',
-      'packageJsonDirectory',
-      'gitRootDirectory',
-      'currentWorkingDirectory'
+      'existingPromptxDirectory',           // 1. 现有.promptx目录（最可靠的项目标识）
+      'packageJsonDirectory',               // 2. 向上查找项目标识文件（最准确的项目边界）
+      'gitRootDirectory',                   // 3. Git根目录（通用可靠）
+      'currentWorkingDirectoryIfHasMarkers', // 4. 当前目录项目标识（降级策略）
+      'currentWorkingDirectory'             // 5. 纯当前目录（最后回退）
     ]
     
     // 项目标识文件
@@ -277,26 +277,26 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
    */
   async locate(context = {}) {
     const cacheKey = `promptxWorkspace:${JSON.stringify(context)}`
-    
+
     // 检查缓存
     const cached = this.getCached(cacheKey)
     if (cached) {
       return cached
     }
 
-    // 策略1：IDE环境变量
+    // 策略1：IDE环境变量（最高优先级 - 用户/IDE明确指定）
     const workspaceFromIDE = await this._fromIDEEnvironment()
     if (workspaceFromIDE) {
       return this.setCached(cacheKey, workspaceFromIDE)
     }
 
-    // 策略2：PromptX专用环境变量
+    // 策略2：PromptX专用环境变量（用户手动配置）
     const workspaceFromEnv = await this._fromPromptXEnvironment()
     if (workspaceFromEnv) {
       return this.setCached(cacheKey, workspaceFromEnv)
     }
 
-    // 策略3：如果上下文指定了特定策略（如init命令），直接使用项目根目录
+    // 策略3：特定上下文策略（如init命令的强制指定）
     if (context.strategies) {
       const workspaceFromProject = await this._fromProjectRoot(context)
       if (workspaceFromProject) {
@@ -304,40 +304,103 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
       }
     }
 
-    // 策略4：现有.promptx目录
+    // 策略4：现有.promptx目录（已初始化的项目）
     const workspaceFromExisting = await this._fromExistingDirectory(context.startDir)
     if (workspaceFromExisting) {
       return this.setCached(cacheKey, workspaceFromExisting)
     }
 
-    // 策略5：项目根目录
+    // 策略5：项目根目录（基于项目结构推断）
     const workspaceFromProject = await this._fromProjectRoot(context)
     if (workspaceFromProject) {
       return this.setCached(cacheKey, workspaceFromProject)
     }
 
-    // 策略6：回退到当前目录
-    return this.setCached(cacheKey, context.startDir || process.cwd())
+    // 策略6：智能回退策略（兜底方案）
+    return this.setCached(cacheKey, await this._getSmartFallback(context))
   }
 
   /**
-   * 从IDE环境变量获取
+   * 从IDE环境变量获取（支持多种IDE）
    */
   async _fromIDEEnvironment() {
-    const workspaceFolders = process.env.WORKSPACE_FOLDER_PATHS
-    if (workspaceFolders) {
-      try {
-        const folders = JSON.parse(workspaceFolders)
-        if (Array.isArray(folders) && folders.length > 0) {
-          const firstFolder = folders[0]
-          if (await this.isValidDirectory(firstFolder)) {
-            return firstFolder
+    // IDE环境变量检测策略（按优先级排序）
+    const ideStrategies = [
+      // Claude IDE (现有格式)
+      {
+        name: 'Claude IDE',
+        vars: ['WORKSPACE_FOLDER_PATHS'],
+        parse: (value) => {
+          try {
+            const folders = JSON.parse(value)
+            return Array.isArray(folders) && folders.length > 0 ? folders[0] : null
+          } catch {
+            return null
           }
         }
-      } catch {
-        // 忽略解析错误
+      },
+      
+      // VSCode
+      {
+        name: 'VSCode',
+        vars: ['VSCODE_WORKSPACE_FOLDER', 'VSCODE_CWD'],
+        parse: (value) => value
+      },
+      
+      // IntelliJ IDEA / WebStorm / PhpStorm
+      {
+        name: 'JetBrains IDEs',
+        vars: ['PROJECT_ROOT', 'IDEA_INITIAL_DIRECTORY', 'WEBSTORM_PROJECT_PATH'],
+        parse: (value) => value
+      },
+      
+      // Sublime Text
+      {
+        name: 'Sublime Text',
+        vars: ['SUBLIME_PROJECT_PATH', 'SUBL_PROJECT_DIR'],
+        parse: (value) => value
+      },
+      
+      // Atom
+      {
+        name: 'Atom',
+        vars: ['ATOM_PROJECT_PATH', 'ATOM_HOME_PROJECT'],
+        parse: (value) => value
+      },
+      
+      // Vim/Neovim
+      {
+        name: 'Vim/Neovim',
+        vars: ['VIM_PROJECT_ROOT', 'NVIM_PROJECT_ROOT'],
+        parse: (value) => value
+      },
+      
+      // 通用工作目录
+      {
+        name: 'Generic',
+        vars: ['WORKSPACE_ROOT', 'PROJECT_DIR', 'WORKING_DIRECTORY'],
+        parse: (value) => value
+      }
+    ]
+
+    // 按策略逐一检测
+    for (const strategy of ideStrategies) {
+      for (const varName of strategy.vars) {
+        const envValue = process.env[varName]
+        if (envValue && envValue.trim() !== '') {
+          const parsedPath = strategy.parse(envValue.trim())
+          if (parsedPath) {
+            const normalizedPath = this.normalizePath(this.expandHome(parsedPath))
+            if (normalizedPath && await this.isValidDirectory(normalizedPath)) {
+              // 记录检测到的IDE类型（用于调试）
+              this._detectedIDE = strategy.name
+              return normalizedPath
+            }
+          }
+        }
       }
     }
+    
     return null
   }
 
@@ -369,6 +432,95 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
   async _fromProjectRoot(context) {
     const projectRoot = await this.projectRootLocator.locate(context)
     return projectRoot
+  }
+
+  /**
+   * 智能回退策略
+   */
+  async _getSmartFallback(context) {
+    // 1. 尝试从命令行参数推断
+    const argPath = await this._fromProcessArguments()
+    if (argPath && await this.isValidDirectory(argPath)) {
+      return argPath
+    }
+
+    // 2. 尝试从进程的工作目录
+    const processCwd = process.cwd()
+    if (await this.isValidDirectory(processCwd)) {
+      return processCwd
+    }
+
+    // 3. 最后回退到用户主目录
+    return os.homedir()
+  }
+
+  /**
+   * 从进程参数推断项目路径
+   */
+  async _fromProcessArguments() {
+    const args = process.argv
+    
+    // 查找可能的路径参数
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i]
+      
+      // 查找 --project-path 或类似参数
+      if (arg.startsWith('--project-path=')) {
+        return arg.split('=')[1]
+      }
+      
+      if (arg === '--project-path' && i + 1 < args.length) {
+        return args[i + 1]
+      }
+      
+      // 查找 --cwd 参数
+      if (arg.startsWith('--cwd=')) {
+        return arg.split('=')[1]
+      }
+      
+      if (arg === '--cwd' && i + 1 < args.length) {
+        return args[i + 1]
+      }
+    }
+    
+    return null
+  }
+
+  /**
+   * 获取检测调试信息
+   */
+  getDetectionInfo() {
+    return {
+      detectedIDE: this._detectedIDE || 'Unknown',
+      availableEnvVars: this._getAvailableEnvVars(),
+      platform: process.platform,
+      cwd: process.cwd(),
+      args: process.argv
+    }
+  }
+
+  /**
+   * 获取可用的环境变量
+   */
+  _getAvailableEnvVars() {
+    const relevantVars = [
+      'WORKSPACE_FOLDER_PATHS', 'VSCODE_WORKSPACE_FOLDER', 'VSCODE_CWD',
+      'PROJECT_ROOT', 'IDEA_INITIAL_DIRECTORY', 'WEBSTORM_PROJECT_PATH',
+      'SUBLIME_PROJECT_PATH', 'SUBL_PROJECT_DIR',
+      'ATOM_PROJECT_PATH', 'ATOM_HOME_PROJECT',
+      'VIM_PROJECT_ROOT', 'NVIM_PROJECT_ROOT',
+      'WORKSPACE_ROOT', 'PROJECT_DIR', 'WORKING_DIRECTORY',
+      'PROMPTX_WORKSPACE', 'PWD'
+    ]
+    
+    const available = {}
+    for (const varName of relevantVars) {
+      if (process.env[varName]) {
+        available[varName] = process.env[varName]
+      }
+    }
+    
+    return available
   }
 }
 
