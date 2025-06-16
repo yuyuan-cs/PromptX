@@ -42,6 +42,24 @@ PromptX 能做什么？简单来说，它让你的 AI 助手拥有了"大脑"和
 
 ---
 
+## ⚠️ **项目状态说明**
+
+PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和修复问题。在达到正式稳定版本之前，您可能会遇到一些使用上的问题或不稳定情况。
+
+**我们诚恳地请求您的理解和支持！** 🙏
+
+### 📞 **遇到问题？获取帮助！**
+
+如果您在使用过程中遇到任何问题，请通过以下方式联系我们：
+
+- 🐛 **提交 Issue**: [GitHub Issues](https://github.com/Deepractice/PromptX/issues) - 详细描述问题，我们会尽快回复
+- 💬 **直接联系**: 添加开发者微信 `sean-xie-deepractice` 获取即时帮助
+- 📱 **技术交流群**: 扫描下方二维码加入我们的技术交流群
+
+您的反馈对我们非常宝贵，帮助我们快速改进产品质量！ ✨
+
+---
+
 ## 🚀 **一键启动，30秒完成配置**
 
 打开配置文件，将下面的 `promptx` 配置代码复制进去。这是最简单的 **零配置模式**，PromptX 会自动为您处理一切。
@@ -52,8 +70,15 @@ PromptX 能做什么？简单来说，它让你的 AI 助手拥有了"大脑"和
     "promptx": {
       // 指定使用 npx 运行 promptx 服务
       "command": "npx",
-      // '-y' 自动确认, '-f' 强制刷新缓存, 'dpml-prompt@snapshot' 使用最新版, 'mcp-server' 启动服务
-      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"]
+      // 启动参数配置
+      "args": [
+        "-y",                               // 自动确认
+        "-f",                               // 强制刷新缓存
+        "--registry",                       // 指定镜像源
+        "https://registry.npmjs.org",       // 使用官方镜像
+        "dpml-prompt@beta",                 // 使用稳定测试版
+        "mcp-server"                        // 启动服务
+      ]
     }
   }
 }
@@ -61,26 +86,7 @@ PromptX 能做什么？简单来说，它让你的 AI 助手拥有了"大脑"和
 
 **🎯 就这么简单！** 保存文件并重启您的AI应用，PromptX 就已成功激活。
 
-🔧 如果您想指定一个特定的文件夹作为 PromptX 的工作区，可以添加 `env` 环境变量。
-
-```json
-{
-  "mcpServers": {
-    "promptx": {
-      "command": "npx",
-      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"],
-      "env": {
-        // PROMPTX_WORKSPACE: 自定义工作空间路径 (可选，系统会自动识别)
-        // Windows: "D:\\path\\to\\your\\project" (注意使用双反斜杠)
-        // macOS/Linux: "/Users/username/path/your/project"
-        "PROMPTX_WORKSPACE": "/your/custom/workspace/path"
-      }
-    }
-  }
-}
-```
-
-<br/>
+> **💡 提示：** 配置中特意指定了官方镜像源 `registry.npmjs.org`，这可以避免因使用非官方镜像导致的安装问题。如果您发现安装很慢，建议使用代理工具加速，而不是切换到其他镜像源。
 
 ---
 
@@ -181,7 +187,7 @@ graph TD
 
 #### **📚 相关资源**
 
-- **AI集成标准与实践指南：** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHCN.md
+- **AI集成标准与实践指南：** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHC N.md
 
 ---
 

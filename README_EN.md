@@ -42,6 +42,24 @@ What can PromptX do? Simply put, it gives your AI assistant a "brain" and "memor
 
 ---
 
+## ⚠️ **Project Status Notice**
+
+PromptX is currently in the **early development stage**, and we are actively improving features and fixing issues. Before reaching the official stable version, you may encounter some usage issues or instability.
+
+**We sincerely ask for your understanding and support!** 🙏
+
+### 📞 **Need Help? Get Support!**
+
+If you encounter any issues during usage, please contact us through:
+
+- 🐛 **Submit Issue**: [GitHub Issues](https://github.com/Deepractice/PromptX/issues) - Describe the problem in detail, we'll respond promptly
+- 💬 **Direct Contact**: Add developer WeChat `sean-xie-deepractice` for immediate assistance
+- 📱 **Tech Community**: Scan the QR code below to join our technical discussion group
+
+Your feedback is invaluable to us and helps us improve product quality rapidly! ✨
+
+---
+
 ## 🚀 **Quick Start - 30-Second Setup**
 
 Open your configuration file and copy the `promptx` configuration code below. This is the simplest **zero-configuration mode**, where PromptX automatically handles everything for you.
@@ -52,8 +70,15 @@ Open your configuration file and copy the `promptx` configuration code below. Th
     "promptx": {
       // Use npx to run promptx service
       "command": "npx",
-      // '-y' auto-confirm, '-f' force refresh cache, 'dpml-prompt@snapshot' use latest version, 'mcp-server' start service
-      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"]
+      // Startup parameters configuration
+      "args": [
+        "-y",                               // Auto-confirm
+        "-f",                               // Force refresh cache
+        "--registry",                       // Specify registry
+        "https://registry.npmjs.org",       // Use official registry
+        "dpml-prompt@beta",                 // Use stable beta version
+        "mcp-server"                        // Start service
+      ]
     }
   }
 }
@@ -61,24 +86,7 @@ Open your configuration file and copy the `promptx` configuration code below. Th
 
 **🎯 It's that simple!** Save the file and restart your AI application, and PromptX is successfully activated.
 
-🔧 If you want to specify a particular folder as PromptX's workspace, you can add the `env` environment variable.
-
-```json
-{
-  "mcpServers": {
-    "promptx": {
-      "command": "npx",
-      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"],
-      "env": {
-        // PROMPTX_WORKSPACE: Custom workspace path (optional, automatically detected by default)
-        // Windows: "D:\\path\\to\\your\\project" (note the double backslashes)
-        // macOS/Linux: "/Users/username/path/your/project"
-        "PROMPTX_WORKSPACE": "/your/custom/workspace/path"
-      }
-    }
-  }
-}
-```
+> **💡 Tip:** The configuration specifically uses the official registry `registry.npmjs.org` to avoid installation issues caused by unofficial mirrors. If you find the installation slow, it's recommended to use a proxy tool for acceleration rather than switching to alternative mirrors.
 
 <br/>
 
@@ -210,5 +218,3 @@ Join our technical community:
 ---
 
 **🚀 Get Started Now: Launch PromptX MCP Server and enhance your AI application with professional capabilities!**
-
-```
