@@ -165,7 +165,7 @@ graph TD
 ## 🎨 **女娲创造工坊 - 让每个人都成为AI角色设计师**
 
 <div align="center">
-  <img src="assets/nuwa-icon.png" alt="女娲创造工坊" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
+  <img src="assets/nuwa-logo.png" alt="女娲创造工坊" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
 </div>
 
 #### **💫 从想法到现实，只需2分钟**
@@ -199,10 +199,10 @@ graph TD
 
 <div align="center">
   <div align="center">
-  <img src="assets/nuwa-demo/step1-action-nuwa.jpg" alt="激活女娲" width="22%" style="margin: 3px;">
-  <img src="assets/nuwa-demo/step2-require-nuwa.jpg" alt="描述需求" width="22%" style="margin: 3px;">
-  <img src="assets/nuwa-demo/step3-modify-requirement.jpg" alt="完善需求" width="22%" style="margin: 3px;">
-  <img src="assets/nuwa-demo/step4-action-bew-role.jpg" alt="激活新角色" width="22%" style="margin: 3px;">
+  <img src="assets/nuwa-demo/step1-action-nuwa.jpg" alt="第1步：激活女娲角色创造顾问" width="80%" style="margin: 10px 0;">
+  <img src="assets/nuwa-demo/step2-require-nuwa.jpg" alt="第2步：向女娲描述你的需求" width="80%" style="margin: 10px 0;">
+  <img src="assets/nuwa-demo/step3-modify-requirement.jpg" alt="第3步：女娲理解并完善需求" width="80%" style="margin: 10px 0;">
+  <img src="assets/nuwa-demo/step4-action-bew-role.jpg" alt="第4步：激活新创建的专属角色" width="80%" style="margin: 10px 0;">
 </div>
 </div>
 
