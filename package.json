@@ -33,6 +33,8 @@
     "changeset:status": "changeset status",
     "release": "pnpm changeset publish",
     "release:snapshot": "pnpm changeset version --snapshot snapshot && pnpm changeset publish --tag snapshot",
+    "release:alpha": "pnpm changeset version --snapshot alpha && pnpm changeset publish --tag alpha",
+    "release:beta": "pnpm changeset version --snapshot beta && pnpm changeset publish --tag beta",
     "version:patch": "pnpm changeset add --type patch",
     "version:minor": "pnpm changeset add --type minor",
     "version:major": "pnpm changeset add --type major"

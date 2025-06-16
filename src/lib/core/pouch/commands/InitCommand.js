@@ -1,9 +1,10 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
 const { COMMANDS } = require('../../../../constants')
-const PromptXConfig = require('../../../utils/promptxConfig')
+const { getDirectoryService } = require('../../../utils/DirectoryService')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
+const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
 const logger = require('../../../utils/logger')
 const path = require('path')
 const fs = require('fs-extra')
@@ -18,6 +19,8 @@ class InitCommand extends BasePouchCommand {
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
     this.projectDiscovery = new ProjectDiscovery()
+    this.directoryService = getDirectoryService()
+    this.currentProjectManager = new CurrentProjectManager()
   }
 
   getPurpose () {
@@ -25,16 +28,81 @@ class InitCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    const [workspacePath = '.'] = args
+    // 获取工作目录参数，支持两种格式：
+    // 1. 来自MCP的对象格式：{ workingDirectory: "path" }
+    // 2. 来自CLI的字符串格式：["path"]
+    let workingDirectory
+    
+    if (args && typeof args[0] === 'object' && args[0].workingDirectory) {
+      // MCP格式
+      workingDirectory = args[0].workingDirectory
+    } else if (args && typeof args[0] === 'string') {
+      // CLI格式
+      workingDirectory = args[0]
+    } else if (args && args.length > 0 && args[0]) {
+      // 兜底：直接取第一个参数
+      workingDirectory = args[0]
+    }
+    
+    let projectPath
+    
+    if (workingDirectory) {
+      // AI提供了工作目录，使用AI提供的路径
+      projectPath = path.resolve(workingDirectory)
+      
+      // 验证AI提供的路径是否有效
+      if (!await this.currentProjectManager.validateProjectPath(projectPath)) {
+        return `❌ 提供的工作目录无效: ${projectPath}
+        
+请确保：
+1. 路径存在且为目录
+2. 不是用户主目录
+3. 具有适当的访问权限
+
+💡 请提供一个有效的项目目录路径。`
+      }
+      
+      // 保存AI提供的项目路径
+      await this.currentProjectManager.setCurrentProject(projectPath)
+      
+    } else {
+      // AI没有提供工作目录，检查是否已有保存的项目
+      const savedProject = await this.currentProjectManager.getCurrentProject()
+      
+      if (savedProject) {
+        // 使用之前保存的项目路径
+        projectPath = savedProject
+      } else {
+        // 没有保存的项目，要求AI提供
+        return `🎯 PromptX需要知道当前项目的工作目录。
+
+请在调用此工具时提供 workingDirectory 参数，例如：
+- workingDirectory: "/Users/sean/WorkSpaces/DeepracticeProjects/PromptX"
+
+💡 你当前工作在哪个项目目录？请提供完整的绝对路径。`
+      }
+    }
+
+    // 构建统一的查找上下文，使用确定的项目路径
+    const context = {
+      startDir: projectPath,
+      platform: process.platform,
+      avoidUserHome: true,
+      // init命令特有：优先当前目录，不查找现有.promptx
+      strategies: [
+        'currentWorkingDirectoryIfHasMarkers',
+        'currentWorkingDirectory'
+      ]
+    }
 
     // 1. 获取版本信息
     const version = await this.getVersionInfo()
 
-    // 2. 基础环境准备 - 只创建 .promptx 目录
-    await this.ensurePromptXDirectory(workspacePath)
+    // 2. 基础环境准备 - 创建 .promptx 目录
+    await this.ensurePromptXDirectory(context)
 
     // 3. 生成项目级资源注册表
-    const registryStats = await this.generateProjectRegistry(workspacePath)
+    const registryStats = await this.generateProjectRegistry(context)
 
     // 4. 刷新全局 ResourceManager（确保新资源立即可用）
     await this.refreshGlobalResourceManager()
@@ -62,18 +130,17 @@ ${registryStats.message}
 
   /**
    * 生成项目级资源注册表
-   * @param {string} workspacePath - 工作目录路径
+   * @param {Object} context - 查找上下文
    * @returns {Promise<Object>} 注册表生成统计信息
    */
-  async generateProjectRegistry(workspacePath) {
+  async generateProjectRegistry(context) {
     try {
-      // 1. 获取项目根目录
-      const projectRoot = await this.projectDiscovery._findProjectRoot()
-      
-      // 2. 确保 .promptx/resource/domain 目录结构存在
-      const resourceDir = path.join(projectRoot, '.promptx', 'resource')
+      // 1. 使用统一的目录服务获取项目根目录
+      const projectRoot = await this.directoryService.getProjectRoot(context)
+      const resourceDir = await this.directoryService.getResourceDirectory(context)
       const domainDir = path.join(resourceDir, 'domain')
       
+      // 2. 确保目录结构存在
       await fs.ensureDir(domainDir)
       logger.debug(`[InitCommand] 确保目录结构存在: ${domainDir}`)
 
@@ -83,7 +150,7 @@ ${registryStats.message}
       
       // 4. 生成统计信息
       const stats = registryData.getStats()
-      const registryPath = path.join(projectRoot, '.promptx', 'resource', 'project.registry.json')
+      const registryPath = await this.directoryService.getRegistryPath(context)
 
       if (registryData.size === 0) {
         return {
@@ -114,12 +181,12 @@ ${registryStats.message}
 
   /**
    * 确保 .promptx 基础目录存在
-   * 这是 init 的唯一职责 - 创建基础环境标识
+   * 使用统一的目录服务创建基础环境
    */
-  async ensurePromptXDirectory (workspacePath) {
-    const config = new PromptXConfig(workspacePath)
-    // 利用 PromptXConfig 的统一目录管理
-    await config.ensureDir()
+  async ensurePromptXDirectory (context) {
+    const promptxDir = await this.directoryService.getPromptXDirectory(context)
+    await fs.ensureDir(promptxDir)
+    logger.debug(`[InitCommand] 确保.promptx目录存在: ${promptxDir}`)
   }
 
   /**

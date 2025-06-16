@@ -76,3 +76,4 @@ temp/
 *.orig
 .husky/_
 
+.kilocode/

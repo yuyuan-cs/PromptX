@@ -42,6 +42,24 @@ What can PromptX do? Simply put, it gives your AI assistant a "brain" and "memor
 
 ---
 
+## ⚠️ **Project Status Notice**
+
+PromptX is currently in the **early development stage**, and we are actively improving features and fixing issues. Before reaching the official stable version, you may encounter some usage issues or instability.
+
+**We sincerely ask for your understanding and support!** 🙏
+
+### 📞 **Need Help? Get Support!**
+
+If you encounter any issues during usage, please contact us through:
+
+- 🐛 **Submit Issue**: [GitHub Issues](https://github.com/Deepractice/PromptX/issues) - Describe the problem in detail, we'll respond promptly
+- 💬 **Direct Contact**: Add developer WeChat `sean-xie-deepractice` for immediate assistance
+- 📱 **Tech Community**: Scan the QR code below to join our technical discussion group
+
+Your feedback is invaluable to us and helps us improve product quality rapidly! ✨
+
+---
+
 ## 🚀 **Quick Start - 30-Second Setup**
 
 Open your configuration file and copy the `promptx` configuration code below. This is the simplest **zero-configuration mode**, where PromptX automatically handles everything for you.
@@ -52,8 +70,15 @@ Open your configuration file and copy the `promptx` configuration code below. Th
     "promptx": {
       // Use npx to run promptx service
       "command": "npx",
-      // '-y' auto-confirm, '-f' force refresh cache, 'dpml-prompt@snapshot' use latest version, 'mcp-server' start service
-      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"]
+      // Startup parameters configuration
+      "args": [
+        "-y",                               // Auto-confirm
+        "-f",                               // Force refresh cache
+        "--registry",                       // Specify registry
+        "https://registry.npmjs.org",       // Use official registry
+        "dpml-prompt@beta",                 // Use stable beta version
+        "mcp-server"                        // Start service
+      ]
     }
   }
 }
@@ -61,24 +86,29 @@ Open your configuration file and copy the `promptx` configuration code below. Th
 
 **🎯 It's that simple!** Save the file and restart your AI application, and PromptX is successfully activated.
 
-🔧 If you want to specify a particular folder as PromptX's workspace, you can add the `env` environment variable.
+> **💡 Tip:** The configuration specifically uses the official registry `registry.npmjs.org` to avoid installation issues caused by unofficial mirrors. If you find the installation slow, it's recommended to use a proxy tool for acceleration rather than switching to alternative mirrors.
 
+### 🌐 **Advanced Configuration: HTTP Mode Support**
+
+In addition to the local mode above, PromptX also supports **HTTP mode**, suitable for remote deployment or special network environments:
+
+```bash
+# Start HTTP mode server
+npx -f -y dpml-prompt@beta mcp-server --transport http --port 3000
+```
+
+Then use in client configuration:
 ```json
 {
   "mcpServers": {
     "promptx": {
-      "command": "npx",
-      "args": ["-y", "-f", "dpml-prompt@snapshot", "mcp-server"],
-      "env": {
-        // PROMPTX_WORKSPACE: Custom workspace path (optional, automatically detected by default)
-        // Windows: "D:\\path\\to\\your\\project" (note the double backslashes)
-        // macOS/Linux: "/Users/username/path/your/project"
-        "PROMPTX_WORKSPACE": "/your/custom/workspace/path"
-      }
+      "url": "http://localhost:3000/mcp"
     }
   }
 }
 ```
+
+📖 **[Complete Installation & Configuration Guide](https://github.com/Deepractice/PromptX/wiki/PromptX-MCP-Install)** - Detailed configuration methods for various clients and troubleshooting
 
 <br/>
 
@@ -117,31 +147,7 @@ When you call the `promptx_...` series of tools, your AI application sends the r
 
 ### New to MCP? [Watch MCP Tutorial on BiliBili](https://www.bilibili.com/video/BV1HFd6YhErb)
 
-#### **Supported AI Applications**
-
-| Application | Status | Configuration | Notes |
-|-------------|--------|---------------|-------|
-| **Claude Desktop** | ✅ Official | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` | Anthropic's official client with native MCP support |
-| **Cursor** | ✅ Supported | MCP settings panel | Developer-friendly code editor |
-| **Claude Code** | ✅ Supported | `/home/user/.claude.json` or `~/.claude.json` | Anthropic's official CLI tool with native MCP support, command-line AI programming assistant |
-| **Windsurf** | ✅ Supported | IDE MCP panel | Codeium's AI-native IDE |
-| **Cline** | ✅ Supported | VS Code plugin config | Powerful AI programming assistant |
-| **Augment** | ✅ Supported | Desktop app config | AI-native code editor |
-| **Trae** | ✅ Supported | IDE plugin config | AI-driven code generation tool |
-| **通义灵码** | 🟡 Planned | Alibaba Cloud IDE plugin | Alibaba's AI programming assistant |
-| **Zed** | ✅ Supported | Config: `~/.config/zed/settings.json` | High-performance code editor |
-| **Continue** | ✅ Supported | VS Code plugin config | VS Code AI assistant plugin |
-| **Replit Agent** | 🟡 Experimental | Built into Replit platform | Online programming environment |
-| **Jan** | 🟡 In Development | Local AI client | Privacy-first local AI assistant |
-| **Ollama WebUI** | 🟡 Community | Third-party MCP adapter | Local model interface |
-| **Open WebUI** | 🟡 Community | Plugin system | Open source AI interface |
-| **百度 Comate** | 🟡 Planned | Baidu IDE plugin | Baidu's AI programming assistant |
-| **腾讯 CodeWhisperer** | 🟡 Planned | Tencent Cloud IDE | Tencent's AI programming tool |
-
-> **Legend**:
-> - ✅ **Official Support**: Native or official plugin support for MCP protocol.
-> - 🟡 **Experimental/Community/Planned Support**: Support through community plugins, experimental features, or in development plans.
-> - More AI applications are integrating MCP protocol...
+All AI clients that support the MCP protocol can use PromptX. This includes major applications like **Claude Desktop**, **Cursor**, **Windsurf**, **Cline**, **Zed**, **Continue**, and many more mainstream AI development tools that are integrating MCP support.
 
 **🎯 After configuration, your AI application will automatically gain 6 professional tools:**
 - `promptx_init`: 🏗️ **System Initialization** - Automatically prepares the working environment.
@@ -210,5 +216,3 @@ Join our technical community:
 ---
 
 **🚀 Get Started Now: Launch PromptX MCP Server and enhance your AI application with professional capabilities!**
-
-```

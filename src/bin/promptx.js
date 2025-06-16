@@ -25,7 +25,9 @@ program
   .command('init [workspacePath]')
   .description('🏗️ init锦囊 - 初始化工作环境，传达系统基本诺记')
   .action(async (workspacePath, options) => {
-    await cli.execute('init', workspacePath ? [workspacePath] : [])
+    // 如果提供了workspacePath，将其作为workingDirectory参数传递
+    const args = workspacePath ? { workingDirectory: workspacePath } : {}
+    await cli.execute('init', [args])
   })
 
 program

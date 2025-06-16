@@ -36,8 +36,11 @@ class MCPServerCommand {
       }
     }
     
+    // 基本调试信息
     this.log(`📂 最终工作目录: ${process.cwd()}`);
     this.log(`📋 预期记忆文件路径: ${require('path').join(process.cwd(), '.promptx/memory/declarative.md')}`);
+    
+    // DirectoryService路径信息将在需要时异步获取
     
     // 输出完整调试信息
     if (this.debug) {
@@ -163,7 +166,7 @@ class MCPServerCommand {
    */
   convertMCPToCliParams(toolName, mcpArgs) {
     const paramMapping = {
-      'promptx_init': () => [],
+      'promptx_init': (args) => args.workingDirectory ? [args] : [],
       
       'promptx_hello': () => [],
       

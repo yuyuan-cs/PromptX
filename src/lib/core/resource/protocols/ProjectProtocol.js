@@ -1,6 +1,7 @@
 const ResourceProtocol = require('./ResourceProtocol')
 const path = require('path')
 const fs = require('fs').promises
+const { getDirectoryService } = require('../../../utils/DirectoryService')
 
 /**
  * 项目协议实现
@@ -31,8 +32,8 @@ class ProjectProtocol extends ResourceProtocol {
       tools: 'tools' // 工具目录
     }
 
-    // 项目根目录缓存
-    this.projectRootCache = new Map()
+    // 获取全局DirectoryService实例
+    this.directoryService = getDirectoryService()
   }
 
   /**
@@ -140,25 +141,15 @@ class ProjectProtocol extends ResourceProtocol {
    * @returns {Promise<string|null>} 项目根目录路径
    */
   async findProjectRoot (startDir = process.cwd()) {
-    // 检查缓存
-    const cacheKey = path.resolve(startDir)
-    if (this.projectRootCache.has(cacheKey)) {
-      return this.projectRootCache.get(cacheKey)
-    }
-
     try {
-      // 使用自实现的向上查找
-      const promptxPath = this.findUpDirectorySync('.promptx', startDir)
-
-      let projectRoot = null
-      if (promptxPath) {
-        // .promptx 目录的父目录就是项目根目录
-        projectRoot = path.dirname(promptxPath)
+      // 使用DirectoryService获取项目根目录
+      const context = {
+        startDir: path.resolve(startDir),
+        platform: process.platform,
+        avoidUserHome: true
       }
-
-      // 缓存结果
-      this.projectRootCache.set(cacheKey, projectRoot)
-
+      
+      const projectRoot = await this.directoryService.getProjectRoot(context)
       return projectRoot
     } catch (error) {
       throw new Error(`查找项目根目录失败: ${error.message}`)
@@ -383,7 +374,8 @@ class ProjectProtocol extends ResourceProtocol {
    */
   clearCache () {
     super.clearCache()
-    this.projectRootCache.clear()
+    // 清除DirectoryService缓存
+    this.directoryService.clearCache()
   }
 }
 

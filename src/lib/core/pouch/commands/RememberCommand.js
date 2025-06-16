@@ -70,16 +70,17 @@ class RememberCommand extends BasePouchCommand {
    * 确保AI记忆体系目录存在
    */
   async ensureMemoryDirectory () {
-    const promptxDir = path.join(process.cwd(), '.promptx')
-    const memoryDir = path.join(promptxDir, 'memory')
-
+    const { getDirectoryService } = require('../../../utils/DirectoryService')
+    const directoryService = getDirectoryService()
+    
+    const memoryDir = await directoryService.getMemoryDirectory()
     await fs.ensureDir(memoryDir)
 
     return memoryDir
   }
 
   /**
-   * 格式化为一行记忆（紧凑格式）
+   * 格式化为多行记忆块（新格式）
    */
   formatMemoryLine (value) {
     const now = new Date()
@@ -88,7 +89,11 @@ class RememberCommand extends BasePouchCommand {
     // 自动生成标签
     const tags = this.generateTags(value)
 
-    return `- ${timestamp} ${value} #${tags} #评分:8 #有效期:长期`
+    // 使用新的多行格式
+    return `- ${timestamp} START
+${value}
+--tags ${tags} #评分:8 #有效期:长期
+- END`
   }
 
   /**
@@ -109,14 +114,14 @@ class RememberCommand extends BasePouchCommand {
   /**
    * 追加到记忆文件
    */
-  async appendToMemoryFile (memoryFile, memoryLine) {
+  async appendToMemoryFile (memoryFile, memoryBlock) {
     // 初始化文件（如果不存在）
     if (!await fs.pathExists(memoryFile)) {
       await fs.writeFile(memoryFile, `# 陈述性记忆
 
 ## 高价值记忆（评分 ≥ 7）
 
-${memoryLine}
+${memoryBlock}
 
 `)
       return 'created'
@@ -125,8 +130,8 @@ ${memoryLine}
     // 读取现有内容
     const content = await fs.readFile(memoryFile, 'utf-8')
 
-    // 追加新记忆（在高价值记忆部分）
-    const updatedContent = content + '\n\n' + memoryLine
+    // 追加新记忆块（在高价值记忆部分）
+    const updatedContent = content + '\n\n' + memoryBlock
     await fs.writeFile(memoryFile, updatedContent)
     return 'created'
   }

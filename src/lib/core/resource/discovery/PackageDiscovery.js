@@ -5,6 +5,7 @@ const logger = require('../../../utils/logger')
 const path = require('path')
 const fs = require('fs-extra')
 const CrossPlatformFileScanner = require('./CrossPlatformFileScanner')
+const { getDirectoryService } = require('../../../utils/DirectoryService')
 
 /**
  * PackageDiscovery - 包级资源发现器
@@ -19,7 +20,9 @@ class PackageDiscovery extends BaseDiscovery {
   constructor() {
     super('PACKAGE', 1)
     this.fileScanner = new CrossPlatformFileScanner()
-    this.registryPath = path.join(process.cwd(), 'src/package.registry.json')
+    this.directoryService = getDirectoryService()
+    // 将在_getRegistryPath()中动态计算
+    this.registryPath = null
   }
 
   /**
@@ -79,20 +82,44 @@ class PackageDiscovery extends BaseDiscovery {
   }
 
   /**
+   * 获取注册表路径
+   * @returns {Promise<string>} 注册表文件路径
+   * @private
+   */
+  async _getRegistryPath() {
+    if (!this.registryPath) {
+      try {
+        const context = {
+          startDir: process.cwd(),
+          platform: process.platform,
+          avoidUserHome: true
+        }
+        const projectRoot = await this.directoryService.getProjectRoot(context)
+        this.registryPath = path.join(projectRoot, 'src/package.registry.json')
+      } catch (error) {
+        // 回退到默认路径
+        this.registryPath = path.join(process.cwd(), 'src/package.registry.json')
+      }
+    }
+    return this.registryPath
+  }
+
+  /**
    * 从硬编码注册表加载资源
    * @returns {Promise<RegistryData|null>} 注册表数据
    * @private
    */
   async _loadFromRegistry() {
     try {
-      logger.debug(`[PackageDiscovery] 🔧 注册表路径: ${this.registryPath}`)
+      const registryPath = await this._getRegistryPath()
+      logger.debug(`[PackageDiscovery] 🔧 注册表路径: ${registryPath}`)
       
-      if (!(await fs.pathExists(this.registryPath))) {
-        logger.warn(`[PackageDiscovery] ❌ 注册表文件不存在: ${this.registryPath}`)
+      if (!(await fs.pathExists(registryPath))) {
+        logger.warn(`[PackageDiscovery] ❌ 注册表文件不存在: ${registryPath}`)
         return null
       }
 
-      const registryData = await RegistryData.fromFile('package', this.registryPath)
+      const registryData = await RegistryData.fromFile('package', registryPath)
       logger.debug(`[PackageDiscovery] 📊 加载资源总数: ${registryData.size}`)
       
       return registryData
@@ -461,16 +488,22 @@ class PackageDiscovery extends BaseDiscovery {
    * @returns {Promise<boolean>} 是否为开发模式
    */
   async _isDevelopmentMode() {
-    const cwd = process.cwd()
-    const hasCliScript = await fs.pathExists(path.join(cwd, 'src', 'bin', 'promptx.js'))
-    const hasPackageJson = await fs.pathExists(path.join(cwd, 'package.json'))
-    
-    if (!hasCliScript || !hasPackageJson) {
-      return false
-    }
-
     try {
-      const packageJson = await fs.readJSON(path.join(cwd, 'package.json'))
+      const context = {
+        startDir: process.cwd(),
+        platform: process.platform,
+        avoidUserHome: true
+      }
+      const projectRoot = await this.directoryService.getProjectRoot(context)
+      
+      const hasCliScript = await fs.pathExists(path.join(projectRoot, 'src', 'bin', 'promptx.js'))
+      const hasPackageJson = await fs.pathExists(path.join(projectRoot, 'package.json'))
+      
+      if (!hasCliScript || !hasPackageJson) {
+        return false
+      }
+
+      const packageJson = await fs.readJSON(path.join(projectRoot, 'package.json'))
       return packageJson.name === 'dpml-prompt'
     } catch (error) {
       return false
