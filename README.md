@@ -88,6 +88,33 @@ PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和�
 
 > **💡 提示：** 配置中特意指定了官方镜像源 `registry.npmjs.org`，这可以避免因使用非官方镜像导致的安装问题。如果您发现安装很慢，建议使用代理工具加速，而不是切换到其他镜像源。
 
+### 🌐 **高级配置：HTTP 模式支持**
+
+除了上述本地模式外，PromptX 还支持 **HTTP 模式**，适用于远程部署或特殊网络环境：
+
+```bash
+# 启动 HTTP 模式服务器
+npx -f -y dpml-prompt@beta mcp-server --transport http --port 3000
+```
+
+然后在客户端配置中使用：
+```json
+{
+  "mcpServers": {
+    "promptx": {
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
+
+📖 **[完整安装配置指南](https://github.com/Deepractice/PromptX/wiki/PromptX-MCP-Install)** - 包含各种客户端的详细配置方法和故障排除
+
+
+### 不知道MCP是怎么？  [点击查看 MCP幼儿园教程 BiliBili](https://www.bilibili.com/video/BV1HFd6YhErb)
+
+目前所有支持 MCP 协议的 AI 客户端都可以使用 PromptX。主要包括：**Claude Desktop**、**Cursor**、**Windsurf**、**Cline**、**Zed**、**Continue** 等主流 AI 编程工具，以及更多正在接入中的应用。
+
 ---
 
 ### ⚙️ **工作原理**
@@ -120,35 +147,6 @@ graph TD
 当您调用 `promptx_...` 系列工具时，AI应用会将请求通过MCP协议发送给 PromptX。PromptX 引擎会加载相应的专业角色、检索相关记忆，然后返回一个经过专业能力增强的结果给AI应用，最终呈现给您。
 
 ---
-
-### 不知道MCP怎么使用？  [点击查看 MCP幼儿园教程 BiliBili](https://www.bilibili.com/video/BV1HFd6YhErb)
-
-#### **支持MCP的AI应用**
-
-| AI应用 | 状态 | 配置文件位置 | 特性 |
-|--------|--------|-----------|------|
-| **Claude Desktop** | ✅ 官方支持 | Windows: `%APPDATA%\Claude\claude_desktop_config.json`<br/>macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` | Anthropic官方客户端，MCP原生支持 |
-| **Cursor** | ✅ 支持 | 通过MCP设置面板配置 | 智能代码编辑器，开发者友好 |
-| **Claude Code** | ✅ 支持 | `/home/user/.claude.json` 或者 `~/.claude.json` | Anthropic官方CLI工具，MCP原生支持，命令行AI编程助手 |
-| **Windsurf** | ✅ 支持 | IDE内MCP配置面板 | Codeium推出的AI原生IDE |
-| **Cline** | ✅ 支持 | VS Code插件配置 | 强大的AI编程助手 |
-| **Augment** | ✅ 支持 | 桌面应用配置 | AI原生代码编辑器 |
-| **Trae** | ✅ 支持 | IDE插件配置 | AI驱动的代码生成和重构工具 |
-| **通义灵码** | 🟡 计划支持 | 阿里云IDE插件 | 阿里云推出的AI编程助手 |
-| **Zed** | ✅ 支持 | 配置文件：`~/.config/zed/settings.json` | 高性能代码编辑器 |
-| **Continue** | ✅ 支持 | VS Code插件配置 | VS Code AI助手插件 |
-| **Replit Agent** | 🟡 实验支持 | Replit平台内置 | 在线编程环境 |
-| **Jan** | 🟡 开发中 | 本地AI客户端 | 隐私优先的本地AI助手 |
-| **Ollama WebUI** | 🟡 社区支持 | 第三方MCP适配器 | 本地大模型界面 |
-| **Open WebUI** | 🟡 社区支持 | 插件系统 | 开源AI界面 |
-| **百度 Comate** | 🟡 计划支持 | 百度IDE插件 | 百度推出的AI编程助手 |
-| **腾讯 CodeWhisperer** | 🟡 计划支持 | 腾讯云IDE | 腾讯云AI编程工具 |
-
-
-> **图例说明**：
-> - ✅ **官方支持**：原生或通过官方插件支持MCP协议。
-> - 🟡 **实验/社区/计划支持**：通过社区插件、实验性功能或已列入开发计划。
-> - 更多AI应用正在接入...
 
 **🎯 配置完成后，您的AI应用将自动获得6个专业工具：**
 - `promptx_init`: 🏗️ **系统初始化** - 自动准备工作环境。
@@ -187,7 +185,7 @@ graph TD
 
 #### **📚 相关资源**
 
-- **AI集成标准与实践指南：** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHC N.md
+- **AI集成标准与实践指南：** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHCN.md
 
 ---
 
