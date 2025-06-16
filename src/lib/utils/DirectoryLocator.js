@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const path = require('path')
 const os = require('os')
+const CurrentProjectManager = require('./CurrentProjectManager')
 
 /**
  * 目录定位器基础抽象类
@@ -90,13 +91,17 @@ class ProjectRootLocator extends DirectoryLocator {
   constructor(options = {}) {
     super(options)
     
+    // 初始化AI驱动的项目管理器
+    this.currentProjectManager = new CurrentProjectManager()
+    
     // 可配置的查找策略优先级（按可靠性和准确性排序）
     this.strategies = options.strategies || [
-      'existingPromptxDirectory',           // 1. 现有.promptx目录（最可靠的项目标识）
-      'packageJsonDirectory',               // 2. 向上查找项目标识文件（最准确的项目边界）
-      'gitRootDirectory',                   // 3. Git根目录（通用可靠）
-      'currentWorkingDirectoryIfHasMarkers', // 4. 当前目录项目标识（降级策略）
-      'currentWorkingDirectory'             // 5. 纯当前目录（最后回退）
+      'aiProvidedProjectPath',              // 1. AI提供的项目路径（最可靠，由AI告知）
+      'existingPromptxDirectory',           // 2. 现有.promptx目录（最可靠的项目标识）
+      'packageJsonDirectory',               // 3. 向上查找项目标识文件（最准确的项目边界）
+      'gitRootDirectory',                   // 4. Git根目录（通用可靠）
+      'currentWorkingDirectoryIfHasMarkers', // 5. 当前目录项目标识（降级策略）
+      'currentWorkingDirectory'             // 6. 纯当前目录（最后回退）
     ]
     
     // 项目标识文件
@@ -144,6 +149,9 @@ class ProjectRootLocator extends DirectoryLocator {
    */
   async _executeStrategy(strategy, startDir, context) {
     switch (strategy) {
+      case 'aiProvidedProjectPath':
+        return await this._findByAIProvidedPath()
+      
       case 'existingPromptxDirectory':
         return await this._findByExistingPromptx(startDir)
       
@@ -162,6 +170,21 @@ class ProjectRootLocator extends DirectoryLocator {
       default:
         return null
     }
+  }
+
+  /**
+   * 通过AI提供的项目路径查找（最高优先级）
+   */
+  async _findByAIProvidedPath() {
+    try {
+      const aiProvidedPath = await this.currentProjectManager.getCurrentProject()
+      if (aiProvidedPath && await this.isValidDirectory(aiProvidedPath)) {
+        return aiProvidedPath
+      }
+    } catch (error) {
+      // AI提供的路径获取失败，继续使用其他策略
+    }
+    return null
   }
 
   /**
@@ -270,6 +293,7 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
   constructor(options = {}) {
     super(options)
     this.projectRootLocator = options.projectRootLocator || new ProjectRootLocator(options)
+    this.currentProjectManager = new CurrentProjectManager()
   }
 
   /**
@@ -284,19 +308,25 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
       return cached
     }
 
-    // 策略1：IDE环境变量（最高优先级 - 用户/IDE明确指定）
+    // 策略1：AI提供的项目路径（最高优先级 - AI驱动的路径管理）
+    const workspaceFromAI = await this._fromAIProvidedPath()
+    if (workspaceFromAI) {
+      return this.setCached(cacheKey, workspaceFromAI)
+    }
+
+    // 策略2：IDE环境变量（用户/IDE明确指定）
     const workspaceFromIDE = await this._fromIDEEnvironment()
     if (workspaceFromIDE) {
       return this.setCached(cacheKey, workspaceFromIDE)
     }
 
-    // 策略2：PromptX专用环境变量（用户手动配置）
+    // 策略3：PromptX专用环境变量（用户手动配置）
     const workspaceFromEnv = await this._fromPromptXEnvironment()
     if (workspaceFromEnv) {
       return this.setCached(cacheKey, workspaceFromEnv)
     }
 
-    // 策略3：特定上下文策略（如init命令的强制指定）
+    // 策略4：特定上下文策略（如init命令的强制指定）
     if (context.strategies) {
       const workspaceFromProject = await this._fromProjectRoot(context)
       if (workspaceFromProject) {
@@ -304,20 +334,35 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
       }
     }
 
-    // 策略4：现有.promptx目录（已初始化的项目）
+    // 策略5：现有.promptx目录（已初始化的项目）
     const workspaceFromExisting = await this._fromExistingDirectory(context.startDir)
     if (workspaceFromExisting) {
       return this.setCached(cacheKey, workspaceFromExisting)
     }
 
-    // 策略5：项目根目录（基于项目结构推断）
+    // 策略6：项目根目录（基于项目结构推断）
     const workspaceFromProject = await this._fromProjectRoot(context)
     if (workspaceFromProject) {
       return this.setCached(cacheKey, workspaceFromProject)
     }
 
-    // 策略6：智能回退策略（兜底方案）
+    // 策略7：智能回退策略（兜底方案）
     return this.setCached(cacheKey, await this._getSmartFallback(context))
+  }
+
+  /**
+   * 从AI提供的项目路径获取（最高优先级）
+   */
+  async _fromAIProvidedPath() {
+    try {
+      const aiProvidedPath = await this.currentProjectManager.getCurrentProject()
+      if (aiProvidedPath && await this.isValidDirectory(aiProvidedPath)) {
+        return aiProvidedPath
+      }
+    } catch (error) {
+      // AI提供的路径获取失败，继续使用其他策略
+    }
+    return null
   }
 
   /**
