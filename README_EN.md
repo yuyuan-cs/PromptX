@@ -53,7 +53,8 @@ PromptX is currently in the **early development stage**, and we are actively imp
 If you encounter any issues during usage, please contact us through:
 
 - 🐛 **Submit Issue**: [GitHub Issues](https://github.com/Deepractice/PromptX/issues) - Describe the problem in detail, we'll respond promptly
-- 💬 **Direct Contact**: Add developer WeChat `sean-xie-deepractice` for immediate assistance
+- 💬 **Direct Contact**: Add developer WeChat `deepracticex` for immediate assistance
+- 📧 **Email Contact**: Send email to `sean@deepracticex.com` for technical support
 - 📱 **Tech Community**: Scan the QR code below to join our technical discussion group
 
 Your feedback is invaluable to us and helps us improve product quality rapidly! ✨

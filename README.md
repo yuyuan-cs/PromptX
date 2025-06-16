@@ -53,7 +53,8 @@ PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和�
 如果您在使用过程中遇到任何问题，请通过以下方式联系我们：
 
 - 🐛 **提交 Issue**: [GitHub Issues](https://github.com/Deepractice/PromptX/issues) - 详细描述问题，我们会尽快回复
-- 💬 **直接联系**: 添加开发者微信 `sean-xie-deepractice` 获取即时帮助
+- 💬 **直接联系**: 添加开发者微信 `deepracticex` 获取即时帮助
+- 📧 **邮件联系**: 发送邮件至 `sean@deepracticex.com` 获取技术支持
 - 📱 **技术交流群**: 扫描下方二维码加入我们的技术交流群
 
 您的反馈对我们非常宝贵，帮助我们快速改进产品质量！ ✨
