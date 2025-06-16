@@ -236,13 +236,13 @@ ${registryStats.message}
         {
           name: '发现专业角色',
           description: '查看所有可用的AI专业角色',
-          command: COMMANDS.HELLO,
+          method: 'MCP PromptX hello 工具',
           priority: 'recommended'
         },
         {
           name: '激活专业角色',
           description: '直接激活特定专业角色（如果已知角色ID）',
-          command: COMMANDS.ACTION,
+          method: 'MCP PromptX action 工具',
           priority: 'optional'
         }
       ],

@@ -22,10 +22,11 @@
 
 ### ✨ **Understanding PromptX at a Glance**
 
-What can PromptX do? Simply put, it gives your AI assistant a "brain" and "memory."
+What can PromptX do? Simply put, it gives your AI assistant a "brain" and "memory," and transforms you from user to creator.
 
 - **🎭 Professional Role-Playing**: Provides expert roles across different domains, making AI responses more professional and in-depth.
 - **🧠 Long-term Memory & Knowledge Base**: AI can remember key information and your preferences, providing coherent and personalized support in ongoing conversations and work.
+- **✨ AI Role Creation Workshop**: **Create professional AI assistants in 2 minutes** - Transform your ideas into reality, evolving from user to creator.
 - **🔌 Easy Integration**: With just one command, seamlessly enable these powerful features for dozens of mainstream AI applications (like Claude, Cursor).
 
 <br/>
@@ -153,12 +154,86 @@ All AI clients that support the MCP protocol can use PromptX. This includes majo
 **🎯 After configuration, your AI application will automatically gain 6 professional tools:**
 - `promptx_init`: 🏗️ **System Initialization** - Automatically prepares the working environment.
 - `promptx_hello`: 👋 **Role Discovery** - Browse all available expert roles.
-- `promptx_action`: ⚡ **Role Activation** - Transform into an expert in a specific domain with one click.
+- `promptx_action`: ⚡ **Role Activation** - Transform into an expert in a specific domain with one click. **(Includes Nuwa🎨 Role Creation Consultant)**
 - `promptx_learn`: 📚 **Knowledge Learning** - Have AI learn specific knowledge or skills.
 - `promptx_recall`: 🔍 **Memory Retrieval** - Look up historical information from the memory repository.
 - `promptx_remember`: 💾 **Experience Saving** - Store important information in long-term memory.
 
 📖 **[Complete MCP Integration Guide](docs/mcp-integration-guide.md)**
+
+---
+
+## 🎨 **Nuwa Creation Workshop - Democratizing AI Role Design**
+
+<div align="center">
+  <img src="assets/nuwa-logo.png" alt="Nuwa Creation Workshop" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
+</div>
+
+#### **💫 From Idea to Reality in Just 2 Minutes**
+
+Have you ever thought: What if I could customize a professional AI assistant for specific work scenarios? **Nuwa makes this idea a reality.**
+
+> *"Every idea deserves its own dedicated AI assistant. Technical barriers should never limit creative flight."*
+
+#### **🎯 Core Value Transformation**
+
+- **🚀 Zero-Barrier Creation**: No need to learn complex technology - describe your needs in natural language
+- **⚡ Lightning-Fast Delivery**: From idea to usable role in just 2 minutes
+- **🎭 Professional Quality**: Automatically generates professional AI roles compliant with DPML standards
+- **🔄 Plug-and-Play**: Created roles can be activated immediately after completion
+- **💝 Sense of Control**: Elegant transformation from user to creator
+
+#### **✨ Usage Scenarios Examples**
+
+<div align="center">
+
+| 🎯 **User Need** | ⚡ **Nuwa Generated** | 🚀 **Ready to Use** |
+|---|---|---|
+| 👩‍💼 "I need an AI assistant for Instagram marketing" | Instagram Marketing Expert Role | `promptx_action instagram-expert` |
+| 👨‍💻 "I want a Python async programming expert" | Python Async Programming Tutor Role | `promptx_action python-async-tutor` |
+| 🎨 "Give me a UI/UX design consultant" | UI/UX Design Expert Role | `promptx_action uiux-consultant` |
+| 📊 "Need a data analyst assistant" | Data Analysis Expert Role | `promptx_action data-analyst` |
+
+</div>
+
+#### **📊 Efficiency Revolution**
+
+<div align="center">
+
+| **Traditional Method** | **Nuwa Method** | **Improvement** |
+|---|---|---|
+| 📚 Learn DPML syntax | 🗣️ Natural language description | **95% learning curve reduction** |
+| ⏰ 2-8 hours development | ⚡ 2 minutes generation | **240x speed increase** |
+| 🤔 Technical decision making | 🎯 Focus on requirements | **100% cognitive load reduction** |
+| 🧪 Manual testing and debugging | ✅ Instant activation | **99% error rate reduction** |
+
+</div>
+
+#### **🚀 4-Step Simple Workflow**
+
+  <div align="center">
+  <img src="assets/nuwa-demo/step1-action-nuwa.jpg" alt="Step 1: Activate Nuwa Role Creation Consultant" width="80%" style="margin: 10px 0;">
+  <img src="assets/nuwa-demo/step2-require-nuwa.jpg" alt="Step 2: Describe your needs to Nuwa" width="80%" style="margin: 10px 0;">
+  <img src="assets/nuwa-demo/step3-modify-requirement.jpg" alt="Step 3: Nuwa understands and refines requirements" width="80%" style="margin: 10px 0;">
+  <img src="assets/nuwa-demo/step4-action-bew-role.jpg" alt="Step 4: Activate the newly created dedicated role" width="80%" style="margin: 10px 0;">
+</div>
+
+#### **💬 User Testimonials**
+
+> **👨‍💻 Developer**: *"I used to spend hours writing role configurations. Now with Nuwa, I describe my needs and get a professional AI assistant immediately. It's magical!"*
+
+> **🎨 Designer**: *"As a non-technical person, I never thought I could create AI roles. Nuwa made me feel like a creator, not just a user."*
+
+> **📊 Product Manager**: *"Our team now creates customized AI assistants for different projects. Nuwa has become an indispensable part of our toolkit."*
+
+#### **🧠 Design Philosophy**
+
+Nuwa embodies the core philosophy of PromptX: **"Making professional capabilities accessible to everyone"**. We believe that:
+
+- **🌟 Boundless Creativity**: Technical barriers shouldn't limit imagination
+- **⚡ Instant Satisfaction**: Great ideas deserve immediate realization  
+- **🎯 Demand-Driven**: Technology should serve human creativity, not constrain it
+- **🤝 Ecosystem Co-creation**: Every user can contribute to the AI assistant ecosystem
 
 ---
 

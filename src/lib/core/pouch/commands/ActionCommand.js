@@ -59,7 +59,16 @@ class ActionCommand extends BasePouchCommand {
         logger.warn(`[ActionCommand] 角色 "${roleId}" 不存在！`)
         return `❌ 角色 "${roleId}" 不存在！
 
-🔍 请使用 MCP PromptX 工具的 hello 功能查看可用角色`
+🔍 可能的原因：
+- 角色尚未注册到系统中
+- 刚刚创建的新角色需要刷新注册表
+
+💡 解决方案：
+1. **首先尝试**：使用 MCP PromptX 工具的 **init** 功能刷新注册表
+2. **然后重试**：再次使用 action 功能激活角色
+3. **查看角色**：使用 hello 功能查看所有可用角色
+
+🚨 **特别提示**：如果刚刚用女娲创建了新角色，必须先执行 init 刷新注册表！`
       }
 
       // 2. 分析角色文件，提取依赖
@@ -73,10 +82,18 @@ class ActionCommand extends BasePouchCommand {
 
 🔍 可能的原因：
 - 角色文件不存在或格式错误
+- 新创建的角色尚未注册到系统
 - 权限不足
 - 系统资源问题
 
-💡 请使用 MCP PromptX 工具的 hello 功能查看可用角色列表。`
+💡 解决方案：
+1. **优先尝试**：使用 MCP PromptX 工具的 **init** 功能刷新注册表
+2. **然后重试**：再次尝试激活角色
+3. **查看可用角色**：使用 hello 功能查看角色列表
+
+🚨 **新角色提示**：如果是女娲等工具刚创建的角色，必须先执行 init！
+
+📋 **错误详情**：${error.message}`
     }
   }
 
