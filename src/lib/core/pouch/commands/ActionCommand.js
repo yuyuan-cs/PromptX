@@ -5,6 +5,7 @@ const { COMMANDS } = require('../../../../constants')
 const { getGlobalResourceManager } = require('../../resource')
 const DPMLContentParser = require('../../resource/DPMLContentParser')
 const SemanticRenderer = require('../../resource/SemanticRenderer')
+const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -20,6 +21,7 @@ class ActionCommand extends BasePouchCommand {
     this.resourceManager = getGlobalResourceManager()
     this.dpmlParser = new DPMLContentParser()
     this.semanticRenderer = new SemanticRenderer()
+    this.currentProjectManager = new CurrentProjectManager()
   }
 
   getPurpose () {
@@ -27,6 +29,8 @@ class ActionCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
+    // 智能提示，不阻断服务
+
     const [roleId] = args
 
     if (!roleId) {
@@ -474,6 +478,65 @@ ${recallContent}
         approach: '直接激活-自动记忆-立即可用',
         systemVersion: '锦囊串联状态机 v2.1',
         designPhilosophy: 'AI use CLI get prompt for AI - 一键专家化，自动记忆'
+      }
+    }
+  }
+
+  /**
+   * 重写execute方法以添加项目状态检查
+   */
+  async execute (args = []) {
+    // 获取项目状态提示
+    const projectPrompt = await this.currentProjectManager.generateTopLevelProjectPrompt('action')
+    
+    const purpose = this.getPurpose()
+    const content = await this.getContent(args)
+    const pateoas = await this.getPATEOAS(args)
+
+    return this.formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt)
+  }
+  
+  /**
+   * 格式化带有项目检查的输出
+   */
+  formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt) {
+    const output = {
+      purpose,
+      content,
+      pateoas,
+      context: this.context,
+      format: this.outputFormat,
+      projectPrompt
+    }
+
+    if (this.outputFormat === 'json') {
+      return output
+    }
+
+    // 人类可读格式
+    return {
+      ...output,
+      toString () {
+        const divider = '='.repeat(60)
+        const nextSteps = (pateoas.nextActions || [])
+          .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
+          .join('\n')
+
+        return `${projectPrompt}
+
+${divider}
+🎯 锦囊目的：${purpose}
+${divider}
+
+📜 锦囊内容：
+${content}
+
+🔄 下一步行动：
+${nextSteps}
+
+📍 当前状态：${pateoas.currentState}
+${divider}
+`
       }
     }
   }

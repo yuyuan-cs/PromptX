@@ -4,6 +4,7 @@ const { COMMANDS } = require('../../../../constants')
 const { getDirectoryService } = require('../../../utils/DirectoryService')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
+const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
 const logger = require('../../../utils/logger')
 const path = require('path')
 const fs = require('fs-extra')
@@ -19,6 +20,7 @@ class InitCommand extends BasePouchCommand {
     this.resourceManager = getGlobalResourceManager()
     this.projectDiscovery = new ProjectDiscovery()
     this.directoryService = getDirectoryService()
+    this.currentProjectManager = new CurrentProjectManager()
   }
 
   getPurpose () {
@@ -26,18 +28,70 @@ class InitCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    const [workspacePath = '.'] = args
+    // 获取工作目录参数，支持两种格式：
+    // 1. 来自MCP的对象格式：{ workingDirectory: "path" }
+    // 2. 来自CLI的字符串格式：["path"]
+    let workingDirectory
+    
+    if (args && typeof args[0] === 'object' && args[0].workingDirectory) {
+      // MCP格式
+      workingDirectory = args[0].workingDirectory
+    } else if (args && typeof args[0] === 'string') {
+      // CLI格式
+      workingDirectory = args[0]
+    } else if (args && args.length > 0 && args[0]) {
+      // 兜底：直接取第一个参数
+      workingDirectory = args[0]
+    }
+    
+    let projectPath
+    
+    if (workingDirectory) {
+      // AI提供了工作目录，使用AI提供的路径
+      projectPath = path.resolve(workingDirectory)
+      
+      // 验证AI提供的路径是否有效
+      if (!await this.currentProjectManager.validateProjectPath(projectPath)) {
+        return `❌ 提供的工作目录无效: ${projectPath}
+        
+请确保：
+1. 路径存在且为目录
+2. 不是用户主目录
+3. 具有适当的访问权限
 
-    // 构建统一的查找上下文
-    // 对于init命令，我们优先使用当前目录，不向上查找现有.promptx
+💡 请提供一个有效的项目目录路径。`
+      }
+      
+      // 保存AI提供的项目路径
+      await this.currentProjectManager.setCurrentProject(projectPath)
+      
+    } else {
+      // AI没有提供工作目录，检查是否已有保存的项目
+      const savedProject = await this.currentProjectManager.getCurrentProject()
+      
+      if (savedProject) {
+        // 使用之前保存的项目路径
+        projectPath = savedProject
+      } else {
+        // 没有保存的项目，要求AI提供
+        return `🎯 PromptX需要知道当前项目的工作目录。
+
+请在调用此工具时提供 workingDirectory 参数，例如：
+- workingDirectory: "/Users/sean/WorkSpaces/DeepracticeProjects/PromptX"
+
+💡 你当前工作在哪个项目目录？请提供完整的绝对路径。`
+      }
+    }
+
+    // 构建统一的查找上下文，使用确定的项目路径
     const context = {
-      startDir: workspacePath === '.' ? process.cwd() : path.resolve(workspacePath),
+      startDir: projectPath,
       platform: process.platform,
-      avoidUserHome: true,  // 特别是Windows环境下避免用户家目录
+      avoidUserHome: true,
       // init命令特有：优先当前目录，不查找现有.promptx
       strategies: [
         'currentWorkingDirectoryIfHasMarkers',
-        'currentWorkingDirectory'  // 如果当前目录没有项目标识，就直接使用当前目录
+        'currentWorkingDirectory'
       ]
     }
 

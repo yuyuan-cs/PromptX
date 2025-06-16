@@ -166,7 +166,7 @@ class MCPServerCommand {
    */
   convertMCPToCliParams(toolName, mcpArgs) {
     const paramMapping = {
-      'promptx_init': () => [],
+      'promptx_init': (args) => args.workingDirectory ? [args] : [],
       
       'promptx_hello': () => [],
       

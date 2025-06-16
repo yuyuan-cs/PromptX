@@ -2,6 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
 const DPMLContentParser = require('../../resource/DPMLContentParser')
 const SemanticRenderer = require('../../resource/SemanticRenderer')
+const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
 const { COMMANDS } = require('../../../../constants')
 
 /**
@@ -16,6 +17,7 @@ class LearnCommand extends BasePouchCommand {
     this.resourceManager = getGlobalResourceManager()
     this.dpmlParser = new DPMLContentParser()
     this.semanticRenderer = new SemanticRenderer()
+    this.currentProjectManager = new CurrentProjectManager()
   }
 
   getPurpose () {
@@ -66,7 +68,7 @@ class LearnCommand extends BasePouchCommand {
         }
       }
 
-      return this.formatSuccessResponse(protocol, resourceId, finalContent)
+      return await this.formatSuccessResponse(protocol, resourceId, finalContent)
     } catch (error) {
       return this.formatErrorResponse(resourceUrl, error.message)
     }
@@ -97,7 +99,7 @@ class LearnCommand extends BasePouchCommand {
   /**
    * 格式化成功响应
    */
-  formatSuccessResponse (protocol, resourceId, content) {
+  async formatSuccessResponse (protocol, resourceId, content) {
     const protocolLabels = {
       thought: '🧠 思维模式',
       execution: '⚡ 执行模式',
@@ -271,6 +273,65 @@ ${errorMessage}
         protocol,
         resourceId,
         systemVersion: '锦囊串联状态机 v1.0'
+      }
+    }
+  }
+
+  /**
+   * 重写execute方法以添加项目状态检查
+   */
+  async execute (args = []) {
+    // 获取项目状态提示
+    const projectPrompt = await this.currentProjectManager.generateTopLevelProjectPrompt('learn')
+    
+    const purpose = this.getPurpose()
+    const content = await this.getContent(args)
+    const pateoas = await this.getPATEOAS(args)
+
+    return this.formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt)
+  }
+  
+  /**
+   * 格式化带有项目检查的输出
+   */
+  formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt) {
+    const output = {
+      purpose,
+      content,
+      pateoas,
+      context: this.context,
+      format: this.outputFormat,
+      projectPrompt
+    }
+
+    if (this.outputFormat === 'json') {
+      return output
+    }
+
+    // 人类可读格式
+    return {
+      ...output,
+      toString () {
+        const divider = '='.repeat(60)
+        const nextSteps = (pateoas.nextActions || [])
+          .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
+          .join('\n')
+
+        return `${projectPrompt}
+
+${divider}
+🎯 锦囊目的：${purpose}
+${divider}
+
+📜 锦囊内容：
+${content}
+
+🔄 下一步行动：
+${nextSteps}
+
+📍 当前状态：${pateoas.currentState}
+${divider}
+`
       }
     }
   }

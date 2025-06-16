@@ -11,12 +11,19 @@ const { z } = require('zod');
 const TOOL_DEFINITIONS = [
   {
     name: 'promptx_init',
-    description: '🎯 [AI专业能力启动器] ⚡ 让你瞬间拥有任何领域的专家级思维和技能 - 一键激活丰富的专业角色库(产品经理/开发者/设计师/营销专家等)，获得跨对话记忆能力，30秒内从普通AI变身行业专家。**必须使用场景**：1️⃣系统首次使用时；2️⃣创建新角色后刷新注册表；3️⃣角色激活(action)出错时重新发现角色；4️⃣查看当前版本号。每次需要专业服务时都应该先用这个',
+    description: '🎯 [AI专业能力启动器] ⚡ 让你瞬间拥有任何领域的专家级思维和技能 - 一键激活丰富的专业角色库(产品经理/开发者/设计师/营销专家等)，获得跨对话记忆能力，30秒内从普通AI变身行业专家。**必须使用场景**：1️⃣系统首次使用时；2️⃣创建新角色后刷新注册表；3️⃣角色激活(action)出错时重新发现角色；4️⃣查看当前版本号；5️⃣项目路径发生变化时。每次需要专业服务时都应该先用这个',
     inputSchema: {
       type: 'object',
-      properties: {}
+      properties: {
+        workingDirectory: {
+          type: 'string',
+          description: '当前项目的工作目录绝对路径。AI应该知道当前工作的项目路径，请提供此参数。'
+        }
+      }
     },
-    zodSchema: z.object({})
+    zodSchema: z.object({
+      workingDirectory: z.string().optional().describe('当前项目的工作目录绝对路径。AI应该知道当前工作的项目路径，请提供此参数。')
+    })
   },
   {
     name: 'promptx_hello',

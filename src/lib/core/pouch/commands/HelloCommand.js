@@ -2,6 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { getGlobalResourceManager } = require('../../resource')
+const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -13,6 +14,7 @@ class HelloCommand extends BasePouchCommand {
     super()
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
+    this.currentProjectManager = new CurrentProjectManager()
   }
 
   getPurpose () {
@@ -170,7 +172,7 @@ class HelloCommand extends BasePouchCommand {
 
     let content = `🤖 **AI专业角色服务清单** (共 ${totalRoles} 个专业角色可供选择)
 
-> 💡 **重要说明**：以下是可激活的AI专业角色。每个角色都有唯一的ID，可通过MCP工具激活。
+> 💡 **使用说明**：以下是可激活的AI专业角色。每个角色都有唯一的ID，可通过MCP工具激活。
 
 
 ## 📋 可用角色列表
@@ -335,6 +337,65 @@ class HelloCommand extends BasePouchCommand {
       logger.info(`按来源分布: ${JSON.stringify(stats.bySource, null, 2)}`)
     } else {
       logger.info('❌ RegistryData 不可用')
+    }
+  }
+
+  /**
+   * 重写execute方法以添加项目状态检查
+   */
+  async execute (args = []) {
+    // 获取项目状态提示
+    const projectPrompt = await this.currentProjectManager.generateTopLevelProjectPrompt('list')
+    
+    const purpose = this.getPurpose()
+    const content = await this.getContent(args)
+    const pateoas = await this.getPATEOAS(args)
+
+    return this.formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt)
+  }
+  
+  /**
+   * 格式化带有项目检查的输出
+   */
+  formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt) {
+    const output = {
+      purpose,
+      content,
+      pateoas,
+      context: this.context,
+      format: this.outputFormat,
+      projectPrompt
+    }
+
+    if (this.outputFormat === 'json') {
+      return output
+    }
+
+    // 人类可读格式
+    return {
+      ...output,
+      toString () {
+        const divider = '='.repeat(60)
+        const nextSteps = (pateoas.nextActions || [])
+          .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
+          .join('\n')
+
+        return `${projectPrompt}
+
+${divider}
+🎯 锦囊目的：${purpose}
+${divider}
+
+📜 锦囊内容：
+${content}
+
+🔄 下一步行动：
+${nextSteps}
+
+📍 当前状态：${pateoas.currentState}
+${divider}
+`
+      }
     }
   }
 }
