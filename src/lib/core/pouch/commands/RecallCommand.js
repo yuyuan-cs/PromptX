@@ -263,28 +263,17 @@ ${formattedMemories}
    */
   formatRetrievedKnowledge (memories, query) {
     return memories.map((memory, index) => {
-      // 多行内容处理：如果内容包含换行，保持原始格式，但限制总长度
+      // 保持完整的记忆内容，不进行截断
+      // 陈述性记忆的完整性对于系统价值至关重要
       let content = memory.content
-      if (content.length > 200) {
-        // 保持换行结构但截断过长内容
-        const lines = content.split('\n')
-        let truncated = ''
-        let currentLength = 0
-        
-        for (const line of lines) {
-          if (currentLength + line.length + 1 > 180) {
-            truncated += '...'
-            break
-          }
-          truncated += (truncated ? '\n' : '') + line
-          currentLength += line.length + 1
-        }
-        content = truncated
-      }
+      
+      // 只对格式进行优化，但不截断内容
+      // 确保换行符正确显示
+      content = content.trim()
 
       return `📝 ${index + 1}. **记忆** (${memory.timestamp})
 ${content}
-${memory.tags.slice(0, 5).join(' ')}
+${memory.tags.slice(0, 8).join(' ')}  
 ---`
     }).join('\n')
   }
