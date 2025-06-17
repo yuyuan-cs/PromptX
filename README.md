@@ -98,26 +98,6 @@ PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和�
 
 > **💡 提示：** 配置中特意指定了官方镜像源 `registry.npmjs.org`，这可以避免因使用非官方镜像导致的安装问题。如果您发现安装很慢，建议使用代理工具加速，而不是切换到其他镜像源。
 
-### 🌐 **高级配置：HTTP 模式支持**
-
-除了上述本地模式外，PromptX 还支持 **HTTP 模式**，适用于远程部署或特殊网络环境：
-
-```bash
-# 启动 HTTP 模式服务器
-npx -f -y dpml-prompt@beta mcp-server --transport http --port 3000
-```
-
-然后在客户端配置中使用：
-```json
-{
-  "mcpServers": {
-    "promptx": {
-      "url": "http://localhost:3000/mcp"
-    }
-  }
-}
-```
-
 📖 **[完整安装配置指南](https://github.com/Deepractice/PromptX/wiki/PromptX-MCP-Install)** - 包含各种客户端的详细配置方法和故障排除
 
 
