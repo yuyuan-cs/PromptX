@@ -173,7 +173,7 @@ graph TD
 ## 🎨 **女娲创造工坊 - 让每个人都成为AI角色设计师**
 
 <div align="center">
-  <img src="assets/nuwa-logo.png" alt="女娲创造工坊" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
+  <img src="assets/logo/nuwa-logo-backgroud.jpg" alt="女娲创造工坊" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
 </div>
 
 #### **💫 从想法到现实，只需2分钟**
