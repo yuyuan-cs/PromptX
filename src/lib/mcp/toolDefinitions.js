@@ -70,7 +70,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'promptx_recall',
-    description: '🔍 [记忆回想器] ⚡ 让你记住并运用以前的经验和知识 - 瞬间检索之前学会的专业技能/处理过的项目经验/掌握的最佳实践/解决过的问题方案，避免重复犯错和重新学习，当需要参考历史经验做决策时必须使用，让你的工作越来越专业',
+    description: '🔍 [记忆回想器] ⚡ 让你记住并运用以前的经验和知识 - 瞬间检索专业技能/项目经验/最佳实践/问题方案。**关键字策略**：1️⃣有把握精确匹配时使用query（如"女娲"、"PromptX"、"MCP"）；2️⃣语义搜索或不确定时留空query获取全量记忆；3️⃣如果第一次使用参数没获取到想要的结果，建议重新使用无参数获取全量信息；4️⃣全量检索比错过重要记忆更有价值。避免重复犯错，让工作越来越专业',
     inputSchema: {
       type: 'object',
       properties: {
@@ -80,13 +80,13 @@ const TOOL_DEFINITIONS = [
         },
         query: {
           type: 'string',
-          description: '检索关键词或描述，可选参数，不提供则返回所有记忆'
+          description: '检索关键词，仅在确信能精确匹配时使用（如"女娲"、"PromptX"等具体词汇）。语义搜索或不确定时请留空以获取全量记忆，如果使用关键字无结果建议重试无参数方式'
         }
       },
       required: ['random_string']
     },
     zodSchema: z.object({
-      query: z.string().optional().describe('检索关键词或描述，可选参数，不提供则返回所有记忆')
+      query: z.string().optional().describe('检索关键词，仅在确信能精确匹配时使用（如"女娲"、"PromptX"等具体词汇）。语义搜索或不确定时请留空以获取全量记忆，如果使用关键字无结果建议重试无参数方式')
     })
   },
   {
