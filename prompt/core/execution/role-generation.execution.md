@@ -28,83 +28,141 @@
     - **即用原则**：生成的角色应立即可用，无需额外配置
     - **用户友好**：保持简单明了的交互体验
     - **镜像一致**：与系统结构保持一致，降低认知负载
+    - **可视化思维**：复杂流程用图形表达，提高理解效率
   </guideline>
 
   <process>
-    ## 极简3步生成流程
+    ## 🚀 极简3步生成流程
+    
+    ```mermaid
+    flowchart TD
+        Start([用户描述需求]) --> A[Step 1: 领域识别]
+        A --> B[Step 2: 模板生成]
+        B --> C[Step 3: 结果交付]
+        C --> End([角色可用])
+        
+        A -.->|30秒| A1[提取关键词]
+        B -.->|60秒| B1[生成文件]
+        C -.->|30秒| C1[验证激活]
+    ```
 
     ### Step 1: 领域快速识别 (30秒内)
+    
+    ```mermaid
+    mindmap
+      root((用户描述))
+        技术栈关键词
+          微信小程序
+          React/Vue
+          Java/Python
+          数据库
+        职业角色关键词
+          产品经理
+          设计师
+          开发者
+          运营
+        功能需求关键词
+          开发
+          分析
+          营销
+          管理
     ```
-    目标：从用户描述中快速提取领域关键词
     
-    识别策略：
-    - 提取技术栈关键词（如：微信小程序、React、Python等）
-    - 识别职业角色关键词（如：产品经理、设计师、运营等）
-    - 理解功能需求关键词（如：开发、分析、营销等）
+    **快速确认模板**：
+    > "明白了！您需要一个【X领域】的专业AI助手，对吗？"
     
-    快速确认：
-    "明白了！您需要一个【X领域】的专业AI助手，对吗？"
-    
-    处理原则：
+    **处理原则**：
     - 最多1次确认，用户确认后立即进入生成
     - 如果领域明确，跳过确认直接生成
-    ```
 
     ### Step 2: 模板化角色生成 (60秒内)
+    
+    ```mermaid
+    graph TD
+        A[识别领域] --> B{选择模板}
+        B -->|前端开发| C[前端工程师模板]
+        B -->|产品管理| D[产品经理模板]
+        B -->|数据分析| E[数据分析师模板]
+        B -->|内容创作| F[创作者模板]
+        B -->|其他领域| G[通用专家模板]
+        
+        C --> H[生成角色文件]
+        D --> H
+        E --> H
+        F --> H
+        G --> H
     ```
-    基于识别的领域，调用标准模板：
     
-    模板选择逻辑：
-    - 微信小程序 → 小程序开发专家模板
-    - 前端开发 → 前端工程师模板
-    - 产品管理 → 产品经理模板
-    - 数据分析 → 数据分析师模板
-    - 更多领域... → 对应专业模板
+    **文件组织结构**：
+    ```mermaid
+    graph LR
+        A[.promptx/resource/domain/{roleId}/] --> B[{roleId}.role.md]
+        A --> C[thought/]
+        A --> D[execution/]
+        C --> E[{specific}.thought.md]
+        D --> F[{specific}.execution.md]
+    ```
     
-    文件组织结构（镜像系统结构）：
-    .promptx/resource/domain/{roleId}/
-    ├── {roleId}.role.md              # 主角色文件
-    ├── thought/                      # 思维模式目录（需要时创建）
-    │   └── {specific}.thought.md     # 专业思维模式
-    └── execution/                    # 执行模式目录（需要时创建）
-        └── {specific}.execution.md   # 专业执行流程
-    
-    三组件自动填充：
-    personality: 引用该领域的标准思维模式（remember + recall + 专业思维）
-    principle: 引用该领域的标准执行流程（可独立创建execution文件）
-    knowledge: 引用该领域的专业知识体系（或直接定义）
-    
-    质量检查：
-    ☐ DPML格式正确
-    ☐ 三组件完整
-    ☐ 引用资源有效
-    ☐ 目录结构规范（镜像系统结构）
-    ☐ 文件路径正确
-    ☐ ResourceManager可发现
+    **三组件快速填充**：
+    ```mermaid
+    flowchart LR
+        A[personality] --> A1[@!thought://remember]
+        A --> A2[@!thought://recall]
+        A --> A3[@!thought://domain-specific]
+        
+        B[principle] --> B1[@!execution://domain-workflow]
+        
+        C[knowledge] --> C1[领域专业知识]
     ```
 
     ### Step 3: 结果直接交付 (30秒内)
+    
+    ```mermaid
+    graph TD
+        A[生成完成] --> B[展示价值]
+        B --> C[确认创建]
+        C --> D[提供激活命令]
+        D --> E{用户满意?}
+        E -->|是| F[完成]
+        E -->|需扩展| G[指导扩展]
     ```
-    呈现格式：
-    1. 角色价值简述
-    2. 文件创建确认（正确目录结构）
-    3. 激活命令说明
-    4. 使用建议（可选）
     
-    目录结构展示（镜像系统结构）：
+    **交付模板**：
+    ```
+    ✅ 角色创建成功！
+    
+    📁 文件结构：
     .promptx/resource/domain/{roleId}/
-    ├── {roleId}.role.md          # ✅ 已创建
-    └── [其他扩展文件]            # ✅ 按需创建
+    ├── {roleId}.role.md
+    └── [扩展文件...]
     
-    交付策略：
-    - 确认角色已正确创建在用户资源目录
-    - 提供立即可用的激活命令
-    - 说明文件组织规范（与系统结构一致）
-    - 说明ResourceManager自动发现机制
+    🚀 激活命令：
+    promptx action {roleId}
     
-    后续支持：
-    - 如果用户满意，直接结束
-    - 如果需要扩展功能，指导创建execution/thought文件
+    💡 该角色将帮助您：
+    - [核心能力1]
+    - [核心能力2]
+    - [核心能力3]
+    ```
+    
+    ## 📊 核心设计模式速查
+    
+    ```mermaid
+    graph TD
+        A[用户需求] --> B{需求类型}
+        B -->|基础服务| C[基础助手模式]
+        B -->|专业工作| D[专业专家模式]
+        B -->|创意创作| E[创作生成模式]
+        B -->|数据分析| F[分析咨询模式]
+        B -->|教育培训| G[教学辅导模式]
+        B -->|复杂需求| H[复合综合模式]
+        
+        style C fill:#e1f5fe
+        style D fill:#f3e5f5
+        style E fill:#fff3e0
+        style F fill:#e8f5e9
+        style G fill:#fce4ec
+        style H fill:#f5f5f5
     ```
   </process>
 
