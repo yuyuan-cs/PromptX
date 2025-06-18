@@ -8,5 +8,6 @@
 
   <principle>
     @!execution://assistant
+    @!execution://dacp-service-calling
   </principle>
 </role>

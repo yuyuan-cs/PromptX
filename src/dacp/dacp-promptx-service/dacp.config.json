@@ -1,38 +1,23 @@
 {
   "service": {
     "id": "dacp-promptx-service",
-    "name": "PromptX Unified DACP Service",
+    "name": "PromptX DACP Demo Service",
     "version": "1.0.0",
-    "description": "Unified DACP service providing multiple demo actions for PromptX ecosystem",
-    "type": "unified",
+    "description": "DACP protocol demonstration service with calculator and email examples",
+    "type": "demo",
     "status": "active"
   },
   "capabilities": {
     "actions": [
       {
-        "name": "send_email",
-        "description": "Send professional emails with AI-powered content generation",
-        "category": "communication"
-      },
-      {
-        "name": "schedule_meeting",
-        "description": "Schedule meetings and manage calendar events",
-        "category": "calendar"
-      },
-      {
-        "name": "create_document",
-        "description": "Create and format professional documents",
-        "category": "document"
-      },
-      {
-        "name": "analyze_data",
-        "description": "Perform basic data analysis and visualization",
-        "category": "analytics"
-      },
-      {
         "name": "calculate",
-        "description": "Simple calculator for basic math operations",
-        "category": "utility"
+        "description": "Demo: Simple calculator for basic math operations",
+        "category": "demo"
+      },
+      {
+        "name": "send_email",
+        "description": "Demo: Send professional emails with AI-powered content generation",
+        "category": "demo"
       }
     ],
     "protocols": ["DACP/1.0"],

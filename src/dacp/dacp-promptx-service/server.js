@@ -80,22 +80,19 @@ app.post('/dacp', async (req, res) => {
     }
 
     // Find action handler
-    const actionParts = action.split('_');
-    const actionModule = actionParts[0]; // e.g., 'send' from 'send_email'
-    
     let handler = null;
     
-    // Try to find exact match first
-    if (actions[action]) {
-      handler = actions[action];
-    } else {
-      // Try to find by module name
-      for (const [moduleName, module] of Object.entries(actions)) {
-        if (module[action] && typeof module[action] === 'function') {
-          handler = module[action];
-          break;
-        }
+    // Try to find by module name first
+    for (const [moduleName, module] of Object.entries(actions)) {
+      if (module[action] && typeof module[action] === 'function') {
+        handler = module[action];
+        break;
       }
+    }
+    
+    // If not found, try exact module match
+    if (!handler && actions[action]) {
+      handler = actions[action];
     }
 
     if (!handler) {
