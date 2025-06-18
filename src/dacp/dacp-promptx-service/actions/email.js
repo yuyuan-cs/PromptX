@@ -1,7 +1,10 @@
 /**
  * Email Action Module for DACP PromptX Service
- * 提供邮件发送功能
+ * 提供邮件发送功能 - 支持Demo模式和真实发送
  */
+
+const nodemailer = require('nodemailer')
+const DACPConfigManager = require('../../../lib/utils/DACPConfigManager')
 
 // Email action handler
 async function send_email(parameters) {
@@ -124,7 +127,39 @@ function validateEmailData(emailData) {
 
 // 执行邮件发送
 async function executeSendEmail(emailData, context) {
-  // Demo模式：模拟发送
+  const configManager = new DACPConfigManager()
+  
+  // 检查是否有用户配置
+  const hasConfig = await configManager.hasActionConfig('send_email')
+  
+  if (!hasConfig) {
+    // 无配置，回退到Demo模式
+    return await executeDemoSendEmail(emailData, context)
+  }
+  
+  // 读取配置
+  const config = await configManager.readActionConfig('send_email')
+  
+  // 验证配置
+  const validation = configManager.validateEmailConfig(config)
+  if (!validation.valid) {
+    // 配置无效，抛出友好错误
+    const errorMessage = configManager.generateConfigErrorMessage('send_email', validation)
+    throw new Error(errorMessage)
+  }
+  
+  try {
+    // 真实邮件发送
+    return await executeRealSendEmail(emailData, config, context)
+  } catch (error) {
+    // 发送失败，提供友好提示
+    console.error('邮件发送失败:', error.message)
+    throw new Error(`\n📧 邮件发送失败\n\n❌ 错误信息: ${error.message}\n\n💡 可能的解决方案:\n  • 检查邮箱密码是否正确\n  • 确认已启用SMTP服务\n  • 验证网络连接状态\n  • Gmail用户确保使用应用专用密码\n`)
+  }
+}
+
+// Demo模式发送
+async function executeDemoSendEmail(emailData, context) {
   console.log('📧 [DACP Demo] Simulating email send:');
   console.log(`   To: ${emailData.to}`);
   console.log(`   Subject: ${emailData.subject}`);
@@ -133,21 +168,80 @@ async function executeSendEmail(emailData, context) {
   // 模拟网络延迟
   await new Promise(resolve => setTimeout(resolve, 100));
   
+  const configManager = new DACPConfigManager()
+  const configHint = configManager.generateConfigErrorMessage('send_email')
+  
   return {
-    message_id: `msg_${Date.now()}`,
-    status: 'sent',
+    message_id: `demo_msg_${Date.now()}`,
+    status: 'demo_sent',
     recipient: emailData.to,
     subject: emailData.subject,
     body: emailData.body,
     sent_at: emailData.timestamp,
     urgency: emailData.urgency,
     demo_mode: true,
+    config_hint: configHint,
     execution_metrics: {
       parsing_time: '10ms',
       validation_time: '5ms',
       sending_time: '100ms'
     }
   };
+}
+
+// 真实邮件发送
+async function executeRealSendEmail(emailData, config, context) {
+  const startTime = Date.now()
+  
+  // 获取提供商配置
+  const configManager = new DACPConfigManager()
+  const providerConfig = configManager.getProviderConfig(config.provider)
+  
+  if (!providerConfig) {
+    throw new Error(`不支持的邮件服务提供商: ${config.provider}`)
+  }
+  
+  // 创建邮件传输器
+  const transporter = nodemailer.createTransport({
+    host: providerConfig.smtp,
+    port: providerConfig.port,
+    secure: providerConfig.secure,
+    auth: {
+      user: config.smtp.user,
+      pass: config.smtp.password
+    }
+  })
+  
+  // 构建邮件选项
+  const mailOptions = {
+    from: `"${config.sender.name}" <${config.sender.email}>`,
+    to: emailData.to,
+    subject: emailData.subject,
+    html: emailData.body.replace(/\n/g, '<br>'),
+    text: emailData.body
+  }
+  
+  // 发送邮件
+  const info = await transporter.sendMail(mailOptions)
+  const endTime = Date.now()
+  
+  return {
+    message_id: info.messageId,
+    status: 'sent',
+    recipient: emailData.to,
+    subject: emailData.subject,
+    body: emailData.body,
+    sent_at: new Date().toISOString(),
+    urgency: emailData.urgency,
+    demo_mode: false,
+    provider: config.provider,
+    smtp_response: info.response,
+    execution_metrics: {
+      parsing_time: '10ms',
+      validation_time: '5ms',
+      sending_time: `${endTime - startTime}ms`
+    }
+  }
 }
 
 // 导出所有email相关的actions
