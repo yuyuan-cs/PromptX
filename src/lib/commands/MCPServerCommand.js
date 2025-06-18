@@ -481,7 +481,9 @@ class MCPServerCommand {
           result.push('--tags', args.tags);
         }
         return result;
-      }
+      },
+      
+      'promptx_dacp': (args) => [args]
     };
     
     const mapper = paramMapping[toolName];

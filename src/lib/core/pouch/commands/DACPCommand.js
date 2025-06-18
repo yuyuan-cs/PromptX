@@ -139,8 +139,11 @@ class DACPCommand extends BasePouchCommand {
 
   async getContent(args) {
     try {
+      // 处理参数：如果是数组，取第一个元素；否则直接使用
+      const dacpArgs = Array.isArray(args) ? args[0] : args;
+      
       // 执行DACP调用
-      const result = await this.callDACPService(args);
+      const result = await this.callDACPService(dacpArgs);
       
       // 格式化响应
       if (result.success) {
