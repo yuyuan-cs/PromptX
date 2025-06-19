@@ -24,6 +24,9 @@ class LearnCommand extends BasePouchCommand {
     return '智能学习指定协议的资源内容，支持thought、execution、memory等DPML协议以及角色组件，支持@引用的语义渲染'
   }
 
+  /**
+   * 学习指定资源并返回结果
+   */
   async getContent (args) {
     const [resourceUrl] = args
 
@@ -31,21 +34,29 @@ class LearnCommand extends BasePouchCommand {
       return this.getUsageHelp()
     }
 
+    // 复用ActionCommand的成功资源加载逻辑
+    return await this.loadLearnContentUsingActionLogic(resourceUrl)
+  }
+
+  /**
+   * 使用ActionCommand的成功逻辑加载学习内容
+   * 这个方法复用了ActionCommand.loadLearnContent的逻辑
+   */
+  async loadLearnContentUsingActionLogic(resourceUrl) {
     try {
-      // 解析协议信息
-      const urlMatch = resourceUrl.match(/^(@[!?]?)?([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$/)
-      if (!urlMatch) {
-        return this.formatErrorResponse(resourceUrl, '无效的资源URL格式')
-      }
-      
-      const [, loadingSemantic, protocol, resourceId] = urlMatch
-
-      // 使用ResourceManager解析资源
       const result = await this.resourceManager.resolve(resourceUrl)
-
+      
       if (!result.success) {
         return this.formatErrorResponse(resourceUrl, result.error.message)
       }
+
+      // 解析协议信息
+      const urlMatch = resourceUrl.match(/^(@[!?]?)?([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$/)
+      if (!urlMatch) {
+        return this.formatErrorResponse(resourceUrl, "无效的资源URL格式")
+      }
+      
+      const [, loadingSemantic, protocol, resourceId] = urlMatch
 
       // 检查内容是否包含@引用，如果包含则进行语义渲染
       let finalContent = result.content
