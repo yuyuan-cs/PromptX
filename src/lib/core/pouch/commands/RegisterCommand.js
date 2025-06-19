@@ -174,12 +174,12 @@ class RegisterCommand extends BasePouchCommand {
     if (!roleId) {
       return {
         currentState: 'register_awaiting_role',
-        availableTransitions: ['hello', 'action'],
+        availableTransitions: ['welcome', 'action'],
         nextActions: [
           {
             name: '查看可用角色',
             description: '查看已注册的角色',
-            method: 'MCP PromptX hello 工具',
+            method: 'MCP PromptX welcome 工具',
             priority: 'medium'
           },
           {
@@ -197,7 +197,7 @@ class RegisterCommand extends BasePouchCommand {
 
     return {
       currentState: 'register_completed',
-      availableTransitions: ['action', 'hello'],
+      availableTransitions: ['action', 'welcome'],
       nextActions: [
         {
           name: '激活角色',
@@ -208,7 +208,7 @@ class RegisterCommand extends BasePouchCommand {
         {
           name: '查看所有角色',
           description: '查看角色列表',
-          method: 'MCP PromptX hello 工具',
+          method: 'MCP PromptX welcome 工具',
           priority: 'medium'
         }
       ],

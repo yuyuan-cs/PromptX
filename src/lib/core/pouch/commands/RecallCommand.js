@@ -66,12 +66,12 @@ ${formattedMemories}
 
     return {
       currentState,
-      availableTransitions: ['hello', 'remember', 'learn', 'recall'],
+      availableTransitions: ['welcome', 'remember', 'learn', 'recall'],
       nextActions: [
         {
           name: '选择角色',
           description: '选择专业角色来应用检索到的知识',
-          method: 'MCP PromptX hello 工具'
+          method: 'MCP PromptX welcome 工具'
         },
         {
           name: '记忆新知识',

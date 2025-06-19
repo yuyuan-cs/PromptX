@@ -6,10 +6,10 @@ const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
- * 角色发现锦囊命令
+ * 角色欢迎锦囊命令
  * 负责展示可用的AI角色和领域专家
  */
-class HelloCommand extends BasePouchCommand {
+class WelcomeCommand extends BasePouchCommand {
   constructor () {
     super()
     // 使用全局单例 ResourceManager
@@ -264,16 +264,16 @@ class HelloCommand extends BasePouchCommand {
    * 获取角色信息（提供给其他命令使用）
    */
   async getRoleInfo (roleId) {
-    logger.debug(`[HelloCommand] getRoleInfo调用，角色ID: ${roleId}`)
+    logger.debug(`[WelcomeCommand] getRoleInfo调用，角色ID: ${roleId}`)
     
     const registry = await this.loadRoleRegistry()
-    logger.debug(`[HelloCommand] 注册表加载完成，包含角色:`, Object.keys(registry))
+    logger.debug(`[WelcomeCommand] 注册表加载完成，包含角色:`, Object.keys(registry))
     
     const roleData = registry[roleId]
-    logger.debug(`[HelloCommand] 查找角色${roleId}结果:`, roleData ? '找到' : '未找到')
+    logger.debug(`[WelcomeCommand] 查找角色${roleId}结果:`, roleData ? '找到' : '未找到')
 
     if (!roleData) {
-      logger.debug(`[HelloCommand] 角色${roleId}在注册表中不存在`)
+      logger.debug(`[WelcomeCommand] 角色${roleId}在注册表中不存在`)
       return null
     }
 
@@ -284,7 +284,7 @@ class HelloCommand extends BasePouchCommand {
       file: roleData.file
     }
     
-    logger.debug(`[HelloCommand] 返回角色信息:`, result)
+    logger.debug(`[WelcomeCommand] 返回角色信息:`, result)
     return result
   }
 
@@ -310,7 +310,7 @@ class HelloCommand extends BasePouchCommand {
   async debugRegistry() {
     await this.loadRoleRegistry()
     
-    logger.info('\n🔍 HelloCommand - 注册表调试信息')
+    logger.info('\n🔍 WelcomeCommand - 注册表调试信息')
     logger.info('='.repeat(50))
     
     if (this.roleRegistry && Object.keys(this.roleRegistry).length > 0) {
@@ -400,4 +400,4 @@ ${divider}
   }
 }
 
-module.exports = HelloCommand
+module.exports = WelcomeCommand

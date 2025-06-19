@@ -31,10 +31,10 @@ program
   })
 
 program
-  .command('hello')
-  .description('👋 hello锦囊 - 发现并展示所有可用的AI角色和领域专家')
+  .command('welcome')
+  .description('👋 welcome锦囊 - 发现并展示所有可用的AI角色和领域专家')
   .action(async (options) => {
-    await cli.execute('hello', [])
+    await cli.execute('welcome', [])
   })
 
 program
@@ -151,7 +151,7 @@ ${chalk.cyan('💡 PromptX 锦囊框架 - AI use CLI get prompt for AI')}
 
 ${chalk.cyan('🎒 七大核心命令:')}
   🏗️ ${chalk.cyan('init')}   → 初始化环境，传达系统协议
-  👋 ${chalk.yellow('hello')}  → 发现可用角色和领域专家  
+  👋 ${chalk.yellow('welcome')}  → 发现可用角色和领域专家  
   ⚡ ${chalk.red('action')} → 激活特定角色，获取专业能力
   📚 ${chalk.blue('learn')}  → 深入学习领域知识体系
   🔍 ${chalk.green('recall')} → AI主动检索应用记忆
@@ -164,7 +164,7 @@ ${chalk.cyan('示例:')}
   promptx init
 
   ${chalk.gray('# 2️⃣ 发现可用角色')}
-  promptx hello
+  promptx welcome
 
   ${chalk.gray('# 3️⃣ 激活专业角色')}
   promptx action copywriter

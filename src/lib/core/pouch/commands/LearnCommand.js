@@ -165,7 +165,7 @@ ${errorMessage}
   - 继续学习: 使用 MCP PromptX learn 工具学习其他资源
   - 应用记忆: 使用 MCP PromptX recall 工具检索相关经验
   - 激活角色: 使用 MCP PromptX action 工具激活完整角色能力
-  - 查看角色列表: 使用 MCP PromptX hello 工具选择其他角色`
+  - 查看角色列表: 使用 MCP PromptX welcome 工具选择其他角色`
   }
 
   /**
@@ -198,11 +198,11 @@ ${errorMessage}
 
 ## 🔍 发现可学习资源
 - 使用 MCP PromptX action 工具查看角色需要的所有资源
-- 使用 MCP PromptX hello 工具查看可用角色列表
+- 使用 MCP PromptX welcome 工具查看可用角色列表
 
 🔄 下一步行动：
   - 激活角色: 使用 MCP PromptX action 工具分析角色依赖
-  - 查看角色: 使用 MCP PromptX hello 工具选择感兴趣的角色`
+  - 查看角色: 使用 MCP PromptX welcome 工具选择感兴趣的角色`
   }
 
   /**
@@ -214,12 +214,12 @@ ${errorMessage}
     if (!resourceUrl) {
       return {
         currentState: 'learn_awaiting_resource',
-        availableTransitions: ['hello', 'action'],
+        availableTransitions: ['welcome', 'action'],
         nextActions: [
           {
             name: '查看可用角色',
             description: '返回角色选择页面',
-            method: 'MCP PromptX hello 工具',
+            method: 'MCP PromptX welcome 工具',
             priority: 'high'
           },
           {
@@ -236,7 +236,7 @@ ${errorMessage}
     if (!urlMatch) {
       return {
         currentState: 'learn_error',
-        availableTransitions: ['hello', 'action'],
+        availableTransitions: ['welcome', 'action'],
         nextActions: [
           {
             name: '查看使用帮助',
@@ -252,7 +252,7 @@ ${errorMessage}
 
     return {
       currentState: `learned_${protocol}`,
-      availableTransitions: ['learn', 'recall', 'hello', 'action'],
+      availableTransitions: ['learn', 'recall', 'welcome', 'action'],
       nextActions: [
         {
           name: '继续学习',
@@ -275,7 +275,7 @@ ${errorMessage}
         {
           name: '查看角色列表',
           description: '选择其他角色',
-          method: 'MCP PromptX hello 工具',
+          method: 'MCP PromptX welcome 工具',
           priority: 'low'
         }
       ],

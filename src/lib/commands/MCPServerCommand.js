@@ -460,7 +460,7 @@ class MCPServerCommand {
     const paramMapping = {
       'promptx_init': (args) => args.workingDirectory ? [args] : [],
       
-      'promptx_hello': () => [],
+      'promptx_welcome': () => [],
       
       'promptx_action': (args) => [args.role],
       
