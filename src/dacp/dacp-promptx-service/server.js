@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const config = JSON.parse(fs.readFileSync('./dacp.config.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'dacp.config.json'), 'utf8'));
 const PORT = process.env.PORT || config.deployment.port || 3002;
 
 // Middleware

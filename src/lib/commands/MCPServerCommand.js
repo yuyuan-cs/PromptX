@@ -311,7 +311,7 @@ class MCPServerCommand {
       // 启动DACP服务作为子进程
       // 注意：不能直接使用 'inherit'，因为会干扰MCP的stdio通信
       // 但我们需要看到DACP的启动信息
-      this.dacpProcess = spawn('npm', ['start'], {
+      this.dacpProcess = spawn('node', ['server.js'], {
         cwd: dacpPath,
         stdio: ['ignore', 'pipe', 'pipe'], // stdin忽略, stdout和stderr都输出到pipe
         shell: true,
