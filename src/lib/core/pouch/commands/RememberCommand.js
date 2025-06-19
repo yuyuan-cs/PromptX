@@ -201,12 +201,12 @@ AI学习和内化各种专业知识：
     if (!content) {
       return {
         currentState: 'remember_awaiting_input',
-        availableTransitions: ['hello', 'learn', 'recall'],
+        availableTransitions: ['welcome', 'learn', 'recall'],
         nextActions: [
           {
             name: '查看角色',
             description: '选择角色获取专业知识',
-            method: 'MCP PromptX hello 工具',
+            method: 'MCP PromptX welcome 工具',
             priority: 'medium'
           },
           {
