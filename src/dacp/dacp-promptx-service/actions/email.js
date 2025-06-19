@@ -144,7 +144,7 @@ async function executeSendEmail(emailData, context) {
   const validation = configManager.validateEmailConfig(config)
   if (!validation.valid) {
     // 配置无效，抛出友好错误
-    const errorMessage = configManager.generateConfigErrorMessage('send_email', validation)
+    const errorMessage = await configManager.generateConfigErrorMessage('send_email', validation)
     throw new Error(errorMessage)
   }
   
@@ -169,7 +169,7 @@ async function executeDemoSendEmail(emailData, context) {
   await new Promise(resolve => setTimeout(resolve, 100));
   
   const configManager = new DACPConfigManager()
-  const configHint = configManager.generateConfigErrorMessage('send_email')
+  const configHint = await configManager.generateConfigErrorMessage('send_email')
   
   return {
     message_id: `demo_msg_${Date.now()}`,
