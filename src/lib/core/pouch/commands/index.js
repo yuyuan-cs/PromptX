@@ -8,6 +8,7 @@ const ActionCommand = require('./ActionCommand')
 const LearnCommand = require('./LearnCommand')
 const RecallCommand = require('./RecallCommand')
 const RememberCommand = require('./RememberCommand')
+const DACPCommand = require('./DACPCommand')
 
 module.exports = {
   InitCommand,
@@ -15,5 +16,6 @@ module.exports = {
   ActionCommand,
   LearnCommand,
   RecallCommand,
-  RememberCommand
+  RememberCommand,
+  DACPCommand
 }

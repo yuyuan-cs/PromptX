@@ -110,6 +110,46 @@ const TOOL_DEFINITIONS = [
       content: z.string().describe('要保存的重要信息或经验'),
       tags: z.string().optional().describe('自定义标签，用空格分隔，可选')
     })
+  },
+  {
+    name: 'promptx_dacp',
+    description: '🚀 [DACP专业服务调用器] 让PromptX角色拥有执行能力 - 调用邮件发送、日程管理、文档处理等专业服务，将AI建议转化为实际行动。支持自然语言需求智能路由到合适的DACP服务包。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        service_id: {
+          type: 'string',
+          description: 'DACP服务ID，如：dacp-email-service'
+        },
+        action: {
+          type: 'string',
+          description: '具体操作，如：send_email'
+        },
+        parameters: {
+          type: 'object',
+          properties: {
+            user_request: {
+              type: 'string',
+              description: '用户自然语言需求'
+            },
+            context: {
+              type: 'object',
+              description: '上下文信息'
+            }
+          },
+          required: ['user_request']
+        }
+      },
+      required: ['service_id', 'action', 'parameters']
+    },
+    zodSchema: z.object({
+      service_id: z.string().describe('DACP服务ID，如：dacp-email-service'),
+      action: z.string().describe('具体操作，如：send_email'),
+      parameters: z.object({
+        user_request: z.string().describe('用户自然语言需求'),
+        context: z.object({}).optional().describe('上下文信息')
+      })
+    })
   }
 ];
 
