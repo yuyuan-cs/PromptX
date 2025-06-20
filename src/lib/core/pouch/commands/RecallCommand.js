@@ -2,6 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { COMMANDS } = require('../../../../constants')
+const { getGlobalResourceManager } = require('../../resource')
 
 /**
  * 记忆检索锦囊命令
@@ -10,6 +11,8 @@ const { COMMANDS } = require('../../../../constants')
 class RecallCommand extends BasePouchCommand {
   constructor () {
     super()
+    // 复用ActionCommand的ResourceManager方式
+    this.resourceManager = getGlobalResourceManager()
   }
 
   getPurpose () {
@@ -99,16 +102,20 @@ ${formattedMemories}
   }
 
   /**
-   * 获取所有记忆（支持多行格式）
+   * 获取所有记忆（支持多行格式，使用ResourceManager路径获取）
    */
   async getAllMemories (query) {
     this.lastSearchCount = 0
     const memories = []
 
-    // 读取单一记忆文件
-    const { getDirectoryService } = require('../../../utils/DirectoryService')
-    const directoryService = getDirectoryService()
-    const memoryDir = await directoryService.getMemoryDirectory()
+    // 确保ResourceManager已初始化（就像ActionCommand那样）
+    if (!this.resourceManager.initialized) {
+      await this.resourceManager.initializeWithNewArchitecture()
+    }
+    
+    // 通过ResourceManager获取项目路径（与ActionCommand一致）
+    const projectPath = await this.getProjectPath()
+    const memoryDir = path.join(projectPath, '.promptx', 'memory')
     const memoryFile = path.join(memoryDir, 'declarative.md')
 
     try {
@@ -129,6 +136,14 @@ ${formattedMemories}
 
     this.lastSearchCount = memories.length
     return memories
+  }
+
+  /**
+   * 获取项目路径（复用ActionCommand逻辑）
+   */
+  async getProjectPath() {
+    // 使用ResourceManager的项目路径获取逻辑
+    return this.resourceManager.projectPath || process.cwd()
   }
 
   /**
