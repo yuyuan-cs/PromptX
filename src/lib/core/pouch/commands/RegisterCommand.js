@@ -2,6 +2,8 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const PackageProtocol = require('../../resource/protocols/PackageProtocol')
+const { getGlobalResourceManager } = require('../../resource')
+const { getDirectoryService } = require('../../../utils/DirectoryService')
 
 /**
  * 角色注册锦囊命令
@@ -11,6 +13,9 @@ class RegisterCommand extends BasePouchCommand {
   constructor () {
     super()
     this.packageProtocol = new PackageProtocol()
+    // 复用ActionCommand的ResourceManager方式
+    this.resourceManager = getGlobalResourceManager()
+    this.directoryService = getDirectoryService()
   }
 
   getPurpose () {
@@ -80,12 +85,18 @@ class RegisterCommand extends BasePouchCommand {
   }
 
   /**
-   * 检查角色文件是否存在
+   * 检查角色文件是否存在（使用ResourceManager路径获取）
    */
   async checkRoleExists (roleId) {
     try {
-      const packageRoot = await this.packageProtocol.getPackageRoot()
-      const roleFile = path.join(packageRoot, 'prompt', 'domain', roleId, `${roleId}.role.md`)
+      // 确保ResourceManager已初始化（就像ActionCommand那样）
+      if (!this.resourceManager.initialized) {
+        await this.resourceManager.initializeWithNewArchitecture()
+      }
+      
+      // 通过ResourceManager获取项目路径（与ActionCommand一致）
+      const projectPath = await this.getProjectPath()
+      const roleFile = path.join(projectPath, 'prompt', 'domain', roleId, `${roleId}.role.md`)
       
       return await fs.pathExists(roleFile)
     } catch (error) {
@@ -94,14 +105,15 @@ class RegisterCommand extends BasePouchCommand {
   }
 
   /**
-   * 提取角色元数据
+   * 提取角色元数据（使用ResourceManager路径获取）
    */
   async extractRoleMetadata (roleId) {
-    const packageRoot = await this.packageProtocol.getPackageRoot()
-    const roleFile = path.join(packageRoot, 'prompt', 'domain', roleId, `${roleId}.role.md`)
+    // 通过ResourceManager获取项目路径（与ActionCommand一致）
+    const projectPath = await this.getProjectPath()
+    const roleFile = path.join(projectPath, 'prompt', 'domain', roleId, `${roleId}.role.md`)
     
     const content = await fs.readFile(roleFile, 'utf-8')
-    const relativePath = path.relative(packageRoot, roleFile)
+    const relativePath = path.relative(projectPath, roleFile)
     
     // 提取元数据
     let name = `🎭 ${roleId}`
@@ -138,12 +150,12 @@ class RegisterCommand extends BasePouchCommand {
   }
 
   /**
-   * 注册角色到系统
+   * 注册角色到系统（使用DirectoryService统一路径获取）
    */
   async registerRole (roleId, metadata) {
     try {
-      const packageRoot = await this.packageProtocol.getPackageRoot()
-      const registryPath = path.join(packageRoot, 'src', 'resource.registry.json')
+      // 通过DirectoryService获取注册表路径（与其他命令一致）
+      const registryPath = await this.directoryService.getRegistryPath()
       
       // 读取当前注册表
       const registry = await fs.readJson(registryPath)
@@ -166,6 +178,14 @@ class RegisterCommand extends BasePouchCommand {
     } catch (error) {
       return { success: false, error: error.message }
     }
+  }
+
+  /**
+   * 获取项目路径（复用ActionCommand逻辑）
+   */
+  async getProjectPath() {
+    // 使用ResourceManager的项目路径获取逻辑
+    return this.resourceManager.projectPath || process.cwd()
   }
 
   getPATEOAS (args) {
