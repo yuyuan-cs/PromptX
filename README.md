@@ -239,10 +239,32 @@ graph TD
 > "使用 PromptX 的开发体验真的非常不一样。我们团队基于 Claude Code 并结合 PromptX，**一位开发者仅三天内就完成了超过一万一千行的高质量 Java 代码。**
 >
 > 这套工作流的价值在实际开发中体现得淋漓尽致。PromptX 解决了 AI 使用时的许多痛点，时刻确保代码风格的统一和质量的达标，大大降低了新成员的学习成本。过去那些需要反复沟通、依靠文档传承的最佳实践，现在能够自然而然地融入到每一次代码生成中。"
+> 
+> ---
+>
+> “女娲”让我使用 AI 角色更加方便、快捷，实际上手发现，我并不需要懂代码，也不需要懂复杂的AI原理。我只需要用大白话告诉“女娲”我想要什么，它就能帮我把背后那些复杂的设计工作给完成了，能引导我完成剩下的所有事情。“女娲”本身不负责写小红书笔记，但它能创造出一个“精通小红书营销”的专家。一旦这个专家被创造出来，我以后所有小红书相关的工作，都可以交给这个新角色去做了，效率和专业度都大大提升。
 
 #### **📚 相关资源**
 
 - **AI集成标准与实践指南：** https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHCN.md
+
+---
+
+## 📚 **社区教程与案例**
+
+社区成员 **coso** 基于 PromptX 架构开发了 MCP 工具，并分享了完整的开发经验：
+
+#### 🔧 **使用 PromptX 架构开发 crawl-mcp 工具**
+- **文章**：[从想法到产品：我如何用Cursor Agent开发出智能内容处理MCP工具](https://mp.weixin.qq.com/s/x23Ap3t9LBDVNcr_7dcMHQ)
+- **成果**：[crawl-mcp-server](https://www.npmjs.com/package/crawl-mcp-server) - NPM包 | [GitHub](https://github.com/wutongci/crawl-mcp)
+- **亮点**：以 PromptX 为架构参考，实现零代码开发，几小时完成从想法到发布
+
+#### 🛠️ **MCP 开发模板化实践**
+- **文章**：[从零代码到开源：我如何用模板革命MCP开发](https://mp.weixin.qq.com/s/aQ9Io2KFoQt8k779L5kuuA)
+- **成果**：[mcp-template](https://github.com/wutongci/mcp-template) - 通用MCP开发模板
+- **价值**：将 MCP 开发时间从 40 小时缩短到 30 分钟
+
+> 💡 欢迎社区成员分享基于 PromptX 的实践经验，提交 PR 添加到此处。
 
 ---
 
