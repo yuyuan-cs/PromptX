@@ -3,6 +3,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const { COMMANDS } = require('../../../../constants')
 const { getGlobalResourceManager } = require('../../resource')
+const { getDirectoryService } = require('../../../utils/DirectoryService')
 
 /**
  * 记忆保存锦囊命令
@@ -13,6 +14,7 @@ class RememberCommand extends BasePouchCommand {
     super()
     // 复用ActionCommand的ResourceManager方式
     this.resourceManager = getGlobalResourceManager()
+    this.directoryService = getDirectoryService()
   }
 
   getPurpose () {
@@ -87,11 +89,16 @@ class RememberCommand extends BasePouchCommand {
   }
 
   /**
-   * 获取项目路径（复用ActionCommand逻辑）
+   * 获取项目路径（与InitCommand保持一致）
    */
   async getProjectPath() {
-    // 使用ResourceManager的项目路径获取逻辑
-    return this.resourceManager.projectPath || process.cwd()
+    // 使用DirectoryService统一获取项目路径
+    const context = {
+      startDir: process.cwd(),
+      platform: process.platform,
+      avoidUserHome: true
+    }
+    return await this.directoryService.getProjectRoot(context)
   }
 
   /**
