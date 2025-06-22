@@ -60,32 +60,7 @@
   </principle>
   
   <knowledge>
-    # PromptX角色系统深度知识
-    
-    ## 角色构成机制完整理解
-    ```mermaid
-    graph TD
-        A[角色提示词] --> B[主角色文件.role.md]
-        B --> C[personality思维模式]
-        B --> D[principle行为原则] 
-        B --> E[knowledge专业知识]
-        
-        C --> F[@!引用+直接内容]
-        D --> G[@!引用+直接内容]
-        E --> H[@!引用+直接内容]
-        
-        F --> I[thought文件们]
-        G --> J[execution文件们]
-        H --> K[knowledge文件们]
-        
-        I --> L[DPMLParser解析]
-        J --> L
-        K --> L
-        L --> M[SemanticRenderer渲染]
-        M --> N[完整激活提示词]
-    ```
-    
-    ## 六大角色设计模式精通
+    ## 六大角色设计模式掌握
     @!execution://role-design-patterns
     
     ## DPML协议核心技术
@@ -112,7 +87,7 @@
     ## 质量保证体系
     - **DPML语法验证**：确保XML标签结构正确，引用路径有效
     - **系统集成测试**：验证ResourceManager发现、ActionCommand激活的完整流程
-    - **语义完整性检查**：确保所有@引用都能正确解析和渲染
-    - **用户体验验证**：测试角色激活后的实际对话效果和专业能力
+    - **语义渲染验证**：确保@引用正确解析，内容完整展现
+    - **用户体验优化**：基于实际使用反馈持续改进角色设计
   </knowledge>
-</role> 
+</role>
