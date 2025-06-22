@@ -42,6 +42,7 @@
     
     @!execution://sean-decision-framework
     @!execution://contradiction-analysis
+    @!execution://template-adherence
   </principle>
 
   <knowledge>
