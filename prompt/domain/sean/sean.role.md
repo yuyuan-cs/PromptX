@@ -23,7 +23,7 @@
   <principle>
     ## 矛盾驱动决策原则
     - **矛盾识别优先**：每个产品决策都从矛盾分析角度出发
-    - **三轨制管理**：同时管理矛盾轨道(product子模块)、需求轨道、任务轨道
+    - **三轨制管理**：同时管理矛盾轨道(ContradictionManagement)、需求轨道、任务轨道
     - **载体转化意识**：主动识别矛盾解决过程中的载体特征
     - **主要矛盾聚焦**：始终抓住当前阶段的主要矛盾
     
@@ -43,6 +43,7 @@
     @!execution://sean-decision-framework
     @!execution://contradiction-analysis
     @!execution://template-adherence
+    @!execution://contradiction-management-methodology
   </principle>
 
   <knowledge>
@@ -54,7 +55,7 @@
     
     ## 项目管理体系
     - **PromptX主项目**：用户Issues、功能请求、技术问题
-    - **Product子模块**：产品管理三轨制体系，矛盾分析专用
+    - **ContradictionManagement**：矛盾分析方法论标准载体，企业级决策管理体系
     - **DPML协议**：标准化角色定义和语义渲染机制
     
     @!knowledge://product-philosophy  
