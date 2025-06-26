@@ -5,7 +5,7 @@
     "version": "2.0.0",
     "description": "package 级资源注册表",
     "createdAt": "2025-06-22T07:24:56.208Z",
-    "updatedAt": "2025-06-22T07:24:56.212Z",
+    "updatedAt": "2025-06-26T08:15:31.756Z",
     "resourceCount": 51
   },
   "resources": [
@@ -13,12 +13,12 @@
       "id": "assistant",
       "source": "package",
       "protocol": "role",
-      "name": "Assistant 角色",
-      "description": "专业角色，提供特定领域的专业能力",
+      "name": "总经理秘书",
+      "description": "高效执行与协调沟通专家，具备前瞻性服务能力",
       "reference": "@package://prompt/domain/assistant/assistant.role.md",
       "metadata": {
         "createdAt": "2025-06-22T07:24:56.209Z",
-        "updatedAt": "2025-06-22T07:24:56.209Z",
+        "updatedAt": "2025-06-26T08:15:31.753Z",
         "scannedAt": "2025-06-22T07:24:56.209Z"
       }
     },
@@ -52,12 +52,12 @@
       "id": "frontend-developer",
       "source": "package",
       "protocol": "role",
-      "name": "Frontend Developer 角色",
-      "description": "专业角色，提供特定领域的专业能力",
+      "name": "前端开发工程师",
+      "description": "用户体验与前端技术专家，注重代码质量",
       "reference": "@package://prompt/domain/frontend-developer/frontend-developer.role.md",
       "metadata": {
         "createdAt": "2025-06-22T07:24:56.210Z",
-        "updatedAt": "2025-06-22T07:24:56.210Z",
+        "updatedAt": "2025-06-26T08:15:31.755Z",
         "scannedAt": "2025-06-22T07:24:56.210Z"
       }
     },
@@ -143,12 +143,12 @@
       "id": "java-backend-developer",
       "source": "package",
       "protocol": "role",
-      "name": "Java Backend Developer 角色",
-      "description": "专业角色，提供特定领域的专业能力",
+      "name": "Java后端开发工程师",
+      "description": "系统架构与后端开发专家，精通Spring生态",
       "reference": "@package://prompt/domain/java-backend-developer/java-backend-developer.role.md",
       "metadata": {
         "createdAt": "2025-06-22T07:24:56.210Z",
-        "updatedAt": "2025-06-22T07:24:56.210Z",
+        "updatedAt": "2025-06-26T08:15:31.755Z",
         "scannedAt": "2025-06-22T07:24:56.210Z"
       }
     },
@@ -221,12 +221,12 @@
       "id": "nuwa",
       "source": "package",
       "protocol": "role",
-      "name": "Nuwa 角色",
-      "description": "专业角色，提供特定领域的专业能力",
+      "name": "女娲",
+      "description": "AI角色创造专家，精通PromptX角色系统设计",
       "reference": "@package://prompt/domain/nuwa/nuwa.role.md",
       "metadata": {
         "createdAt": "2025-06-22T07:24:56.211Z",
-        "updatedAt": "2025-06-22T07:24:56.211Z",
+        "updatedAt": "2025-06-26T08:15:31.756Z",
         "scannedAt": "2025-06-22T07:24:56.211Z"
       }
     },
@@ -299,12 +299,12 @@
       "id": "product-manager",
       "source": "package",
       "protocol": "role",
-      "name": "Product Manager 角色",
-      "description": "专业角色，提供特定领域的专业能力",
+      "name": "产品经理",
+      "description": "用户价值与商业价值平衡专家，具备全面产品管理能力",
       "reference": "@package://prompt/domain/product-manager/product-manager.role.md",
       "metadata": {
         "createdAt": "2025-06-22T07:24:56.211Z",
-        "updatedAt": "2025-06-22T07:24:56.211Z",
+        "updatedAt": "2025-06-26T08:15:31.756Z",
         "scannedAt": "2025-06-22T07:24:56.211Z"
       }
     },
@@ -364,12 +364,12 @@
       "id": "sean",
       "source": "package",
       "protocol": "role",
-      "name": "Sean 角色",
-      "description": "专业角色，提供特定领域的专业能力",
+      "name": "Sean",
+      "description": "deepractice.ai创始人&CEO，专注AI产品创新",
       "reference": "@package://prompt/domain/sean/sean.role.md",
       "metadata": {
         "createdAt": "2025-06-22T07:24:56.211Z",
-        "updatedAt": "2025-06-22T07:24:56.211Z",
+        "updatedAt": "2025-06-26T08:15:31.756Z",
         "scannedAt": "2025-06-22T07:24:56.211Z"
       }
     },
@@ -455,12 +455,12 @@
       "id": "xiaohongshu-marketer",
       "source": "package",
       "protocol": "role",
-      "name": "Xiaohongshu Marketer 角色",
-      "description": "专业角色，提供特定领域的专业能力",
+      "name": "小红书营销专家",
+      "description": "内容营销与用户增长专家，精通小红书平台运营",
       "reference": "@package://prompt/domain/xiaohongshu-marketer/xiaohongshu-marketer.role.md",
       "metadata": {
         "createdAt": "2025-06-22T07:24:56.212Z",
-        "updatedAt": "2025-06-22T07:24:56.212Z",
+        "updatedAt": "2025-06-26T08:15:31.756Z",
         "scannedAt": "2025-06-22T07:24:56.212Z"
       }
     },
