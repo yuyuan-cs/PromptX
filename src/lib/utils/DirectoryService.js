@@ -46,17 +46,30 @@ class DirectoryService {
   async getProjectRoot(context = {}) {
     await this._ensureInitialized()
     
+    // 🔍 增加详细的路径诊断日志
+    console.error('🔍 [DirectoryService-DIAGNOSIS] ===== getProjectRoot 诊断开始 =====')
+    console.error(`🔍 [DirectoryService-DIAGNOSIS] context: ${JSON.stringify(context)}`)
+    console.error(`🔍 [DirectoryService-DIAGNOSIS] process.cwd(): ${process.cwd()}`)
+    
     try {
       const result = await this.projectRootLocator.locate(context)
       this._lastProjectRoot = result
       this._lastContext = context
       
+      console.error(`🔍 [DirectoryService-DIAGNOSIS] ProjectRootLocator结果: ${result}`)
+      console.error('🔍 [DirectoryService-DIAGNOSIS] ===== getProjectRoot 诊断结束 =====')
+      
       logger.debug(`[DirectoryService] 项目根目录: ${result}`)
       return result
     } catch (error) {
+      console.error(`🔍 [DirectoryService-DIAGNOSIS] ❌ ProjectRootLocator失败: ${error.message}`)
+      console.error('🔍 [DirectoryService-DIAGNOSIS] ===== getProjectRoot 诊断结束（出错） =====')
+      
       logger.error('[DirectoryService] 获取项目根目录失败:', error)
-      // 回退到当前目录
-      return context.startDir || process.cwd()
+      // 回退到当前工作目录
+      const fallback = process.cwd()
+      console.error(`🔍 [DirectoryService-DIAGNOSIS] 回退到process.cwd(): ${fallback}`)
+      return fallback
     }
   }
 
