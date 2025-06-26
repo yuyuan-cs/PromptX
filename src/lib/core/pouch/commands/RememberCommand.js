@@ -146,7 +146,9 @@ class RememberCommand extends BasePouchCommand {
         
       } catch (error) {
         logger.error(`❌ [RememberCommand] Legacy迁移失败: ${error.message}`)
-        throw new Error(`Legacy数据迁移失败，请检查备份: ${error.message}`)
+        logger.debug(`❌ [RememberCommand] 迁移错误堆栈: ${error.stack}`)
+        logger.warn(`⚠️ [RememberCommand] 迁移失败，继续使用新记忆系统，备份文件已保存`)
+        // 静默处理，不向用户抛出错误，宁愿丢失旧记忆也不影响用户体验
       }
     }
   }
@@ -471,16 +473,153 @@ class RememberCommand extends BasePouchCommand {
   }
 
   /**
-   * 解析legacy Markdown格式的记忆
+   * 解析legacy Markdown格式的记忆（支持START-END多行格式）
    */
   parseLegacyMemories (content) {
+    logger.debug('🔍 [RememberCommand] 开始解析Legacy记忆，支持START-END多行格式')
+    
+    const memories = []
+    
+    // 🎯 首先尝试解析START-END多行格式
+    const multiLineMemories = this.parseMultiLineMemories(content)
+    memories.push(...multiLineMemories)
+    
+    // 🎯 只有在没有找到多行格式时才解析单行格式（避免重复）
+    if (multiLineMemories.length === 0) {
+      logger.info('🔍 [RememberCommand] 未找到START-END格式，尝试单行格式解析')
+      const singleLineMemories = this.parseSingleLineMemories(content)
+      memories.push(...singleLineMemories)
+      logger.success(`🔍 [RememberCommand] 单行格式解析完成 - ${singleLineMemories.length} 条记忆`)
+    } else {
+      logger.success(`🔍 [RememberCommand] 多行格式解析完成 - ${multiLineMemories.length} 条记忆，跳过单行解析`)
+    }
+    
+    logger.success(`🔍 [RememberCommand] Legacy记忆解析完成 - 总计: ${memories.length} 条`)
+    
+    return memories
+  }
+
+  /**
+   * 解析START-END多行格式记忆
+   */
+  parseMultiLineMemories (content) {
+    logger.debug('📝 [RememberCommand] 解析START-END多行格式记忆')
+    
+    const memories = []
+    const blocks = this.parseMemoryBlocks(content)
+    
+    for (const block of blocks) {
+      const memory = this.parseMemoryBlock(block)
+      if (memory) {
+        memories.push(memory)
+        logger.debug(`📝 [RememberCommand] 成功解析多行记忆: "${memory.content.substring(0, 30)}..."`)
+      }
+    }
+    
+    logger.debug(`📝 [RememberCommand] 多行格式解析完成 - ${memories.length} 条记忆`)
+    return memories
+  }
+
+  /**
+   * 解析记忆块（START-END格式）
+   */
+  parseMemoryBlocks (content) {
+    const blocks = []
+    const lines = content.split('\n')
+    let currentBlock = []
+    let inBlock = false
+
+    for (const line of lines) {
+      if (line.match(/^- \d{4}\/\d{2}\/\d{2} \d{2}:\d{2} START$/)) {
+        // 开始新的记忆块
+        if (inBlock && currentBlock.length > 0) {
+          blocks.push(currentBlock.join('\n'))
+        }
+        currentBlock = [line]
+        inBlock = true
+      } else if (line === '- END' && inBlock) {
+        // 结束当前记忆块
+        currentBlock.push(line)
+        blocks.push(currentBlock.join('\n'))
+        currentBlock = []
+        inBlock = false
+      } else if (inBlock) {
+        // 记忆块内容
+        currentBlock.push(line)
+      }
+    }
+
+    // 处理未结束的块
+    if (inBlock && currentBlock.length > 0) {
+      blocks.push(currentBlock.join('\n'))
+    }
+
+    return blocks
+  }
+
+  /**
+   * 解析单个记忆块
+   */
+  parseMemoryBlock (blockContent) {
+    const lines = blockContent.split('\n')
+    
+    // 解析开始行：- 2025/06/15 15:58 START
+    const startLine = lines[0]
+    const startMatch = startLine.match(/^- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}) START$/)
+    if (!startMatch) return null
+
+    const timestamp = startMatch[1]
+    
+    // 查找标签行：--tags xxx
+    let tagsLine = ''
+    let contentLines = []
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i]
+      if (line.startsWith('--tags ')) {
+        tagsLine = line
+      } else if (line !== '- END') {
+        contentLines.push(line)
+      }
+    }
+
+    // 提取内容（去除空行）
+    const content = contentLines.join('\n').trim()
+    
+    // 解析标签
+    let tags = []
+    if (tagsLine) {
+      const tagsContent = tagsLine.replace('--tags ', '')
+      const hashTags = tagsContent.match(/#[^\s]+/g) || []
+      const regularTags = tagsContent.replace(/#[^\s]+/g, '').trim().split(/\s+/).filter(t => t)
+      tags = [...regularTags, ...hashTags]
+    }
+
+    return {
+      timestamp,
+      content,
+      tags
+    }
+  }
+
+  /**
+   * 解析单行格式记忆（向后兼容）
+   */
+  parseSingleLineMemories (content) {
+    logger.debug('📄 [RememberCommand] 解析单行格式记忆（向后兼容）')
+    
     const memories = []
     const lines = content.split('\n')
     
     for (const line of lines) {
       const trimmedLine = line.trim()
       
-      // 解析标准格式：- 2025/01/15 14:30 内容 #标签 #评分:8 #有效期:长期
+      // 跳过START-END格式的行（避免重复解析）
+      if (trimmedLine.includes(' START') || trimmedLine === '- END' || trimmedLine.startsWith('--tags')) {
+        continue
+      }
+      
+      // 解析标准单行格式：- 2025/01/15 14:30 内容 #标签 #评分:8 #有效期:长期
       const match = trimmedLine.match(/^- (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}) (.+)$/)
       if (match) {
         const [, timestamp, contentAndTags] = match
@@ -511,9 +650,12 @@ class RememberCommand extends BasePouchCommand {
           content,
           tags
         })
+        
+        logger.debug(`📄 [RememberCommand] 成功解析单行记忆: "${content.substring(0, 30)}..."`)
       }
     }
     
+    logger.debug(`📄 [RememberCommand] 单行格式解析完成 - ${memories.length} 条记忆`)
     return memories
   }
 
