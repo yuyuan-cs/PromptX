@@ -7,20 +7,20 @@ const { getDirectoryService } = require('../../../utils/DirectoryService')
 const logger = require('../../../utils/logger')
 
 /**
- * 记忆保存锦囊命令 - 纯XML模式
- * 负责将知识、经验和最佳实践保存到XML格式记忆库中
- * 已升级为统一XML架构，移除Markdown兼容逻辑
+ * 记忆保存锦囊命令
+ * 负责将知识、经验和最佳实践保存到记忆库中
+ * 支持XML格式和Markdown格式，自动迁移legacy数据
  */
 class RememberCommand extends BasePouchCommand {
   constructor () {
     super()
+    // 复用ActionCommand的ResourceManager方式
     this.resourceManager = getGlobalResourceManager()
     this.directoryService = getDirectoryService()
-    this.FORCE_XML_MODE = true  // 🎯 强制XML模式标志
   }
 
   getPurpose () {
-    return '增强AI长期记忆能力，主动内化专业知识、最佳实践和项目经验（纯XML模式）'
+    return '增强AI长期记忆能力，主动内化专业知识、最佳实践和项目经验'
   }
 
   async getContent (args) {
@@ -31,90 +31,61 @@ class RememberCommand extends BasePouchCommand {
     }
 
     try {
-      // 🛡️ 升级前自动备份（仅首次）
-      await this.ensureSafetyBackupExists()
-      
-      logger.step('🧠 [RememberCommand] 开始记忆保存流程 (纯XML模式)')
+      logger.step('🧠 [RememberCommand] 开始记忆保存流程')
       logger.info(`📝 [RememberCommand] 记忆内容: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`)
       
-      const memoryEntry = await this.saveMemoryXMLOnly(content)
+      const memoryEntry = await this.saveMemory(content)
 
-      logger.success(`✅ [RememberCommand] XML记忆保存完成 - 路径: ${memoryEntry.filePath}`)
+      logger.success(`✅ [RememberCommand] 记忆保存完成 - 格式: ${memoryEntry.format}, 路径: ${memoryEntry.filePath}`)
       return this.formatSaveResponse(content, memoryEntry)
-      
     } catch (error) {
       logger.error(`❌ [RememberCommand] 记忆保存失败: ${error.message}`)
       logger.debug(`🐛 [RememberCommand] 错误堆栈: ${error.stack}`)
       
-      return this.formatErrorWithRecovery(error)
+      return `❌ 记忆内化失败：${error.message}
+
+💡 可能的原因：
+- AI记忆体系目录权限不足
+- 磁盘空间不够
+- 记忆内容格式问题
+
+🔧 解决方案：
+1. 检查 .promptx 目录权限
+2. 确保磁盘空间充足
+3. 检查记忆内容是否包含特殊字符`
     }
   }
 
   /**
-   * 🛡️ 确保安全备份存在
+   * 将知识内化到AI记忆体系（XML格式优先）
    */
-  async ensureSafetyBackupExists() {
-    const projectPath = await this.getProjectPath()
-    const backupMarker = path.join(projectPath, '.promptx', '.xml-upgrade-backup-done')
+  async saveMemory (value) {
+    logger.step('🔧 [RememberCommand] 执行saveMemory方法')
     
-    if (!await fs.pathExists(backupMarker)) {
-      logger.step('🛡️ [RememberCommand] 执行升级前安全备份...')
-      await this.createSafetyBackup()
-      await fs.writeFile(backupMarker, new Date().toISOString())
-      logger.success('🛡️ [RememberCommand] 安全备份完成')
-    }
-  }
-
-  /**
-   * 🛡️ 创建安全备份
-   */
-  async createSafetyBackup() {
-    const projectPath = await this.getProjectPath()
-    const memoryDir = path.join(projectPath, '.promptx', 'memory')
-    const backupDir = path.join(projectPath, '.promptx', 'backup', `backup_${Date.now()}`)
-    
-    await fs.ensureDir(backupDir)
-    
-    // 备份所有现有记忆文件
-    const filesToBackup = ['declarative.dpml', 'declarative.md', 'declarative.md.bak']
-    
-    for (const file of filesToBackup) {
-      const source = path.join(memoryDir, file)
-      if (await fs.pathExists(source)) {
-        await fs.copy(source, path.join(backupDir, file))
-        logger.success(`✅ 备份文件: ${file}`)
-      }
-    }
-    
-    // 创建备份元数据
-    const backupMeta = {
-      timestamp: new Date().toISOString(),
-      version: 'pre-xml-upgrade',
-      files: filesToBackup.filter(f => fs.pathExistsSync(path.join(memoryDir, f)))
-    }
-    
-    await fs.writeJSON(path.join(backupDir, 'backup-meta.json'), backupMeta, {spaces: 2})
-    
-    logger.success(`🛡️ 安全备份完成: ${backupDir}`)
-    return backupDir
-  }
-
-  /**
-   * 纯XML记忆保存（移除所有Markdown逻辑）
-   */
-  async saveMemoryXMLOnly(value) {
-    logger.step('🔧 [RememberCommand] 执行纯XML保存模式')
-    
+    // 1. 确保AI记忆体系目录存在
+    logger.info('📁 [RememberCommand] 确保记忆目录存在...')
     const memoryDir = await this.ensureMemoryDirectory()
+    logger.info(`📁 [RememberCommand] 记忆目录路径: ${memoryDir}`)
+
+    // 2. 检查是否需要从legacy格式迁移
+    logger.info('🔄 [RememberCommand] 检查legacy数据迁移需求...')
+    await this.migrateLegacyMemoriesIfNeeded(memoryDir)
+
+    // 3. 使用XML格式保存记忆
+    const xmlFile = path.join(memoryDir, 'memory.xml')
+    logger.info(`📄 [RememberCommand] XML文件路径: ${xmlFile}`)
     
-    // 🔄 保留一次性Legacy迁移（确保老用户数据不丢失）
-    await this.performSafeLegacyMigration(memoryDir)
-    
-    // 🎯 纯DPML处理流程
-    const xmlFile = path.join(memoryDir, 'declarative.dpml')
+    // 4. 格式化为XML记忆项
+    logger.info('🏷️ [RememberCommand] 格式化XML记忆项...')
     const memoryItem = this.formatXMLMemoryItem(value)
+    logger.debug(`🏷️ [RememberCommand] 记忆项ID: ${memoryItem.id}, 时间戳: ${memoryItem.timestamp}`)
+    logger.debug(`🏷️ [RememberCommand] 记忆标签: ${memoryItem.rawTags}`)
+
+    // 5. 追加到XML文件
+    logger.info('💾 [RememberCommand] 保存到XML文件...')
     const action = await this.appendToXMLFile(xmlFile, memoryItem)
-    
+    logger.success(`💾 [RememberCommand] XML保存操作: ${action}`)
+
     return {
       value,
       filePath: xmlFile,
@@ -123,57 +94,6 @@ class RememberCommand extends BasePouchCommand {
       format: 'xml'
     }
   }
-
-  /**
-   * 🔄 安全的Legacy迁移
-   */
-  async performSafeLegacyMigration(memoryDir) {
-    const legacyFile = path.join(memoryDir, 'declarative.md')
-    const xmlFile = path.join(memoryDir, 'declarative.dpml')
-    
-    if (await fs.pathExists(legacyFile) && !await fs.pathExists(xmlFile)) {
-      logger.step('🔄 [RememberCommand] 检测到Legacy数据，执行安全迁移...')
-      
-      try {
-        // 迁移前再次备份
-        const timestamp = Date.now()
-        await fs.copy(legacyFile, `${legacyFile}.pre-migration.${timestamp}`)
-        
-        // 执行迁移
-        await this.migrateLegacyMemoriesIfNeeded(memoryDir)
-        
-        logger.success('🔄 [RememberCommand] Legacy数据迁移完成')
-        
-      } catch (error) {
-        logger.error(`❌ [RememberCommand] Legacy迁移失败: ${error.message}`)
-        throw new Error(`Legacy数据迁移失败，请检查备份: ${error.message}`)
-      }
-    }
-  }
-
-  /**
-   * 🚨 错误恢复建议
-   */
-  formatErrorWithRecovery(error) {
-    return `❌ XML记忆保存失败：${error.message}
-
-🛡️ **恢复方案**：
-1. 检查 .promptx/backup/ 目录中的数据备份
-2. 如需回滚，请联系技术支持
-3. 备份文件位置：.promptx/backup/backup_*
-
-🔧 **可能的原因**：
-- 磁盘空间不足
-- 文件权限问题  
-- XML格式验证失败
-
-💡 **建议操作**：
-1. 检查磁盘空间和权限
-2. 重试记忆操作
-3. 如持续失败，查看备份数据`
-  }
-
-
 
   /**
    * 确保AI记忆体系目录存在（使用ResourceManager路径获取）
@@ -406,7 +326,7 @@ class RememberCommand extends BasePouchCommand {
    */
   async migrateLegacyMemoriesIfNeeded (memoryDir) {
     const legacyFile = path.join(memoryDir, 'declarative.md')
-    const xmlFile = path.join(memoryDir, 'declarative.dpml')
+    const xmlFile = path.join(memoryDir, 'memory.xml')
     const backupFile = path.join(memoryDir, 'declarative.md.bak')
 
     logger.debug(`🔄 [RememberCommand] 检查迁移需求 - legacy: ${legacyFile}, xml: ${xmlFile}`)
@@ -566,24 +486,13 @@ class RememberCommand extends BasePouchCommand {
   }
 
   /**
-   * 获取使用帮助（纯XML模式）
+   * 获取使用帮助
    */
   getUsageHelp () {
-    return `🧠 **Remember锦囊 - AI记忆增强系统（纯XML模式）**
+    return `🧠 **Remember锦囊 - AI记忆增强系统（XML版本）**
 
 ## 📖 基本用法
 通过 MCP PromptX remember 工具内化知识
-
-## 🆕 升级特性
-- **纯XML存储**: 统一使用XML格式，性能更优
-- **自动备份**: 升级前自动创建安全备份
-- **Legacy迁移**: 自动迁移旧格式数据
-- **数据安全**: 多重备份保护机制
-
-## 🛡️ 安全保障
-- 升级前自动备份所有数据
-- Legacy数据自动迁移到XML格式
-- 出错时提供恢复建议和备份位置
 
 ## 💡 记忆内化示例
 
