@@ -13,7 +13,7 @@ const { getDirectoryService } = require('../../../utils/DirectoryService')
  * 
  * 负责发现NPM包内的资源：
  * 1. 从 src/resource.registry.json 加载静态注册表
- * 2. 扫描 prompt/ 目录发现动态资源
+ * 2. 扫描 resource/ 目录发现动态资源
  * 
  * 优先级：1 (最高优先级)
  */
@@ -143,8 +143,8 @@ class PackageDiscovery extends BaseDiscovery {
       // 这里可以实现动态扫描逻辑，或者返回空Map
       // 为了简化，我们返回一个基础的assistant角色
       const fallbackRegistry = new Map()
-      fallbackRegistry.set('assistant', '@package://prompt/domain/assistant/assistant.role.md')
-      fallbackRegistry.set('package:assistant', '@package://prompt/domain/assistant/assistant.role.md')
+      fallbackRegistry.set('assistant', '@package://resource/domain/assistant/assistant.role.md')
+      fallbackRegistry.set('package:assistant', '@package://resource/domain/assistant/assistant.role.md')
       
       logger.warn(`[PackageDiscovery] 🆘 使用回退资源: assistant`)
       return fallbackRegistry
@@ -167,10 +167,10 @@ class PackageDiscovery extends BaseDiscovery {
     
     try {
       // 扫描包级资源目录
-      const promptDir = path.join(packageRoot, 'prompt')
+      const resourceDir = path.join(packageRoot, 'resource')
       
-      if (await fs.pathExists(promptDir)) {
-        await this._scanDirectory(promptDir, registryData)
+      if (await fs.pathExists(resourceDir)) {
+        await this._scanDirectory(resourceDir, registryData)
       }
       
       // 保存注册表
@@ -308,7 +308,7 @@ class PackageDiscovery extends BaseDiscovery {
         // 查找角色文件
         const roleFile = path.join(itemPath, `${item}.role.md`)
         if (await fs.pathExists(roleFile)) {
-          const reference = `@package://prompt/domain/${item}/${item}.role.md`
+          const reference = `@package://resource/domain/${item}/${item}.role.md`
           
                       const resourceData = new ResourceData({
               id: item,
@@ -334,7 +334,7 @@ class PackageDiscovery extends BaseDiscovery {
             const thoughtId = ResourceFileNaming.extractResourceId(thoughtFile, 'thought')
             if (thoughtId) {
               const fileName = path.basename(thoughtFile)
-              const reference = `@package://prompt/domain/${item}/thought/${fileName}`
+              const reference = `@package://resource/domain/${item}/thought/${fileName}`
               
               const resourceData = new ResourceData({
                 id: thoughtId,
@@ -360,7 +360,7 @@ class PackageDiscovery extends BaseDiscovery {
           for (const execFile of executionFiles) {
             if (execFile.endsWith('.execution.md')) {
               const execId = path.basename(execFile, '.execution.md')
-              const reference = `@package://prompt/domain/${item}/execution/${execFile}`
+              const reference = `@package://resource/domain/${item}/execution/${execFile}`
               
               const resourceData = new ResourceData({
                 id: execId,
@@ -405,7 +405,7 @@ class PackageDiscovery extends BaseDiscovery {
             const match = file.match(/^(.+)\.(\w+)\.md$/)
             if (match) {
               const [, id, protocol] = match
-              const reference = `@package://prompt/core/${item}/${file}`
+              const reference = `@package://resource/core/${item}/${file}`
               
               const resourceData = new ResourceData({
                 id: id,
@@ -428,7 +428,7 @@ class PackageDiscovery extends BaseDiscovery {
         const match = item.match(/^(.+)\.(\w+)\.md$/)
         if (match) {
           const [, id, protocol] = match
-          const reference = `@package://prompt/core/${item}`
+          const reference = `@package://resource/core/${item}`
           
           const resourceData = new ResourceData({
             id: id,

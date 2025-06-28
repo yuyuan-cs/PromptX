@@ -4,8 +4,8 @@
   "metadata": {
     "version": "2.0.0",
     "description": "package 级资源注册表",
-    "createdAt": "2025-06-28T06:22:37.206Z",
-    "updatedAt": "2025-06-28T06:22:37.216Z",
+    "createdAt": "2025-06-28T07:01:07.318Z",
+    "updatedAt": "2025-06-28T07:01:07.327Z",
     "resourceCount": 61
   },
   "resources": [
@@ -15,11 +15,11 @@
       "protocol": "role",
       "name": "Assistant 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/assistant/assistant.role.md",
+      "reference": "@package://resource/domain/assistant/assistant.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -28,11 +28,11 @@
       "protocol": "role",
       "name": "Frontend Developer 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/frontend-developer/frontend-developer.role.md",
+      "reference": "@package://resource/domain/frontend-developer/frontend-developer.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -41,11 +41,11 @@
       "protocol": "role",
       "name": "Java Backend Developer 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/java-backend-developer/java-backend-developer.role.md",
+      "reference": "@package://resource/domain/java-backend-developer/java-backend-developer.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -54,11 +54,11 @@
       "protocol": "role",
       "name": "Noface 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/noface/noface.role.md",
+      "reference": "@package://resource/domain/noface/noface.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -67,11 +67,11 @@
       "protocol": "role",
       "name": "Nuwa 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/nuwa/nuwa.role.md",
+      "reference": "@package://resource/domain/nuwa/nuwa.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -80,11 +80,11 @@
       "protocol": "role",
       "name": "Product Manager 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/product-manager/product-manager.role.md",
+      "reference": "@package://resource/domain/product-manager/product-manager.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -93,11 +93,11 @@
       "protocol": "role",
       "name": "Sean 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/sean/sean.role.md",
+      "reference": "@package://resource/domain/sean/sean.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -106,11 +106,11 @@
       "protocol": "role",
       "name": "Xiaohongshu Marketer 角色",
       "description": "专业角色，提供特定领域的专业能力",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/xiaohongshu-marketer.role.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/xiaohongshu-marketer.role.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.211Z",
-        "updatedAt": "2025-06-28T06:22:37.211Z",
-        "scannedAt": "2025-06-28T06:22:37.211Z"
+        "createdAt": "2025-06-28T07:01:07.322Z",
+        "updatedAt": "2025-06-28T07:01:07.322Z",
+        "scannedAt": "2025-06-28T07:01:07.322Z"
       }
     },
     {
@@ -119,11 +119,11 @@
       "protocol": "execution",
       "name": "Assistant 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/assistant/execution/assistant.execution.md",
+      "reference": "@package://resource/domain/assistant/execution/assistant.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -132,11 +132,11 @@
       "protocol": "execution",
       "name": "Code Quality 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/java-backend-developer/execution/code-quality.execution.md",
+      "reference": "@package://resource/domain/java-backend-developer/execution/code-quality.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -145,11 +145,11 @@
       "protocol": "execution",
       "name": "Frontend Developer 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/frontend-developer/execution/frontend-developer.execution.md",
+      "reference": "@package://resource/domain/frontend-developer/execution/frontend-developer.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -158,11 +158,11 @@
       "protocol": "execution",
       "name": "Technical Architecture 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/frontend-developer/execution/technical-architecture.execution.md",
+      "reference": "@package://resource/domain/frontend-developer/execution/technical-architecture.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -171,11 +171,11 @@
       "protocol": "execution",
       "name": "User Experience 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/frontend-developer/execution/user-experience.execution.md",
+      "reference": "@package://resource/domain/frontend-developer/execution/user-experience.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -184,11 +184,11 @@
       "protocol": "execution",
       "name": "Wechat Miniprogram Development 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/frontend-developer/execution/wechat-miniprogram-development.execution.md",
+      "reference": "@package://resource/domain/frontend-developer/execution/wechat-miniprogram-development.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -197,11 +197,11 @@
       "protocol": "execution",
       "name": "Database Design 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/java-backend-developer/execution/database-design.execution.md",
+      "reference": "@package://resource/domain/java-backend-developer/execution/database-design.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -210,11 +210,11 @@
       "protocol": "execution",
       "name": "Java Backend Developer 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/java-backend-developer/execution/java-backend-developer.execution.md",
+      "reference": "@package://resource/domain/java-backend-developer/execution/java-backend-developer.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -223,11 +223,11 @@
       "protocol": "execution",
       "name": "Spring Ecosystem 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/java-backend-developer/execution/spring-ecosystem.execution.md",
+      "reference": "@package://resource/domain/java-backend-developer/execution/spring-ecosystem.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -236,11 +236,11 @@
       "protocol": "execution",
       "name": "System Architecture 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/java-backend-developer/execution/system-architecture.execution.md",
+      "reference": "@package://resource/domain/java-backend-developer/execution/system-architecture.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -249,11 +249,11 @@
       "protocol": "execution",
       "name": "Adaptive Learning 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/noface/execution/adaptive-learning.execution.md",
+      "reference": "@package://resource/domain/noface/execution/adaptive-learning.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -262,11 +262,11 @@
       "protocol": "execution",
       "name": "Content Preservation 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/noface/execution/content-preservation.execution.md",
+      "reference": "@package://resource/domain/noface/execution/content-preservation.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -275,11 +275,11 @@
       "protocol": "execution",
       "name": "Dpml Authoring 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/nuwa/execution/dpml-authoring.execution.md",
+      "reference": "@package://resource/domain/nuwa/execution/dpml-authoring.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -288,11 +288,11 @@
       "protocol": "execution",
       "name": "Role Design Patterns 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/nuwa/execution/role-design-patterns.execution.md",
+      "reference": "@package://resource/domain/nuwa/execution/role-design-patterns.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -301,11 +301,11 @@
       "protocol": "execution",
       "name": "Role Generation 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/nuwa/execution/role-generation.execution.md",
+      "reference": "@package://resource/domain/nuwa/execution/role-generation.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -314,11 +314,11 @@
       "protocol": "execution",
       "name": "Visualization Enhancement 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/nuwa/execution/visualization-enhancement.execution.md",
+      "reference": "@package://resource/domain/nuwa/execution/visualization-enhancement.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -327,11 +327,11 @@
       "protocol": "execution",
       "name": "Market Analysis 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/product-manager/execution/market-analysis.execution.md",
+      "reference": "@package://resource/domain/product-manager/execution/market-analysis.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -340,11 +340,11 @@
       "protocol": "execution",
       "name": "Product Manager 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/product-manager/execution/product-manager.execution.md",
+      "reference": "@package://resource/domain/product-manager/execution/product-manager.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -353,11 +353,11 @@
       "protocol": "execution",
       "name": "User Research 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/product-manager/execution/user-research.execution.md",
+      "reference": "@package://resource/domain/product-manager/execution/user-research.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -366,11 +366,11 @@
       "protocol": "execution",
       "name": "Contradiction Analysis 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/sean/execution/contradiction-analysis.execution.md",
+      "reference": "@package://resource/domain/sean/execution/contradiction-analysis.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -379,11 +379,11 @@
       "protocol": "execution",
       "name": "Contradiction Management Methodology 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/sean/execution/contradiction-management-methodology.execution.md",
+      "reference": "@package://resource/domain/sean/execution/contradiction-management-methodology.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -392,11 +392,11 @@
       "protocol": "execution",
       "name": "Sean Decision Framework 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/sean/execution/sean-decision-framework.execution.md",
+      "reference": "@package://resource/domain/sean/execution/sean-decision-framework.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -405,11 +405,11 @@
       "protocol": "execution",
       "name": "Template Adherence 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/sean/execution/template-adherence.execution.md",
+      "reference": "@package://resource/domain/sean/execution/template-adherence.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -418,11 +418,11 @@
       "protocol": "execution",
       "name": "Brand Marketing 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/brand-marketing.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/brand-marketing.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -431,11 +431,11 @@
       "protocol": "execution",
       "name": "Community Building 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/community-building.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/community-building.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -444,11 +444,11 @@
       "protocol": "execution",
       "name": "Content Creation 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/content-creation.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/content-creation.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -457,11 +457,11 @@
       "protocol": "execution",
       "name": "Content Optimization 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/content-optimization.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/content-optimization.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -470,11 +470,11 @@
       "protocol": "execution",
       "name": "Data Analytics 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/data-analytics.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/data-analytics.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -483,11 +483,11 @@
       "protocol": "execution",
       "name": "Ecommerce Conversion 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/ecommerce-conversion.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/ecommerce-conversion.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -496,11 +496,11 @@
       "protocol": "execution",
       "name": "Performance Optimization 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/performance-optimization.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/performance-optimization.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -509,11 +509,11 @@
       "protocol": "execution",
       "name": "Platform Compliance 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/platform-compliance.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/platform-compliance.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -522,11 +522,11 @@
       "protocol": "execution",
       "name": "Team Collaboration 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/team-collaboration.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/team-collaboration.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -535,11 +535,11 @@
       "protocol": "execution",
       "name": "User Operation 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/user-operation.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/user-operation.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -548,11 +548,11 @@
       "protocol": "execution",
       "name": "Xiaohongshu Marketer 执行模式",
       "description": "执行模式，定义具体的行为模式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/execution/xiaohongshu-marketer.execution.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/execution/xiaohongshu-marketer.execution.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.212Z",
-        "updatedAt": "2025-06-28T06:22:37.212Z",
-        "scannedAt": "2025-06-28T06:22:37.212Z"
+        "createdAt": "2025-06-28T07:01:07.323Z",
+        "updatedAt": "2025-06-28T07:01:07.323Z",
+        "scannedAt": "2025-06-28T07:01:07.323Z"
       }
     },
     {
@@ -561,11 +561,11 @@
       "protocol": "thought",
       "name": "Recall_v1 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/core/_deprecated/recall_v1.thought.md",
+      "reference": "@package://resource/core/_deprecated/recall_v1.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -574,11 +574,11 @@
       "protocol": "thought",
       "name": "Remember_v1 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/core/_deprecated/remember_v1.thought.md",
+      "reference": "@package://resource/core/_deprecated/remember_v1.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -587,11 +587,11 @@
       "protocol": "thought",
       "name": "Recall Xml 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/core/recall-xml.thought.md",
+      "reference": "@package://resource/core/recall-xml.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -600,11 +600,11 @@
       "protocol": "thought",
       "name": "Recall 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/core/recall.thought.md",
+      "reference": "@package://resource/core/recall.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -613,11 +613,11 @@
       "protocol": "thought",
       "name": "Remember Xml 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/core/remember-xml.thought.md",
+      "reference": "@package://resource/core/remember-xml.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -626,11 +626,11 @@
       "protocol": "thought",
       "name": "Remember 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/core/remember.thought.md",
+      "reference": "@package://resource/core/remember.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -639,11 +639,11 @@
       "protocol": "thought",
       "name": "Assistant 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/assistant/thought/assistant.thought.md",
+      "reference": "@package://resource/domain/assistant/thought/assistant.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -652,11 +652,11 @@
       "protocol": "thought",
       "name": "Frontend Developer 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/frontend-developer/thought/frontend-developer.thought.md",
+      "reference": "@package://resource/domain/frontend-developer/thought/frontend-developer.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -665,11 +665,11 @@
       "protocol": "thought",
       "name": "Java Backend Developer 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/java-backend-developer/thought/java-backend-developer.thought.md",
+      "reference": "@package://resource/domain/java-backend-developer/thought/java-backend-developer.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -678,11 +678,11 @@
       "protocol": "thought",
       "name": "Role Creation 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/nuwa/thought/role-creation.thought.md",
+      "reference": "@package://resource/domain/nuwa/thought/role-creation.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -691,11 +691,11 @@
       "protocol": "thought",
       "name": "Product Manager 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/product-manager/thought/product-manager.thought.md",
+      "reference": "@package://resource/domain/product-manager/thought/product-manager.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -704,11 +704,11 @@
       "protocol": "thought",
       "name": "Contradiction Methodology 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/sean/thought/contradiction-methodology.thought.md",
+      "reference": "@package://resource/domain/sean/thought/contradiction-methodology.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -717,11 +717,11 @@
       "protocol": "thought",
       "name": "Sean 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/sean/thought/sean.thought.md",
+      "reference": "@package://resource/domain/sean/thought/sean.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -730,11 +730,11 @@
       "protocol": "thought",
       "name": "Xiaohongshu Marketer 思维模式",
       "description": "思维模式，指导AI的思考方式",
-      "reference": "@package://prompt/domain/xiaohongshu-marketer/thought/xiaohongshu-marketer.thought.md",
+      "reference": "@package://resource/domain/xiaohongshu-marketer/thought/xiaohongshu-marketer.thought.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.213Z",
-        "updatedAt": "2025-06-28T06:22:37.213Z",
-        "scannedAt": "2025-06-28T06:22:37.213Z"
+        "createdAt": "2025-06-28T07:01:07.324Z",
+        "updatedAt": "2025-06-28T07:01:07.324Z",
+        "scannedAt": "2025-06-28T07:01:07.324Z"
       }
     },
     {
@@ -743,11 +743,11 @@
       "protocol": "knowledge",
       "name": "Contradiction Methodology 知识库",
       "description": "知识库，提供专业知识和信息",
-      "reference": "@package://prompt/domain/sean/knowledge/contradiction-methodology.knowledge.md",
+      "reference": "@package://resource/domain/sean/knowledge/contradiction-methodology.knowledge.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.214Z",
-        "updatedAt": "2025-06-28T06:22:37.214Z",
-        "scannedAt": "2025-06-28T06:22:37.214Z"
+        "createdAt": "2025-06-28T07:01:07.325Z",
+        "updatedAt": "2025-06-28T07:01:07.325Z",
+        "scannedAt": "2025-06-28T07:01:07.325Z"
       }
     },
     {
@@ -756,11 +756,11 @@
       "protocol": "knowledge",
       "name": "Product Philosophy 知识库",
       "description": "知识库，提供专业知识和信息",
-      "reference": "@package://prompt/domain/sean/knowledge/product-philosophy.knowledge.md",
+      "reference": "@package://resource/domain/sean/knowledge/product-philosophy.knowledge.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.214Z",
-        "updatedAt": "2025-06-28T06:22:37.214Z",
-        "scannedAt": "2025-06-28T06:22:37.214Z"
+        "createdAt": "2025-06-28T07:01:07.325Z",
+        "updatedAt": "2025-06-28T07:01:07.325Z",
+        "scannedAt": "2025-06-28T07:01:07.325Z"
       }
     },
     {
@@ -769,11 +769,11 @@
       "protocol": "knowledge",
       "name": "Promptx Evolution 知识库",
       "description": "知识库，提供专业知识和信息",
-      "reference": "@package://prompt/domain/sean/knowledge/promptx-evolution.knowledge.md",
+      "reference": "@package://resource/domain/sean/knowledge/promptx-evolution.knowledge.md",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.214Z",
-        "updatedAt": "2025-06-28T06:22:37.214Z",
-        "scannedAt": "2025-06-28T06:22:37.214Z"
+        "createdAt": "2025-06-28T07:01:07.325Z",
+        "updatedAt": "2025-06-28T07:01:07.325Z",
+        "scannedAt": "2025-06-28T07:01:07.325Z"
       }
     },
     {
@@ -782,11 +782,11 @@
       "protocol": "tool",
       "name": "Calculator tool",
       "description": "tool类型的资源",
-      "reference": "@package://prompt/tool/calculator.tool.js",
+      "reference": "@package://resource/tool/calculator.tool.js",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.215Z",
-        "updatedAt": "2025-06-28T06:22:37.215Z",
-        "scannedAt": "2025-06-28T06:22:37.215Z"
+        "createdAt": "2025-06-28T07:01:07.326Z",
+        "updatedAt": "2025-06-28T07:01:07.326Z",
+        "scannedAt": "2025-06-28T07:01:07.326Z"
       }
     },
     {
@@ -795,11 +795,11 @@
       "protocol": "tool",
       "name": "Send Email tool",
       "description": "tool类型的资源",
-      "reference": "@package://prompt/tool/send-email.tool.js",
+      "reference": "@package://resource/tool/send-email.tool.js",
       "metadata": {
-        "createdAt": "2025-06-28T06:22:37.216Z",
-        "updatedAt": "2025-06-28T06:22:37.216Z",
-        "scannedAt": "2025-06-28T06:22:37.216Z"
+        "createdAt": "2025-06-28T07:01:07.326Z",
+        "updatedAt": "2025-06-28T07:01:07.326Z",
+        "scannedAt": "2025-06-28T07:01:07.326Z"
       }
     }
   ],

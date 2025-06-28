@@ -161,7 +161,7 @@ async loadRoleRegistry() {
     if (Object.keys(this.roleRegistry).length === 0) {
       this.roleRegistry = {
         assistant: {
-          file: '@package://prompt/domain/assistant/assistant.role.md',
+          file: '@package://resource/domain/assistant/assistant.role.md',
           name: '🙋 智能助手',
           description: '通用助理角色，提供基础的助理服务和记忆支持'
         }

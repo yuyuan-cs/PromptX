@@ -257,7 +257,7 @@ sequenceDiagram
 
     Note over RM: 2. 解析逻辑协议 thought
     RM->>RR: resolve("thought:remember")
-    RR->>RM: "@package://prompt/core/thought/remember.thought.md"
+    RR->>RM: "@package://resource/core/thought/remember.thought.md"
 
     Note over RM: 3. 解析基础协议 @package
     RM->>RM: 委托给PackageProtocol

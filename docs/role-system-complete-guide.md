@@ -74,7 +74,7 @@ flowchart TB
     "role": {
       "registry": {
         "角色ID": {
-          "file": "@package://prompt/domain/角色名/角色名.role.md",
+          "file": "@package://resource/domain/角色名/角色名.role.md",
           "name": "🎭 角色显示名称",
           "description": "角色功能描述"
         }
@@ -87,7 +87,7 @@ flowchart TB
 **示例**:
 ```json
 "assistant": {
-  "file": "@package://prompt/domain/assistant/assistant.role.md",
+  "file": "@package://resource/domain/assistant/assistant.role.md",
   "name": "🙋 智能助手",
   "description": "通用助理角色，提供基础的助理服务和记忆支持"
 }

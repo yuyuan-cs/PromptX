@@ -209,27 +209,18 @@ class RememberCommand extends BasePouchCommand {
   async getProjectPath() {
     logger.debug('📍 [RememberCommand] 获取项目路径...')
     
-    // 🔍 增加详细的路径诊断日志
-    logger.warn('🔍 [RememberCommand-DIAGNOSIS] ===== 路径诊断开始 =====')
-    logger.warn(`🔍 [RememberCommand-DIAGNOSIS] process.cwd(): ${process.cwd()}`)
-    logger.warn(`🔍 [RememberCommand-DIAGNOSIS] process.argv: ${JSON.stringify(process.argv)}`)
-    logger.warn(`🔍 [RememberCommand-DIAGNOSIS] PROMPTX_WORKSPACE: ${process.env.PROMPTX_WORKSPACE || 'undefined'}`)
-    logger.warn(`🔍 [RememberCommand-DIAGNOSIS] WORKSPACE_FOLDER_PATHS: ${process.env.WORKSPACE_FOLDER_PATHS || 'undefined'}`)
-    logger.warn(`🔍 [RememberCommand-DIAGNOSIS] PWD: ${process.env.PWD || 'undefined'}`)
-    
     // 使用DirectoryService统一获取项目路径（与InitCommand保持一致）
     const context = {
       startDir: process.cwd(),
       platform: process.platform,
       avoidUserHome: true
     }
-    logger.warn(`🔍 [RememberCommand-DIAGNOSIS] DirectoryService context: ${JSON.stringify(context)}`)
     
     const projectPath = await this.directoryService.getProjectRoot(context)
-    logger.warn(`🔍 [RememberCommand-DIAGNOSIS] DirectoryService结果: ${projectPath}`)
-    logger.warn('🔍 [RememberCommand-DIAGNOSIS] ===== 路径诊断结束 =====')
     
-    logger.debug(`📍 [RememberCommand] 项目路径解析结果: ${projectPath}`)
+    if (process.env.PROMPTX_DEBUG === 'true') {
+      logger.debug(`📍 [RememberCommand] 项目路径解析结果: ${projectPath}`)
+    }
     
     return projectPath
   }

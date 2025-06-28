@@ -434,7 +434,7 @@ class SimplePackageProtocol {
 {
   "role": {
     "assistant": {
-      "file": "@package://prompt/domain/assistant/assistant.role.md",
+      "file": "@package://resource/domain/assistant/assistant.role.md",
       "name": "🙋 智能助手"
     }
   }

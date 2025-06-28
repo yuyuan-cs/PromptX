@@ -75,7 +75,7 @@
 **在`src/resource.registry.json`中的配置**：
 ```json
 "nuwa": {
-  "file": "@package://prompt/core/nuwa/nuwa.role.md",
+  "file": "@package://resource/core/nuwa/nuwa.role.md",
   "name": "🎨 女娲",
   "description": "专业角色创造顾问，通过对话收集需求，为用户量身定制AI助手角色"
 }
@@ -91,7 +91,7 @@
 
 **SimplifiedRoleDiscovery处理流程**：
 1. ✅ 从系统注册表正确加载nuwa角色配置
-2. ✅ 路径解析：`@package://prompt/core/nuwa/nuwa.role.md` → 实际文件路径
+2. ✅ 路径解析：`@package://resource/core/nuwa/nuwa.role.md` → 实际文件路径
 3. ✅ DPML格式验证：通过`<role>`标签检查
 4. ✅ 元数据提取：正确获取name和description
 
