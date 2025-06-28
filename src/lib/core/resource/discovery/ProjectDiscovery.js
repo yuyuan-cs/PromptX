@@ -160,7 +160,7 @@ class ProjectDiscovery extends BaseDiscovery {
       const resources = []
 
       // 定义要扫描的资源类型
-      const resourceTypes = ['role', 'execution', 'thought', 'knowledge']
+      const resourceTypes = ['role', 'execution', 'thought', 'knowledge', 'tool']
 
       // 并行扫描所有资源类型
       for (const resourceType of resourceTypes) {
@@ -254,12 +254,43 @@ class ProjectDiscovery extends BaseDiscovery {
           // knowledge类型比较灵活，只要文件有内容就认为是有效的
           // 可以是纯文本、链接、图片等任何形式的知识内容
           return true
+        case 'tool':
+          // tool类型必须是有效的JavaScript代码
+          return this._validateToolFile(content)
         default:
           return false
       }
     } catch (error) {
       logger.warn(`[ProjectDiscovery] Failed to validate ${filePath}: ${error.message}`)
       return false
+    }
+  }
+
+  /**
+   * 验证Tool文件是否为有效的JavaScript代码
+   * @param {string} content - 文件内容
+   * @returns {boolean} 是否为有效的Tool文件
+   */
+  _validateToolFile(content) {
+    try {
+      // 1. 基本的JavaScript语法检查
+      new Function(content);
+      
+      // 2. 检查是否包含module.exports（CommonJS格式）
+      if (!content.includes('module.exports')) {
+        return false;
+      }
+      
+      // 3. 检查是否包含工具必需的方法（getMetadata, execute等）
+      const requiredMethods = ['getMetadata', 'execute'];
+      const hasRequiredMethods = requiredMethods.some(method => 
+        content.includes(method)
+      );
+      
+      return hasRequiredMethods;
+    } catch (syntaxError) {
+      // JavaScript语法错误
+      return false;
     }
   }
 

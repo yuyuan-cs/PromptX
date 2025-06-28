@@ -96,6 +96,44 @@ program
     }
   })
 
+// Tool命令
+program
+  .command('tool <arguments>')
+  .description('🔧 tool锦囊 - 执行通过@tool协议声明的JavaScript工具')
+  .action(async (argumentsJson, options) => {
+    try {
+      let args = {};
+      
+      // 支持两种调用方式：
+      // 1. 从MCP传来的对象（通过cli.execute调用）
+      // 2. 从CLI传来的JSON字符串（直接命令行调用）
+      if (typeof argumentsJson === 'object') {
+        args = argumentsJson;
+      } else if (typeof argumentsJson === 'string') {
+        try {
+          args = JSON.parse(argumentsJson);
+        } catch (error) {
+          console.error('❌ 参数解析错误，请提供有效的JSON格式');
+          console.error('格式示例: \'{"tool_resource": "@tool://calculator", "parameters": {"operation": "add", "a": 25, "b": 37}}\'');
+          process.exit(1);
+        }
+      }
+      
+      // 验证必需参数
+      if (!args.tool_resource || !args.parameters) {
+        console.error('❌ 缺少必需参数');
+        console.error('必需参数: tool_resource (工具资源引用), parameters (工具参数)');
+        console.error('格式示例: \'{"tool_resource": "@tool://calculator", "parameters": {"operation": "add", "a": 25, "b": 37}}\'');
+        process.exit(1);
+      }
+      
+      await cli.execute('tool', args);
+    } catch (error) {
+      console.error(`❌ Tool命令执行失败: ${error.message}`);
+      process.exit(1);
+    }
+  })
+
 // MCP Server命令
 program
   .command('mcp-server')

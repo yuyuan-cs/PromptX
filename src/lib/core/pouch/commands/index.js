@@ -9,6 +9,7 @@ const LearnCommand = require('./LearnCommand')
 const RecallCommand = require('./RecallCommand')
 const RememberCommand = require('./RememberCommand')
 const DACPCommand = require('./DACPCommand')
+const PromptXToolCommand = require('../../../commands/PromptXToolCommand')
 
 module.exports = {
   InitCommand,
@@ -17,5 +18,6 @@ module.exports = {
   LearnCommand,
   RecallCommand,
   RememberCommand,
-  DACPCommand
+  DACPCommand,
+  PromptXToolCommand
 }

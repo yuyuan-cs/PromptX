@@ -193,20 +193,101 @@ class PackageDiscovery extends BaseDiscovery {
    */
   async _scanDirectory(promptDir, registryData) {
     try {
-      // 扫描domain目录下的角色
-      const domainDir = path.join(promptDir, 'domain')
-      if (await fs.pathExists(domainDir)) {
-        await this._scanDomainDirectory(domainDir, registryData)
-      }
+      // 统一扫描：扫描prompt下所有目录的所有资源类型文件
+      const resourceTypes = ['role', 'execution', 'thought', 'knowledge', 'tool']
       
-      // 扫描core目录下的资源
-      const coreDir = path.join(promptDir, 'core')
-      if (await fs.pathExists(coreDir)) {
-        await this._scanCoreDirectory(coreDir, registryData)
+      for (const resourceType of resourceTypes) {
+        const files = await this.fileScanner.scanResourceFiles(promptDir, resourceType)
+        
+        for (const filePath of files) {
+          await this._processResourceFile(filePath, resourceType, registryData, promptDir)
+        }
       }
       
     } catch (error) {
       logger.warn(`[PackageDiscovery] 扫描目录失败: ${error.message}`)
+    }
+  }
+
+  /**
+   * 处理单个资源文件
+   * @param {string} filePath - 文件路径
+   * @param {string} resourceType - 资源类型
+   * @param {RegistryData} registryData - 注册表数据
+   * @param {string} promptDir - prompt目录路径
+   * @private
+   */
+  async _processResourceFile(filePath, resourceType, registryData, promptDir) {
+    try {
+      // 提取资源ID
+      const fileName = path.basename(filePath)
+      let resourceId
+      
+      if (resourceType === 'tool') {
+        // tool文件：calculator.tool.js -> calculator
+        resourceId = fileName.replace('.tool.js', '')
+      } else {
+        // 其他文件：assistant.role.md -> assistant
+        resourceId = fileName.replace(`.${resourceType}.md`, '')
+      }
+      
+      // 生成引用路径
+      const relativePath = path.relative(path.dirname(promptDir), filePath)
+      const reference = `@package://${relativePath.replace(/\\/g, '/')}`
+      
+      // 创建资源数据
+      const resourceData = new ResourceData({
+        id: resourceId,
+        source: 'package',
+        protocol: resourceType,
+        name: ResourceData._generateDefaultName(resourceId, resourceType),
+        description: ResourceData._generateDefaultDescription(resourceId, resourceType),
+        reference: reference,
+        metadata: {
+          scannedAt: new Date().toISOString()
+        }
+      })
+      
+      // 对tool文件进行语法验证
+      if (resourceType === 'tool') {
+        if (await this._validateToolFile(filePath)) {
+          registryData.addResource(resourceData)
+        } else {
+          logger.warn(`[PackageDiscovery] Tool文件验证失败，跳过: ${filePath}`)
+        }
+      } else {
+        registryData.addResource(resourceData)
+      }
+      
+    } catch (error) {
+      logger.warn(`[PackageDiscovery] 处理资源文件失败: ${filePath} - ${error.message}`)
+    }
+  }
+
+  /**
+   * 验证Tool文件格式
+   * @param {string} filePath - Tool文件路径
+   * @returns {Promise<boolean>} 是否有效
+   * @private
+   */
+  async _validateToolFile(filePath) {
+    try {
+      const content = await fs.readFile(filePath, 'utf8')
+      
+      // 检查JavaScript语法
+      new Function(content)
+      
+      // 检查必需的exports
+      if (!content.includes('module.exports')) {
+        return false
+      }
+      
+      // 检查必需的方法
+      const requiredMethods = ['getMetadata', 'execute']
+      return requiredMethods.some(method => content.includes(method))
+      
+    } catch (error) {
+      return false
     }
   }
 
@@ -431,7 +512,7 @@ class PackageDiscovery extends BaseDiscovery {
       const resources = []
 
       // 定义要扫描的资源类型
-      const resourceTypes = ['role', 'execution', 'thought', 'knowledge']
+      const resourceTypes = ['role', 'execution', 'thought', 'knowledge', 'tool']
 
       // 并行扫描所有资源类型
       for (const resourceType of resourceTypes) {

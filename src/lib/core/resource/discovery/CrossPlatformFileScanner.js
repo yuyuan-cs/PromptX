@@ -57,6 +57,10 @@ class CrossPlatformFileScanner {
       knowledge: {
         extensions: ['.knowledge.md'],
         subdirs: null // 不限制子目录，在所有地方查找knowledge文件
+      },
+      tool: {
+        extensions: ['.tool.js'],
+        subdirs: null // 不限制子目录，在所有地方查找tool文件
       }
     }
 

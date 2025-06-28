@@ -150,6 +150,50 @@ const TOOL_DEFINITIONS = [
         context: z.object({}).optional().describe('上下文信息')
       })
     })
+  },
+  {
+    name: 'promptx_tool',
+    description: '🔧 [工具执行器] 执行通过@tool协议声明的JavaScript工具 - 支持角色配置中定义的专业工具能力，如@tool://calculator数学计算、@tool://send-email邮件发送等。提供安全沙箱执行、参数验证、错误处理和性能监控。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tool_resource: {
+          type: 'string',
+          description: '工具资源引用，格式：@tool://tool-name，如@tool://calculator',
+          pattern: '^@tool://.+'
+        },
+        parameters: {
+          type: 'object',
+          description: '传递给工具的参数对象'
+        },
+        context: {
+          type: 'object',
+          description: '执行上下文信息（可选）',
+          properties: {
+            role_id: {
+              type: 'string',
+              description: '当前激活的角色ID'
+            },
+            session_id: {
+              type: 'string',
+              description: '会话ID'
+            }
+          }
+        }
+      },
+      required: ['tool_resource', 'parameters']
+    },
+    zodSchema: z.object({
+      tool_resource: z.string()
+        .regex(/^@tool:\/\/.+/, '工具资源必须以@tool://开头')
+        .describe('工具资源引用，格式：@tool://tool-name'),
+      parameters: z.object({}).passthrough()
+        .describe('传递给工具的参数对象'),
+      context: z.object({
+        role_id: z.string().optional().describe('当前激活的角色ID'),
+        session_id: z.string().optional().describe('会话ID')
+      }).optional().describe('执行上下文信息')
+    })
   }
 ];
 

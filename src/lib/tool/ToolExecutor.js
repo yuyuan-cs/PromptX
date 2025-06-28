@@ -95,15 +95,29 @@ class ToolExecutor {
       
       script.runInContext(context);
       
-      // 获取导出的工具类
-      const ToolClass = context.module.exports;
+      // 获取导出的工具
+      const exported = context.module.exports;
       
-      if (!ToolClass || typeof ToolClass !== 'function') {
-        throw new Error(`工具未正确导出类: ${toolName}`);
+      if (!exported) {
+        throw new Error(`工具未正确导出: ${toolName}`);
       }
       
-      // 创建工具实例
-      return new ToolClass();
+      // 支持两种导出方式：
+      // 1. 导出类（构造函数）- 需要实例化
+      // 2. 导出对象 - 直接使用
+      let toolInstance;
+      
+      if (typeof exported === 'function') {
+        // 导出的是类，需要实例化
+        toolInstance = new exported();
+      } else if (typeof exported === 'object') {
+        // 导出的是对象，直接使用
+        toolInstance = exported;
+      } else {
+        throw new Error(`工具导出格式不正确，必须是类或对象: ${toolName}`);
+      }
+      
+      return toolInstance;
       
     } catch (error) {
       throw new Error(`工具代码执行失败 ${toolName}: ${error.message}`);
@@ -185,7 +199,18 @@ class ToolExecutor {
   validateParameters(tool, parameters) {
     // 如果工具有自定义validate方法，使用它
     if (typeof tool.validate === 'function') {
-      return tool.validate(parameters);
+      const result = tool.validate(parameters);
+      
+      // 支持两种返回格式：
+      // 1. boolean - 转换为标准格式
+      // 2. {valid: boolean, errors?: array} - 标准格式
+      if (typeof result === 'boolean') {
+        return { valid: result, errors: result ? [] : ['Validation failed'] };
+      } else if (result && typeof result === 'object') {
+        return result;
+      } else {
+        return { valid: false, errors: ['Invalid validation result'] };
+      }
     }
     
     // 否则使用默认验证

@@ -491,7 +491,9 @@ class MCPServerCommand {
         return result;
       },
       
-      'promptx_dacp': (args) => [args]
+      'promptx_dacp': (args) => [args],
+      
+      'promptx_tool': (args) => [args]
     };
     
     const mapper = paramMapping[toolName];
