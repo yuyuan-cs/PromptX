@@ -143,8 +143,8 @@ class PackageDiscovery extends BaseDiscovery {
       // 这里可以实现动态扫描逻辑，或者返回空Map
       // 为了简化，我们返回一个基础的assistant角色
       const fallbackRegistry = new Map()
-      fallbackRegistry.set('assistant', '@package://resource/domain/assistant/assistant.role.md')
-      fallbackRegistry.set('package:assistant', '@package://resource/domain/assistant/assistant.role.md')
+      fallbackRegistry.set('assistant', '@package://resource/role/assistant/assistant.role.md')
+      fallbackRegistry.set('package:assistant', '@package://resource/role/assistant/assistant.role.md')
       
       logger.warn(`[PackageDiscovery] 🆘 使用回退资源: assistant`)
       return fallbackRegistry
@@ -292,23 +292,23 @@ class PackageDiscovery extends BaseDiscovery {
   }
 
   /**
-   * 扫描domain目录（角色资源）
-   * @param {string} domainDir - domain目录路径
+   * 扫描role目录（角色资源）
+   * @param {string} roleDir - role目录路径
    * @param {RegistryData} registryData - 注册表数据
    * @private
    */
-  async _scanDomainDirectory(domainDir, registryData) {
-    const items = await fs.readdir(domainDir)
+  async _scanRoleDirectory(roleDir, registryData) {
+    const items = await fs.readdir(roleDir)
     
     for (const item of items) {
-      const itemPath = path.join(domainDir, item)
+      const itemPath = path.join(roleDir, item)
       const stat = await fs.stat(itemPath)
       
       if (stat.isDirectory()) {
         // 查找角色文件
         const roleFile = path.join(itemPath, `${item}.role.md`)
         if (await fs.pathExists(roleFile)) {
-          const reference = `@package://resource/domain/${item}/${item}.role.md`
+          const reference = `@package://resource/role/${item}/${item}.role.md`
           
                       const resourceData = new ResourceData({
               id: item,
@@ -334,7 +334,7 @@ class PackageDiscovery extends BaseDiscovery {
             const thoughtId = ResourceFileNaming.extractResourceId(thoughtFile, 'thought')
             if (thoughtId) {
               const fileName = path.basename(thoughtFile)
-              const reference = `@package://resource/domain/${item}/thought/${fileName}`
+              const reference = `@package://resource/role/${item}/thought/${fileName}`
               
               const resourceData = new ResourceData({
                 id: thoughtId,
@@ -360,7 +360,7 @@ class PackageDiscovery extends BaseDiscovery {
           for (const execFile of executionFiles) {
             if (execFile.endsWith('.execution.md')) {
               const execId = path.basename(execFile, '.execution.md')
-              const reference = `@package://resource/domain/${item}/execution/${execFile}`
+              const reference = `@package://resource/role/${item}/execution/${execFile}`
               
               const resourceData = new ResourceData({
                 id: execId,

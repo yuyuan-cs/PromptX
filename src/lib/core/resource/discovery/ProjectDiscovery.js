@@ -353,31 +353,31 @@ class ProjectDiscovery extends BaseDiscovery {
    * @private
    */
   async _scanDirectory(resourcesDir, registryData) {
-    // 扫描domain目录
-    const domainDir = path.join(resourcesDir, 'domain')
-    if (await this._fsExists(domainDir)) {
-      await this._scanDomainDirectory(domainDir, registryData)
+    // 扫描role目录
+    const roleDir = path.join(resourcesDir, 'role')
+    if (await this._fsExists(roleDir)) {
+      await this._scanRoleDirectory(roleDir, registryData)
     }
   }
 
   /**
-   * 扫描domain目录（项目角色资源）
-   * @param {string} domainDir - domain目录路径
+   * 扫描role目录（项目角色资源）
+   * @param {string} roleDir - role目录路径
    * @param {RegistryData} registryData - 注册表数据
    * @private
    */
-  async _scanDomainDirectory(domainDir, registryData) {
-    const items = await fs.readdir(domainDir)
+  async _scanRoleDirectory(roleDir, registryData) {
+    const items = await fs.readdir(roleDir)
     
     for (const item of items) {
-      const itemPath = path.join(domainDir, item)
+      const itemPath = path.join(roleDir, item)
       const stat = await fs.stat(itemPath)
       
       if (stat.isDirectory()) {
         // 查找role文件
         const roleFile = path.join(itemPath, `${item}.role.md`)
         if (await this._fsExists(roleFile)) {
-          const reference = `@project://.promptx/resource/domain/${item}/${item}.role.md`
+          const reference = `@project://.promptx/resource/role/${item}/${item}.role.md`
           
           const resourceData = new ResourceData({
             id: item,
@@ -401,7 +401,7 @@ class ProjectDiscovery extends BaseDiscovery {
           for (const thoughtFile of thoughtFiles) {
             if (thoughtFile.endsWith('.thought.md')) {
               const thoughtId = path.basename(thoughtFile, '.thought.md')
-              const reference = `@project://.promptx/resource/domain/${item}/thought/${thoughtFile}`
+              const reference = `@project://.promptx/resource/role/${item}/thought/${thoughtFile}`
               
               const resourceData = new ResourceData({
                 id: thoughtId,
@@ -427,7 +427,7 @@ class ProjectDiscovery extends BaseDiscovery {
           for (const execFile of executionFiles) {
             if (execFile.endsWith('.execution.md')) {
               const execId = path.basename(execFile, '.execution.md')
-              const reference = `@project://.promptx/resource/domain/${item}/execution/${execFile}`
+              const reference = `@project://.promptx/resource/role/${item}/execution/${execFile}`
               
               const resourceData = new ResourceData({
                 id: execId,
@@ -453,7 +453,7 @@ class ProjectDiscovery extends BaseDiscovery {
           for (const knowledgeFile of knowledgeFiles) {
             if (knowledgeFile.endsWith('.knowledge.md')) {
               const knowledgeId = path.basename(knowledgeFile, '.knowledge.md')
-              const reference = `@project://.promptx/resource/domain/${item}/knowledge/${knowledgeFile}`
+              const reference = `@project://.promptx/resource/role/${item}/knowledge/${knowledgeFile}`
               
               const resourceData = new ResourceData({
                 id: knowledgeId,

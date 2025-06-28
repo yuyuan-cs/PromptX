@@ -16,7 +16,7 @@ class PromptProtocol extends ResourceProtocol {
     this.registry = new Map([
       ['protocols', '@package://resource/protocol/**/*.md'],
       ['core', '@package://resource/core/**/*.md'],
-      ['domain', '@package://resource/domain/**/*.md'],
+      ['role', '@package://resource/role/**/*.md'],
       ['resource', '@package://resource/resource/**/*.md'],
       ['bootstrap', '@package://bootstrap.md']
     ])
@@ -62,7 +62,7 @@ class PromptProtocol extends ResourceProtocol {
       examples: [
         'prompt://protocols',
         'prompt://core',
-        'prompt://domain',
+        'prompt://role',
         'prompt://bootstrap'
       ],
       availableResources: Array.from(this.registry.keys()),
@@ -257,7 +257,7 @@ class PromptProtocol extends ResourceProtocol {
     const descriptions = {
       protocols: 'DPML协议规范文档',
       core: '核心思维和执行模式',
-      domain: '领域专家角色定义',
+      role: '角色定义和专家能力',
       resource: '资源管理和路径解析',
       bootstrap: 'PromptX启动引导文件'
     }
