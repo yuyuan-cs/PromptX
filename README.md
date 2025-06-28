@@ -1,9 +1,9 @@
 <div align="center">
   <img src="assets/logo/Creative PromptX Duck Logo 4.svg" alt="PromptX Logo" width="120" height="120"/>
   <h1>PromptX · 领先的AI上下文工程平台</h1>
-  <h2>让任何AI Agent秒变行业专家</h2>
-  <p><strong>✨ Chat is all you need</strong> - 革命性交互设计，用对话创造专属AI团队</p>
-  <p>通过MCP协议为AI应用提供专业角色、记忆管理和知识体系，一行命令完成部署。</p></div>
+  <h2>✨ Chat is all you need - 革命性交互设计，让AI Agent秒变行业专家</h2>
+  <p><strong>核心功能模块：</strong><a href="https://github.com/Deepractice/dpml">提示词结构化协议</a> | <a href="https://github.com/Deepractice/PATEOAS">AI状态化协议</a> | 记忆系统 | 女娲角色工坊 | 鲁班工具工坊</p>
+  <p>基于MCP协议，一行命令为Claude、Cursor等AI应用注入专业能力</p>
 
   <!-- Badges -->
   <p>
@@ -30,51 +30,57 @@
 > **"MCP开发时间从40小时缩短到30分钟"**  
 > —— 社区开发者 coso
 
-### ✨ **PromptX 核心能力**
 
-**🎯 AI上下文工程新标杆** - 让你的 AI 助手拥有"大脑"和"记忆"，更让你成为AI能力的创造者。
+### 💬 **Chat is All you Need - 看看对话如何改变一切**
 
-- **🎭 专业角色注入**: 覆盖各行业专家角色，让 AI 瞬间获得专业领域深度
-- **🧠 长期记忆与知识库**: 持续学习用户偏好，提供个性化专业支持  
-- **✨ Chat is all you need**: **2分钟对话**创造专属AI助手，零技术门槛
-- **🔌 一键部署**: 支持Claude、Cursor等数十种主流AI应用，一行命令完成集成
+#### **1. 对话发现专业角色**
+*只需一句话"我要发现可用的角色"，AI就会展示所有可用的专业领域*
+<img src="assets/role-discovery.png" alt="Chat方式发现角色" width="80%">
 
-<br/>
+#### **2. 对话选择专业角色**
+*看到感兴趣的专家后，直接说"激活XX专家"即可瞬间转换AI身份*
+<img src="assets/role-select.png" alt="Chat方式选择激活角色" width="80%">
 
-### 📸 **配置成功后的使用效果**
+#### **3. 对话管理智能记忆** 
+*说一句"记住这个重要信息"，AI就会自动保存，下次对话时主动运用这些知识*
+<img src="assets/remember.png" alt="Chat方式管理记忆" width="80%">
 
-#### **1. 发现并激活专业角色**
-*使用 `promptx_welcome` 发现可用角色，再用 `promptx_action` 激活，AI即刻变身领域专家。*
-<img src="assets/role-discovery.png" alt="角色发现与激活" width="80%">
+#### **💡 重要：把AI当人，不是软件**
 
-#### **2. 拥有智能记忆**
-*使用 `promptx_remember` 保存关键信息，AI将在后续的交流中主动运用这些知识。*
-<img src="assets/remember.png" alt="记忆功能" width="80%">
+看完上面的演示，你可能还在想："具体应该说什么指令？"
 
----
+**❌ 请停止这样想：**
+> "什么指令能激活角色？" | "正确的命令是什么？" | "我说错了会不会失效？"
 
-## ⚠️ **项目状态说明**
+**✅ 正确的使用心态：**
+> "就像和真人专家聊天一样自然" | "想到什么就说什么，AI会理解你的意图" | "听不懂？换个说法再说一遍就行"
 
-PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和修复问题。在达到正式稳定版本之前，您可能会遇到一些使用上的问题或不稳定情况。
+**🎯 实际例子对比：**
+```
+❌ 软件思维：请执行 promptx_action java-developer
+✅ 人际思维：我需要一个Java开发专家
+✅ 人际思维：帮我找个懂Java的专家  
+✅ 人际思维：我要和Java大牛聊聊
+✅ 人际思维：切换到Java开发模式
+```
 
-**我们诚恳地请求您的理解和支持！** 🙏
-
-### 📞 **遇到问题？获取帮助！**
-
-如果您在使用过程中遇到任何问题，请通过以下方式联系我们：
-
-- 🐛 **提交 Issue**: [GitHub Issues](https://github.com/Deepractice/PromptX/issues) - 详细描述问题，我们会尽快回复
-- 💬 **直接联系**: 添加开发者微信 `deepracticex` 获取即时帮助
-- 📧 **邮件联系**: 发送邮件至 `sean@deepracticex.com` 获取技术支持
-- 📱 **技术交流群**: 扫描下方二维码加入我们的技术交流群
-
-您的反馈对我们非常宝贵，帮助我们快速改进产品质量！ ✨
+**💬 Chat is All you Need 的真正含义：**
+- 🗣️ **自然表达** - 想怎么说就怎么说，就像和朋友聊天
+- 🔄 **灵活调整** - AI没听懂？换个说法继续说  
+- 🤖 **信任AI** - 相信AI能理解你的真实意图，不必拘泥于"标准用法"
+- 💬 **持续对话** - 把每次交互当成和专家的连续对话，而不是一次性命令
 
 ---
 
 ## 🚀 **一键启动，30秒完成配置**
 
+### ⚙️ **快速配置**
+
+**📋 前置要求：** 确保已安装 [Node.js](https://nodejs.org/zh-cn)（建议 v18 及以上版本）
+
 打开配置文件，将下面的 `promptx` 配置代码复制进去。这是最简单的 **零配置模式**，PromptX 会自动为您处理一切。
+
+**推荐配置（beta公测版）：**
 
 ```json
 {
@@ -94,8 +100,47 @@ PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和�
 }
 ```
 
+<details>
+<summary>📦 <strong>其他版本配置</strong></summary>
+
+**Alpha内测版（最新功能）：**
+```json
+{
+  "mcpServers": {
+    "promptx": {
+      "command": "npx",
+      "args": ["-y", "-f", "--registry", "https://registry.npmjs.org", "dpml-prompt@alpha", "mcp-server"]
+    }
+  }
+}
+```
+
+**Latest正式版（最高稳定性）：**
+```json
+{
+  "mcpServers": {
+    "promptx": {
+      "command": "npx",
+      "args": ["-y", "-f", "--registry", "https://registry.npmjs.org", "dpml-prompt@latest", "mcp-server"]
+    }
+  }
+}
+```
+
+</details>
+
+### 📋 **发布渠道说明**
+
+根据你的使用需求选择合适的版本：
+
+| 🏷️ **渠道** | 📊 **稳定性** | 🎯 **适用场景** | 📦 **配置** |
+|---------|---------|------------|---------|
+| **alpha** | 内测版 ⚡ | 尝鲜最新功能，参与测试反馈 | `dpml-prompt@alpha` |
+| **beta** | 公测版 🧪 | 功能相对稳定，适合日常使用 | `dpml-prompt@beta` |
+| **latest** | 正式版 ✅ | 生产环境，追求最高稳定性 | `dpml-prompt@latest` |
+
 **配置参数说明：**
-- `command`: 指定使用 npx 运行 promptx 服务
+- `command`: 指定使用 npx 运行 promptx 服务（npx 随 Node.js 自动安装）
 - `args`: 启动参数配置列表
   - `-y`: 自动确认
   - `-f`: 强制刷新缓存
@@ -108,55 +153,38 @@ PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和�
 
 > **💡 提示：** 配置中特意指定了官方镜像源 `registry.npmjs.org`，这可以避免因使用非官方镜像导致的安装问题。如果您发现安装很慢，建议使用代理工具加速，而不是切换到其他镜像源。
 
+### ✅ **安装成功确认**
+
+配置完成并重启AI应用后，当你看到以下MCP工具出现时，即代表PromptX安装成功：
+
+<img src="assets/install-success.jpg" alt="PromptX MCP工具安装成功示意图" width="80%">
+
+看到这些工具说明PromptX已成功连接！现在就可以开始使用"Chat is All you Need"的体验了。
+
 📖 **[完整安装配置指南](https://github.com/Deepractice/PromptX/wiki/PromptX-MCP-Install)** - 包含各种客户端的详细配置方法和故障排除
 
-
-### 不知道MCP是怎么？  [点击查看 MCP幼儿园教程 BiliBili](https://www.bilibili.com/video/BV1HFd6YhErb)
+### 不知道MCP是什么？ [点击查看 MCP幼儿园教程 BiliBili](https://www.bilibili.com/video/BV1HFd6YhErb)
 
 目前所有支持 MCP 协议的 AI 客户端都可以使用 PromptX。主要包括：**Claude Desktop**、**Cursor**、**Windsurf**、**Cline**、**Zed**、**Continue** 等主流 AI 编程工具，以及更多正在接入中的应用。
 
 ---
 
-### ⚙️ **工作原理**
+## ⚠️ **项目状态说明**
 
-PromptX 作为您和AI应用之间的"专业能力中间件"，通过标准的 [MCP协议](https://github.com/metacontroller/mcp) 进行通信。
+PromptX 目前处于 **初始开发阶段**，我们正在积极完善功能和修复问题。在达到正式稳定版本之前，您可能会遇到一些使用上的问题或不稳定情况。
 
-```mermaid
-graph TD
-    subgraph "Your AI App (Claude,Cursor,etc.)"
-        A[👨‍💻 User Interaction]
-    end
+**我们诚恳地请求您的理解和支持！** 🙏
 
-    subgraph "PromptX MCP Server"
-        C{PromptX Engine}
-        D[🎭 Role Library]
-        E[🧠 Memory & Knowledge]
-    end
+### 📞 **遇到问题？获取帮助！**
 
-    A -- "Calls 'promptx_...' tools" --> B(MCP Protocol)
-    B --> C
-    C -- "Accesses" --> D
-    C -- "Accesses" --> E
+如果您在使用过程中遇到任何问题，请通过以下方式联系我们：
 
-    subgraph "Enhanced Response"
-        F[✨ Professional Output]
-    end
-    C --> F
-```
+- 🐛 **提交 Issue**: [GitHub Issues](https://github.com/Deepractice/PromptX/issues) - 详细描述问题，我们会尽快回复
+- 💬 **直接联系**: 添加开发者微信 `deepracticex` 获取即时帮助
+- 📧 **邮件联系**: 发送邮件至 `sean@deepracticex.com` 获取技术支持
+- 📱 **技术交流群**: 扫描下方二维码加入我们的技术交流群
 
-当您调用 `promptx_...` 系列工具时，AI应用会将请求通过MCP协议发送给 PromptX。PromptX 引擎会加载相应的专业角色、检索相关记忆，然后返回一个经过专业能力增强的结果给AI应用，最终呈现给您。
-
----
-
-**🎯 配置完成后，您的AI应用将自动获得6个专业工具：**
-- `promptx_init`: 🏗️ **系统初始化** - 自动准备工作环境。
-- `promptx_hello`: 👋 **角色发现** - 浏览所有可用的专家角色。
-- `promptx_action`: ⚡ **角色激活** - 一键变身指定领域的专家。**（含女娲🎨角色创造顾问）**
-- `promptx_learn`: 📚 **知识学习** - 让AI学习特定的知识或技能。
-- `promptx_recall`: 🔍 **记忆检索** - 从记忆库中查找历史信息。
-- `promptx_remember`: 💾 **经验保存** - 将重要信息存入长期记忆。
-
-📖 **[查看完整MCP集成指南](docs/mcp-integration-guide.md)**
+您的反馈对我们非常宝贵，帮助我们快速改进产品质量！ ✨
 
 ---
 
@@ -227,7 +255,13 @@ graph TD
 
 ---
 
-## 📋 **实践案例: Legacy Lands Library**
+## ⭐ **Star增长趋势**
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
+
+---
+
+## 🌟 **Deepractice 深度实践社区**
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
@@ -278,25 +312,132 @@ graph TD
 
 ---
 
-## ⭐ **Star增长趋势**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
+## 🌟 **Deepractice 深度实践社区**
+
+<div align="center">
+  <h3>🎯 打造AI时代的Life Style</h3>
+  <p><em>"开源 · 开放 · 包容 · 君子和而不同"</em></p>
+</div>
+
+### 💫 **社区愿景**
+
+我们相信，AI不仅仅是技术工具，更是重新定义生活方式的革命力量。Deepractice深度实践社区致力于：
+
+- **🌐 构建AI原生的生活方式** - 让AI自然融入工作、学习、创作、生活的每个环节
+- **🎓 传播AI时代的实践智慧** - 分享从技术到商业、从工具到哲学的深度思考
+- **🤝 建设包容开放的创新生态** - 汇聚不同背景的实践者，碰撞出AI时代的新可能
+
+### 🎯 **社区价值观**
+
+> **"君子和而不同"** - 我们欢迎不同观点的交流与碰撞，在多元中寻求智慧
+
+- **🔓 开源精神** - 技术开放，知识共享，让AI能力触手可及
+- **🌈 开放包容** - 无论你是技术专家还是AI新手，都能在这里找到价值
+- **💎 深度实践** - 不止于理论探讨，更重视真实场景的落地实践
+- **🚀 持续进化** - 与AI时代同步成长，永远保持学习和创新的热情
+
+### 🎁 **社区资源**
+
+#### 🆓 **开源AI产品**
+
+我们提供**完全免费**的开源产品，覆盖AI时代的核心需求：
+
+<div align="center">
+
+| 🛠️ **AI产品** | 💻 **AI编程** | 💼 **AI商业** | 🌱 **AI生活** |
+|-------------|-------------|-------------|-------------|
+| PromptX角色工坊 | 代码生成最佳实践 | AI创业案例分析 | AI效率生活指南 |
+| MCP工具生态 | AI编程架构模式 | 商业模式创新 | AI创作工作流 |
+| DPML提示词标准 | 团队协作框架 | 产品战略规划 | AI学习方法论 |
+| PATEOAS状态管理 | 开源项目实践 | 技术商业化路径 | AI时代生活哲学 |
+
+</div>
+
+#### 🚀 **开发者创业舞台**
+
+**欢迎开发者和创业者加入社区展示项目！**
+
+- 🌟 **项目孵化** - 利用Deepractice社区影响力，为你的Idea打下第一步基础
+- 💡 **技术交流** - 与社区专家深度讨论技术方案和产品方向
+- 🎯 **用户反馈** - 获得真实用户的使用反馈和改进建议
+- 🤝 **合作机会** - 寻找志同道合的合作伙伴
+
+#### 💼 **商业伙伴共建**
+
+**欢迎商业组织以内容换价值的方式参与社区：**
+
+- ✅ **产品展示** - 可以展示和推广AI相关产品服务
+- 📝 **内容贡献** - 必须为社区提供优质技术内容或实践案例
+- 🚫 **拒绝硬广** - 严格禁止无价值的强推广告
+- 🤝 **共赢理念** - 通过真正的价值创造实现商业成功
+
+> **社区准则：价值优先，内容为王，拒绝割韭菜**
+
+### 🤝 **加入我们**
+
+<div align="center">
+  <img src="assets/qrcode.jpg" alt="Deepractice深度实践社区" width="200">
+</div>
 
 ---
 
-### **🤝 贡献与交流**
+## 🏆 **社区优质案例分享**
 
-我们欢迎任何形式的贡献和反馈！
+### 📋 **企业级应用案例**
 
-- 🌿 **[分支策略](docs/BRANCHING.md)** - 分支管理和发布流程  
-- 🚀 **[发布流程](docs/RELEASE.md)** - 版本管理和发布文档
+#### **🎮 Legacy Lands Library - Minecraft开发工具库**
 
-扫码加入技术交流群：
+<div align="center">
+  <img src="https://raw.githubusercontent.com/LegacyLands/legacy-lands-library/main/logo.png" alt="Legacy Lands Library Logo" width="120" style="border-radius: 10px; margin: 15px 0 25px 0;">
+</div>
 
-<img src="assets/qrcode.jpg" alt="技术交流群" width="200">
+**项目简介：** 面向现代 Minecraft 服务端插件开发的生产级工具库  
+**项目地址：** https://github.com/LegacyLands/legacy-lands-library  
+**组织官网：** https://www.legacylands.cn/
+
+> **💡 核心开发者使用心得**
+> 
+> "使用 PromptX 的开发体验真的非常不一样。我们团队基于 Claude Code 并结合 PromptX，**一位开发者仅三天内就完成了超过一万一千行的高质量 Java 代码。**
+>
+> 这套工作流的价值在实际开发中体现得淋漓尽致。PromptX 解决了 AI 使用时的许多痛点，时刻确保代码风格的统一和质量的达标，大大降低了新成员的学习成本。"
+> 
+> "女娲让我使用 AI 角色更加方便、快捷，我只需要用大白话告诉女娲我想要什么，它就能帮我创造出专业的AI助手，效率和专业度都大大提升。"
+
+**相关资源：** [AI集成标准与实践指南](https://github.com/LegacyLands/legacy-lands-library/blob/main/AI_CODE_STANDARDS_ZHCN.md)
 
 ---
 
-## 📄 **许可证**
+### 🛠️ **社区开发者案例**
 
-[MIT License](LICENSE) - 让AI专业能力触手可及
+#### **🔧 crawl-mcp-server - 智能内容处理工具**
+
+**开发者：** 社区成员 coso  
+**项目地址：** [NPM](https://www.npmjs.com/package/crawl-mcp-server) | [GitHub](https://github.com/wutongci/crawl-mcp)
+
+**开发经验分享：** [从想法到产品：我如何用Cursor Agent开发出智能内容处理MCP工具](https://mp.weixin.qq.com/s/x23Ap3t9LBDVNcr_7dcMHQ)
+
+**项目亮点：** 以 PromptX 为架构参考，实现零代码开发，几小时完成从想法到发布
+
+#### **🎯 mcp-template - MCP开发模板**
+
+**开发者：** 社区成员 coso  
+**项目地址：** [GitHub](https://github.com/wutongci/mcp-template)
+
+**开发经验分享：** [从零代码到开源：我如何用模板革命MCP开发](https://mp.weixin.qq.com/s/aQ9Io2KFoQt8k779L5kuuA)
+
+**项目价值：** 将 MCP 开发时间从 40 小时缩短到 30 分钟
+
+---
+
+### 🌟 **分享你的案例**
+
+我们诚挚邀请社区成员分享基于 PromptX 的实践经验：
+
+- 📝 **提交方式** - 通过 PR 添加你的案例到此处
+- 🎯 **分享内容** - 项目介绍、使用心得、效果数据、经验总结
+- 🏆 **展示平台** - 在这里展示你的创新成果，获得社区认可
+- 🤝 **互相学习** - 与其他实践者交流经验，共同成长
+
+> **让每个优质案例都成为社区的财富！**
+
