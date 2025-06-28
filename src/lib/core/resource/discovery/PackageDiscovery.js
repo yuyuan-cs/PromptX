@@ -100,10 +100,10 @@ class PackageDiscovery extends FilePatternDiscovery {
           avoidUserHome: true
         }
         const projectRoot = await this.directoryService.getProjectRoot(context)
-        this.registryPath = path.join(projectRoot, 'src/package.registry.json')
+        this.registryPath = path.join(projectRoot, 'resource/package.registry.json')
       } catch (error) {
         // 回退到默认路径
-        this.registryPath = path.join(process.cwd(), 'src/package.registry.json')
+        this.registryPath = path.join(process.cwd(), 'resource/package.registry.json')
       }
     }
     return this.registryPath
@@ -208,7 +208,7 @@ class PackageDiscovery extends FilePatternDiscovery {
     try {
       // 查找package.registry.json文件位置
       const packageRoot = await this._findPackageRoot()
-      const registryPath = path.join(packageRoot, 'src', 'package.registry.json')
+      const registryPath = path.join(packageRoot, 'resource', 'package.registry.json')
       
       // 使用RegistryData统一管理
       const registryData = await RegistryData.fromFile('package', registryPath)
@@ -509,7 +509,7 @@ class PackageDiscovery extends FilePatternDiscovery {
     try {
       // 查找package.registry.json文件位置
       const packageRoot = await this._findPackageRoot()
-      const registryPath = path.join(packageRoot, 'src', 'package.registry.json')
+      const registryPath = path.join(packageRoot, 'resource', 'package.registry.json')
       
       // 直接加载RegistryData
       const registryData = await RegistryData.fromFile('package', registryPath)

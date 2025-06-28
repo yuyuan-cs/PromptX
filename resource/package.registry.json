@@ -1,0 +1,371 @@
+{
+  "version": "2.0.0",
+  "source": "package",
+  "metadata": {
+    "version": "2.0.0",
+    "description": "package 级资源注册表",
+    "createdAt": "2025-06-28T08:03:43.222Z",
+    "updatedAt": "2025-06-28T08:03:43.234Z",
+    "resourceCount": 23
+  },
+  "resources": [
+    {
+      "id": "assistant",
+      "source": "package",
+      "protocol": "role",
+      "name": "Assistant 角色",
+      "description": "专业角色，提供特定领域的专业能力",
+      "reference": "@package://resource/role/assistant/assistant.role.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.226Z",
+        "updatedAt": "2025-06-28T08:03:43.226Z",
+        "scannedAt": "2025-06-28T08:03:43.226Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/assistant/assistant.role.md",
+        "fileType": "role"
+      }
+    },
+    {
+      "id": "noface",
+      "source": "package",
+      "protocol": "role",
+      "name": "Noface 角色",
+      "description": "专业角色，提供特定领域的专业能力",
+      "reference": "@package://resource/role/noface/noface.role.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.226Z",
+        "updatedAt": "2025-06-28T08:03:43.226Z",
+        "scannedAt": "2025-06-28T08:03:43.226Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/noface/noface.role.md",
+        "fileType": "role"
+      }
+    },
+    {
+      "id": "nuwa",
+      "source": "package",
+      "protocol": "role",
+      "name": "Nuwa 角色",
+      "description": "专业角色，提供特定领域的专业能力",
+      "reference": "@package://resource/role/nuwa/nuwa.role.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.226Z",
+        "updatedAt": "2025-06-28T08:03:43.226Z",
+        "scannedAt": "2025-06-28T08:03:43.226Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/nuwa/nuwa.role.md",
+        "fileType": "role"
+      }
+    },
+    {
+      "id": "sean",
+      "source": "package",
+      "protocol": "role",
+      "name": "Sean 角色",
+      "description": "专业角色，提供特定领域的专业能力",
+      "reference": "@package://resource/role/sean/sean.role.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.227Z",
+        "updatedAt": "2025-06-28T08:03:43.227Z",
+        "scannedAt": "2025-06-28T08:03:43.227Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/sean/sean.role.md",
+        "fileType": "role"
+      }
+    },
+    {
+      "id": "thought:recall_v1",
+      "source": "package",
+      "protocol": "thought",
+      "name": "Thought:recall_v1 思维模式",
+      "description": "思维模式，指导AI的思考方式",
+      "reference": "@package://resource/core/_deprecated/recall_v1.thought.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.227Z",
+        "updatedAt": "2025-06-28T08:03:43.227Z",
+        "scannedAt": "2025-06-28T08:03:43.227Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/core/_deprecated/recall_v1.thought.md",
+        "fileType": "thought"
+      }
+    },
+    {
+      "id": "thought:remember_v1",
+      "source": "package",
+      "protocol": "thought",
+      "name": "Thought:remember_v1 思维模式",
+      "description": "思维模式，指导AI的思考方式",
+      "reference": "@package://resource/core/_deprecated/remember_v1.thought.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.228Z",
+        "updatedAt": "2025-06-28T08:03:43.228Z",
+        "scannedAt": "2025-06-28T08:03:43.228Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/core/_deprecated/remember_v1.thought.md",
+        "fileType": "thought"
+      }
+    },
+    {
+      "id": "thought:remember-xml",
+      "source": "package",
+      "protocol": "thought",
+      "name": "Thought:remember Xml 思维模式",
+      "description": "思维模式，指导AI的思考方式",
+      "reference": "@package://resource/core/remember-xml.thought.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.228Z",
+        "updatedAt": "2025-06-28T08:03:43.228Z",
+        "scannedAt": "2025-06-28T08:03:43.228Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/core/remember-xml.thought.md",
+        "fileType": "thought"
+      }
+    },
+    {
+      "id": "thought:remember",
+      "source": "package",
+      "protocol": "thought",
+      "name": "Thought:remember 思维模式",
+      "description": "思维模式，指导AI的思考方式",
+      "reference": "@package://resource/core/remember.thought.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.229Z",
+        "updatedAt": "2025-06-28T08:03:43.229Z",
+        "scannedAt": "2025-06-28T08:03:43.229Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/core/remember.thought.md",
+        "fileType": "thought"
+      }
+    },
+    {
+      "id": "thought:assistant",
+      "source": "package",
+      "protocol": "thought",
+      "name": "Thought:assistant 思维模式",
+      "description": "思维模式，指导AI的思考方式",
+      "reference": "@package://resource/role/assistant/thought/assistant.thought.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.229Z",
+        "updatedAt": "2025-06-28T08:03:43.229Z",
+        "scannedAt": "2025-06-28T08:03:43.229Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/assistant/thought/assistant.thought.md",
+        "fileType": "thought"
+      }
+    },
+    {
+      "id": "thought:role-creation",
+      "source": "package",
+      "protocol": "thought",
+      "name": "Thought:role Creation 思维模式",
+      "description": "思维模式，指导AI的思考方式",
+      "reference": "@package://resource/role/nuwa/thought/role-creation.thought.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.229Z",
+        "updatedAt": "2025-06-28T08:03:43.229Z",
+        "scannedAt": "2025-06-28T08:03:43.229Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/nuwa/thought/role-creation.thought.md",
+        "fileType": "thought"
+      }
+    },
+    {
+      "id": "execution:assistant",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:assistant 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/assistant/execution/assistant.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.230Z",
+        "updatedAt": "2025-06-28T08:03:43.230Z",
+        "scannedAt": "2025-06-28T08:03:43.230Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/assistant/execution/assistant.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "execution:adaptive-learning",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:adaptive Learning 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/noface/execution/adaptive-learning.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.230Z",
+        "updatedAt": "2025-06-28T08:03:43.230Z",
+        "scannedAt": "2025-06-28T08:03:43.230Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/noface/execution/adaptive-learning.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "execution:content-preservation",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:content Preservation 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/noface/execution/content-preservation.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.230Z",
+        "updatedAt": "2025-06-28T08:03:43.230Z",
+        "scannedAt": "2025-06-28T08:03:43.230Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/noface/execution/content-preservation.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "execution:dpml-authoring",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:dpml Authoring 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/nuwa/execution/dpml-authoring.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.230Z",
+        "updatedAt": "2025-06-28T08:03:43.230Z",
+        "scannedAt": "2025-06-28T08:03:43.230Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/nuwa/execution/dpml-authoring.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "execution:role-design-patterns",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:role Design Patterns 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/nuwa/execution/role-design-patterns.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.231Z",
+        "updatedAt": "2025-06-28T08:03:43.231Z",
+        "scannedAt": "2025-06-28T08:03:43.231Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/nuwa/execution/role-design-patterns.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "execution:role-generation",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:role Generation 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/nuwa/execution/role-generation.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.231Z",
+        "updatedAt": "2025-06-28T08:03:43.231Z",
+        "scannedAt": "2025-06-28T08:03:43.231Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/nuwa/execution/role-generation.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "execution:visualization-enhancement",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:visualization Enhancement 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/nuwa/execution/visualization-enhancement.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.231Z",
+        "updatedAt": "2025-06-28T08:03:43.231Z",
+        "scannedAt": "2025-06-28T08:03:43.231Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/nuwa/execution/visualization-enhancement.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "execution:template-adherence",
+      "source": "package",
+      "protocol": "execution",
+      "name": "Execution:template Adherence 执行模式",
+      "description": "执行模式，定义具体的行为模式",
+      "reference": "@package://resource/role/sean/execution/template-adherence.execution.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.231Z",
+        "updatedAt": "2025-06-28T08:03:43.231Z",
+        "scannedAt": "2025-06-28T08:03:43.231Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/sean/execution/template-adherence.execution.md",
+        "fileType": "execution"
+      }
+    },
+    {
+      "id": "knowledge:contradiction-methodology",
+      "source": "package",
+      "protocol": "knowledge",
+      "name": "Knowledge:contradiction Methodology 知识库",
+      "description": "知识库，提供专业知识和信息",
+      "reference": "@package://resource/role/sean/knowledge/contradiction-methodology.knowledge.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.232Z",
+        "updatedAt": "2025-06-28T08:03:43.232Z",
+        "scannedAt": "2025-06-28T08:03:43.232Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/sean/knowledge/contradiction-methodology.knowledge.md",
+        "fileType": "knowledge"
+      }
+    },
+    {
+      "id": "knowledge:product-philosophy",
+      "source": "package",
+      "protocol": "knowledge",
+      "name": "Knowledge:product Philosophy 知识库",
+      "description": "知识库，提供专业知识和信息",
+      "reference": "@package://resource/role/sean/knowledge/product-philosophy.knowledge.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.232Z",
+        "updatedAt": "2025-06-28T08:03:43.232Z",
+        "scannedAt": "2025-06-28T08:03:43.232Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/sean/knowledge/product-philosophy.knowledge.md",
+        "fileType": "knowledge"
+      }
+    },
+    {
+      "id": "knowledge:promptx-evolution",
+      "source": "package",
+      "protocol": "knowledge",
+      "name": "Knowledge:promptx Evolution 知识库",
+      "description": "知识库，提供专业知识和信息",
+      "reference": "@package://resource/role/sean/knowledge/promptx-evolution.knowledge.md",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.232Z",
+        "updatedAt": "2025-06-28T08:03:43.232Z",
+        "scannedAt": "2025-06-28T08:03:43.232Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/role/sean/knowledge/promptx-evolution.knowledge.md",
+        "fileType": "knowledge"
+      }
+    },
+    {
+      "id": "tool:calculator",
+      "source": "package",
+      "protocol": "tool",
+      "name": "Tool:calculator tool",
+      "description": "tool类型的资源",
+      "reference": "@package://resource/tool/calculator.tool.js",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.233Z",
+        "updatedAt": "2025-06-28T08:03:43.233Z",
+        "scannedAt": "2025-06-28T08:03:43.233Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/tool/calculator.tool.js",
+        "fileType": "tool"
+      }
+    },
+    {
+      "id": "tool:send-email",
+      "source": "package",
+      "protocol": "tool",
+      "name": "Tool:send Email tool",
+      "description": "tool类型的资源",
+      "reference": "@package://resource/tool/send-email.tool.js",
+      "metadata": {
+        "createdAt": "2025-06-28T08:03:43.233Z",
+        "updatedAt": "2025-06-28T08:03:43.233Z",
+        "scannedAt": "2025-06-28T08:03:43.233Z",
+        "filePath": "/Users/sean/Management/ContradictionManagement/projects/PromptX/resource/tool/send-email.tool.js",
+        "fileType": "tool"
+      }
+    }
+  ],
+  "stats": {
+    "totalResources": 23,
+    "byProtocol": {
+      "role": 4,
+      "thought": 6,
+      "execution": 8,
+      "knowledge": 3,
+      "tool": 2
+    },
+    "bySource": {
+      "package": 23
+    }
+  }
+}

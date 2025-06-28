@@ -13,7 +13,7 @@ async function generatePackageRegistry() {
     
     // 创建PackageDiscovery实例并设置注册表路径
     const discovery = new PackageDiscovery();
-    discovery.registryPath = path.join(projectRoot, 'src', 'package.registry.json');
+    discovery.registryPath = path.join(projectRoot, 'resource', 'package.registry.json');
     
     console.log(`📋 注册表路径: ${discovery.registryPath}`);
     
