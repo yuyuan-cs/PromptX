@@ -46,6 +46,16 @@ const TOOL_INTERFACE = {
   // 可选实现的方法
   optional: [
     {
+      name: 'getPackage',
+      signature: '() => Object',
+      description: '获取工具包信息（可选，用于依赖管理）',
+      returns: {
+        directory: 'string - 工具目录路径',
+        dependencies: 'Array<string> - 依赖列表',
+        packageJson: 'Object - package.json内容（可选）'
+      }
+    },
+    {
       name: 'validate',
       signature: '(parameters: Object) => Object',
       description: '验证参数（可选，有默认实现）',

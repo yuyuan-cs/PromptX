@@ -32,7 +32,7 @@ const getUserDirectories = () => {
 
 /**
  * 用户目录协议实现
- * 实现@user://协议，用于访问用户的标准目录（Documents、Desktop、Downloads等）
+ * 实现@user://协议，直接映射到用户主目录，提供简洁的用户文件访问
  */
 class UserProtocol extends ResourceProtocol {
   constructor (options = {}) {
@@ -74,18 +74,17 @@ class UserProtocol extends ResourceProtocol {
   getProtocolInfo () {
     return {
       name: 'user',
-      description: '用户目录协议，提供跨平台的用户标准目录访问',
-      location: 'user://{directory}/{path}',
+      description: '用户目录协议，直接映射到用户主目录',
+      location: 'user://{path}',
       examples: [
-        'user://documents/notes.txt',
-        'user://desktop/readme.md',
-        'user://downloads/',
-        'user://home/.bashrc',
-        'user://config/promptx.json',
-        'user://data/memories.json',
-        'user://cache/temp-data.json'
+        'user://.promptx/toolbox/text-analyzer',
+        'user://.bashrc',
+        'user://Documents/notes.txt',
+        'user://Desktop/readme.md',
+        'user://Downloads/file.zip',
+        'user://.promptx/config.json'
       ],
-      supportedDirectories: Object.keys(this.userDirs),
+      basePath: '用户主目录 (~)',
       params: this.getSupportedParams()
     }
   }
@@ -121,34 +120,25 @@ class UserProtocol extends ResourceProtocol {
 
   /**
    * 解析用户目录路径
-   * @param {string} resourcePath - 原始资源路径，如 "documents/notes.txt"
+   * @param {string} resourcePath - 原始资源路径，如 ".promptx/toolbox/test-tool"
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 解析后的绝对路径
    */
   async resolvePath (resourcePath, queryParams) {
-    const parts = resourcePath.split('/')
-    const dirType = parts[0]
-    const relativePath = parts.slice(1).join('/')
-
-    // 验证目录类型
-    if (!this.userDirs[dirType]) {
-      throw new Error(`不支持的用户目录类型: ${dirType}。支持的类型: ${Object.keys(this.userDirs).join(', ')}`)
-    }
-
-    // 获取用户目录路径
-    const userDirPath = await this.getUserDirectory(dirType)
-
-    // 如果没有相对路径，返回目录本身
-    if (!relativePath) {
-      return userDirPath
+    // 直接使用用户主目录作为基础路径
+    const userHomeDir = getUserDirectories().getHomeFolder()
+    
+    // 如果没有相对路径，返回用户主目录本身
+    if (!resourcePath) {
+      return userHomeDir
     }
 
     // 拼接完整路径
-    const fullPath = path.join(userDirPath, relativePath)
+    const fullPath = path.join(userHomeDir, resourcePath)
 
-    // 安全检查：确保路径在用户目录内
+    // 安全检查：确保路径在用户主目录内
     const resolvedPath = path.resolve(fullPath)
-    const resolvedUserDir = path.resolve(userDirPath)
+    const resolvedUserDir = path.resolve(userHomeDir)
 
     if (!resolvedPath.startsWith(resolvedUserDir)) {
       throw new Error(`安全错误：路径超出用户目录范围: ${resolvedPath}`)

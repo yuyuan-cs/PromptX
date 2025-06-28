@@ -40,6 +40,9 @@ class ToolExecutor {
       // 2. 执行工具代码并创建实例
       const tool = this.executeToolContent(toolContent, context.toolName || 'unknown');
 
+      // 2.5. 增强工具默认实现
+      this.enhanceToolWithDefaults(tool);
+
       // 3. 参数验证
       const validation = this.validateParameters(tool, parameters);
       if (!validation.valid) {
@@ -85,36 +88,52 @@ class ToolExecutor {
    */
   executeToolContent(toolContent, toolName) {
     try {
-      // 创建安全的执行环境
-      const sandbox = this.createSandbox();
-      
-      // 执行工具代码
+      // 1. 先用基础沙箱获取工具实例，检查是否有包信息
+      const basicSandbox = this.createSandbox();
       const vm = require('vm');
       const script = new vm.Script(toolContent, { filename: `${toolName}.js` });
-      const context = vm.createContext(sandbox);
+      const basicContext = vm.createContext(basicSandbox);
       
-      script.runInContext(context);
-      
-      // 获取导出的工具
-      const exported = context.module.exports;
+      script.runInContext(basicContext);
+      const exported = basicContext.module.exports;
       
       if (!exported) {
         throw new Error(`工具未正确导出: ${toolName}`);
       }
       
-      // 支持两种导出方式：
-      // 1. 导出类（构造函数）- 需要实例化
-      // 2. 导出对象 - 直接使用
+      // 实例化工具
       let toolInstance;
-      
       if (typeof exported === 'function') {
-        // 导出的是类，需要实例化
         toolInstance = new exported();
       } else if (typeof exported === 'object') {
-        // 导出的是对象，直接使用
         toolInstance = exported;
       } else {
         throw new Error(`工具导出格式不正确，必须是类或对象: ${toolName}`);
+      }
+      
+      // 2. 检查工具是否有包信息
+      let packageInfo = null;
+      if (typeof toolInstance.getPackage === 'function') {
+        try {
+          packageInfo = toolInstance.getPackage();
+        } catch (error) {
+          console.warn(`[ToolExecutor] 获取包信息失败: ${error.message}`);
+        }
+      }
+      
+      // 3. 如果有包信息，用智能沙箱重新执行
+      if (packageInfo && packageInfo.directory) {
+        const smartSandbox = this.createSmartSandbox(packageInfo);
+        const smartContext = vm.createContext(smartSandbox);
+        
+        script.runInContext(smartContext);
+        const smartExported = smartContext.module.exports;
+        
+        if (typeof smartExported === 'function') {
+          return new smartExported();
+        } else if (typeof smartExported === 'object') {
+          return smartExported;
+        }
       }
       
       return toolInstance;
@@ -122,6 +141,57 @@ class ToolExecutor {
     } catch (error) {
       throw new Error(`工具代码执行失败 ${toolName}: ${error.message}`);
     }
+  }
+
+  /**
+   * 创建智能沙箱（支持工具依赖）
+   * @param {Object} packageInfo - 工具包信息
+   * @returns {Object} 智能沙箱环境
+   */
+  createSmartSandbox(packageInfo) {
+    const { directory, dependencies } = packageInfo;
+    
+    return {
+      require: (moduleName) => {
+        try {
+          // 优先从工具目录查找依赖
+          return require(require.resolve(moduleName, {
+            paths: [
+              directory + '/node_modules',
+              directory,
+              process.cwd() + '/node_modules'
+            ]
+          }));
+        } catch (error) {
+          // 回退到默认require
+          return require(moduleName);
+        }
+      },
+      module: { exports: {} },
+      exports: {},
+      console: console,
+      Buffer: Buffer,
+      process: {
+        env: process.env,
+        hrtime: process.hrtime
+      },
+      setTimeout: setTimeout,
+      clearTimeout: clearTimeout,
+      setInterval: setInterval,
+      clearInterval: clearInterval,
+      // 基础全局对象
+      Object: Object,
+      Array: Array,
+      String: String,
+      Number: Number,
+      Boolean: Boolean,
+      Date: Date,
+      JSON: JSON,
+      Math: Math,
+      RegExp: RegExp,
+      Error: Error,
+      URL: URL
+    };
   }
 
   /**
@@ -153,7 +223,8 @@ class ToolExecutor {
       JSON: JSON,
       Math: Math,
       RegExp: RegExp,
-      Error: Error
+      Error: Error,
+      URL: URL
     };
   }
 

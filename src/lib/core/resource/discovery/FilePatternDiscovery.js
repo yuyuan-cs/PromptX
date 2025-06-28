@@ -190,12 +190,9 @@ class FilePatternDiscovery extends BaseDiscovery {
       if (fileName.endsWith(extension)) {
         const baseName = fileName.slice(0, -extension.length)
         
-        // role类型直接返回基础名称，其他类型添加前缀
-        if (resourceType === 'role') {
-          return baseName
-        } else {
-          return `${resourceType}:${baseName}`
-        }
+        // 所有资源类型都直接返回基础名称，不添加前缀
+        // 协议信息已经在resource对象的protocol字段中
+        return baseName
       }
     }
 
