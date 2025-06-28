@@ -184,8 +184,13 @@ class RegisterCommand extends BasePouchCommand {
    * 获取项目路径（复用ActionCommand逻辑）
    */
   async getProjectPath() {
-    // 使用ResourceManager的项目路径获取逻辑
-    return this.resourceManager.projectPath || process.cwd()
+    // 使用DirectoryService统一获取项目路径（与InitCommand保持一致）
+    const context = {
+      startDir: process.cwd(),
+      platform: process.platform,
+      avoidUserHome: true
+    }
+    return await this.directoryService.getProjectRoot(context)
   }
 
   getPATEOAS (args) {

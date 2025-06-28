@@ -75,7 +75,7 @@ class ActionCommand extends BasePouchCommand {
       const dependencies = await this.analyzeRoleDependencies(roleInfo)
 
       // 3. 生成学习计划并直接加载所有内容
-      return await this.generateLearningPlan(roleInfo.id, dependencies)
+      return await this.generateLearningPlan(roleInfo, dependencies)
     } catch (error) {
       logger.error('Action command error:', error)
       return `❌ 激活角色 "${roleId}" 时发生错误。
@@ -325,10 +325,11 @@ ${result.content}
   /**
    * 生成学习计划并直接加载所有内容（包含完整的角色语义）
    */
-  async generateLearningPlan (roleId, dependencies) {
+  async generateLearningPlan (roleInfo, dependencies) {
     const { thoughts, executions, roleSemantics } = dependencies
+    const { id: roleId } = roleInfo
 
-    let content = `🎭 **角色激活完成：${roleId}** - 所有技能已自动加载\n`
+    let content = `🎭 **角色激活完成：\`${roleId}\` (${roleInfo.name})** - 所有技能已自动加载\n`
 
     // 加载思维模式技能（仅包含独立的thought引用）
     if (thoughts.size > 0) {
@@ -388,7 +389,7 @@ ${result.content}
 
     // 激活总结
     content += `# 🎯 角色激活总结\n`
-    content += `✅ **${roleId} 角色已完全激活！**\n`
+    content += `✅ **\`${roleId}\` (${roleInfo.name}) 角色已完全激活！**\n`
     content += `📋 **已获得能力**：\n`
     if (thoughts.size > 0) content += `- 🧠 思维模式：${Array.from(thoughts).join(', ')}\n`
     if (executions.size > 0) content += `- ⚡ 执行技能：${Array.from(executions).join(', ')}\n`
@@ -402,7 +403,7 @@ ${result.content}
       content += `- 🎭 角色组件：${roleComponents.join(', ')}\n`
     }
     
-    content += `💡 **现在可以立即开始以 ${roleId} 身份提供专业服务！**\n`
+    content += `💡 **现在可以立即开始以 \`${roleId}\` (${roleInfo.name}) 身份提供专业服务！**\n`
 
     // 自动执行 recall 命令
     content += await this.executeRecall(roleId)

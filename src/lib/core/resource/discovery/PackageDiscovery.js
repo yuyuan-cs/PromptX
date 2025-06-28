@@ -471,19 +471,19 @@ class PackageDiscovery extends BaseDiscovery {
    * @returns {Promise<string>} 环境类型：development, npx, local, unknown
    */
   async _detectExecutionEnvironment() {
-    // 1. 检查是否在开发环境
-    if (await this._isDevelopmentMode()) {
-      return 'development'
-    }
-
-    // 2. 检查是否通过npx执行
+    // 1. 优先检查npx执行（具体环境，避免MCP误判）
     if (this._isNpxExecution()) {
       return 'npx'
     }
 
-    // 3. 检查是否在node_modules中安装
+    // 2. 检查本地安装（具体环境）
     if (this._isLocalInstallation()) {
       return 'local'
+    }
+
+    // 3. 最后检查开发环境（通用环境，优先级降低）
+    if (await this._isDevelopmentMode()) {
+      return 'development'
     }
 
     return 'unknown'
@@ -673,11 +673,24 @@ class PackageDiscovery extends BaseDiscovery {
    */
   async _findFallbackRoot() {
     try {
+      // 优先使用__dirname计算包根目录（更可靠的路径）
+      const packageRoot = path.resolve(__dirname, '../../../../../')
+      
+      // 验证是否为有效的dpml-prompt包
+      const packageJsonPath = path.join(packageRoot, 'package.json')
+      if (await fs.pathExists(packageJsonPath)) {
+        const packageJson = await fs.readJSON(packageJsonPath)
+        if (packageJson.name === 'dpml-prompt') {
+          return packageRoot
+        }
+      }
+      
+      // 后备方案：使用模块解析（使用__dirname作为basedir）
       const resolve = require('resolve')
-      const packageJsonPath = resolve.sync('dpml-prompt/package.json', {
-        basedir: process.cwd()
+      const resolvedPackageJsonPath = resolve.sync('dpml-prompt/package.json', {
+        basedir: __dirname
       })
-      return path.dirname(packageJsonPath)
+      return path.dirname(resolvedPackageJsonPath)
     } catch (error) {
       return null
     }

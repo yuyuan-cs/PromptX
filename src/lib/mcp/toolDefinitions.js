@@ -113,7 +113,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'promptx_dacp',
-    description: '🚀 [DACP专业服务调用器] 让PromptX角色拥有执行能力 - 调用邮件发送、日程管理、文档处理等专业服务，将AI建议转化为实际行动。支持自然语言需求智能路由到合适的DACP服务包。',
+    description: '🚀 [DACP专业服务工具] 专业执行工具 - 需要明确知道如何使用特定DACP服务时调用。工具存在但需要专业知识才能正确使用，不建议在不了解服务配置和参数的情况下尝试。',
     inputSchema: {
       type: 'object',
       properties: {

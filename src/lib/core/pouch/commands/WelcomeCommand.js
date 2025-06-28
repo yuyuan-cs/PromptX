@@ -201,10 +201,8 @@ class WelcomeCommand extends BasePouchCommand {
       content += `### ${sourceLabel}\n\n`
       
       rolesBySource[source].forEach(role => {
-        content += `#### ${roleIndex}. ${role.name}
-**角色ID**: \`${role.id}\`  
+        content += `#### ${roleIndex}. \`${role.id}\` - ${role.name}
 **专业能力**: ${role.description}  
-**文件路径**: ${role.file}  
 **来源**: ${sourceLabel}
 
 ---
