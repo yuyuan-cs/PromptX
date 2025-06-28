@@ -31,7 +31,6 @@ class PouchCLI {
       learn: commands.LearnCommand,
       recall: commands.RecallCommand,
       remember: commands.RememberCommand,
-      dacp: commands.DACPCommand,
       tool: commands.PromptXToolCommand
     })
 

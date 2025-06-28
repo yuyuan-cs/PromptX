@@ -8,9 +8,6 @@
   },
   "scripts": {
     "start": "PROMPTX_ENV=development node src/bin/promptx.js",
-    "dacp:start": "node src/dacp/dacp-promptx-service/server.js",
-    "dacp:dev": "node src/dacp/dacp-promptx-service/server.js",
-    "dacp:test": "jest src/dacp/",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",

@@ -66,35 +66,6 @@ program
     await cli.execute('remember', args)
   })
 
-// DACP命令
-program
-  .command('dacp <service_id> <action> [parameters]')
-  .description('🚀 dacp锦囊 - 调用DACP专业服务，让AI角色拥有执行能力')
-  .action(async (service_id, action, parameters, options) => {
-    try {
-      // 解析参数（如果是JSON字符串）
-      let parsedParams = {};
-      if (parameters) {
-        try {
-          parsedParams = JSON.parse(parameters);
-        } catch (error) {
-          console.error('❌ 参数解析错误，请提供有效的JSON格式');
-          process.exit(1);
-        }
-      }
-      
-      const args = {
-        service_id,
-        action, 
-        parameters: parsedParams
-      };
-      
-      await cli.execute('dacp', args);
-    } catch (error) {
-      console.error(`❌ DACP命令执行失败: ${error.message}`);
-      process.exit(1);
-    }
-  })
 
 // Tool命令
 program
@@ -143,7 +114,6 @@ program
   .option('--host <address>', '绑定地址 (仅http/sse传输)', 'localhost')
   .option('--cors', '启用CORS (仅http/sse传输)', false)
   .option('--debug', '启用调试模式', false)
-  .option('--with-dacp', '(已废弃，静默忽略)', false)
   .action(async (options) => {
     try {
       // 设置调试模式
@@ -154,7 +124,6 @@ program
       // 根据传输类型选择命令
       if (options.transport === 'stdio') {
         const mcpServer = new MCPServerCommand();
-        // 🔧 DACP现为Mock模式，静默忽略用户的withDacp配置
         await mcpServer.execute();
       } else if (options.transport === 'http' || options.transport === 'sse') {
         const mcpHttpServer = new MCPStreamableHttpCommand();
@@ -188,14 +157,14 @@ program.addHelpText('after', `
 
 ${chalk.cyan('💡 PromptX 锦囊框架 - AI use CLI get prompt for AI')}
 
-${chalk.cyan('🎒 七大核心命令:')}
+${chalk.cyan('🎒 六大核心命令:')}
   🏗️ ${chalk.cyan('init')}   → 初始化环境，传达系统协议
   👋 ${chalk.yellow('welcome')}  → 发现可用角色和领域专家  
   ⚡ ${chalk.red('action')} → 激活特定角色，获取专业能力
   📚 ${chalk.blue('learn')}  → 深入学习领域知识体系
   🔍 ${chalk.green('recall')} → AI主动检索应用记忆
   🧠 ${chalk.magenta('remember')} → AI主动内化知识增强记忆
-  🚀 ${chalk.cyan('dacp')} → 调用DACP专业服务，AI角色执行能力
+  🔧 ${chalk.cyan('tool')} → 执行JavaScript工具，AI智能行动
   🔌 ${chalk.blue('mcp-server')} → 启动MCP Server，连接AI应用
 
 ${chalk.cyan('示例:')}
@@ -221,9 +190,9 @@ ${chalk.cyan('示例:')}
   promptx remember "每日站会控制在15分钟内"
   promptx remember "测试→预发布→生产"
 
-  ${chalk.gray('# 7️⃣ 调用DACP专业服务')}
-  promptx dacp dacp-promptx-service calculate '{"user_request": "计算2+3"}'
-  promptx dacp dacp-email-service send_email '{"user_request": "发送邮件"}'
+  ${chalk.gray('# 7️⃣ 执行JavaScript工具')}
+  promptx tool '{"tool_resource": "@tool://calculator", "parameters": {"operation": "add", "a": 2, "b": 3}}'
+  promptx tool '{"tool_resource": "@tool://send-email", "parameters": {"to": "test@example.com", "subject": "Hello", "content": "Test"}}'
 
   ${chalk.gray('# 8️⃣ 启动MCP服务')}
   promptx mcp-server                    # stdio传输(默认)

@@ -450,7 +450,6 @@ class MCPStreamableHttpCommand {
         }
         return result;
       },
-      'promptx_dacp': (args) => [args]
     };
     
     const mapper = paramMapping[toolName];

@@ -84,8 +84,6 @@ class MCPServerCommand {
       // 设置进程清理处理器
       this.setupProcessCleanup();
       
-      // 🔧 DACP现已改为Mock模式，无需启动独立服务
-      // 静默忽略任何withDacp选项，保持向后兼容
       
       this.log('🚀 启动MCP Server...');
       const transport = new StdioServerTransport();
@@ -143,267 +141,14 @@ class MCPServerCommand {
   }
   
   /**
-   * 清理子进程 (DACP现为Mock模式，此方法保留但无实际清理工作)
-   * @deprecated DACP已改为Mock模式，无需清理子进程
+   * 清理资源
    */
   cleanup() {
-    // 🔧 DACP现已改为Mock模式，无需清理DACP子进程
-    // HTTP模式的进程清理代码已保留作为参考实现
-    this.log('🔧 Mock模式下无需清理DACP子进程');
+    this.log('🔧 清理MCP Server资源');
   }
   
-  /**
-   * 检测DACP服务是否已经运行 (HTTP模式 - 仅作参考实现保留)
-   * @deprecated DACP已改为Mock模式，此方法仅保留作为参考
-   * @param {string} host - 主机地址
-   * @param {number} port - 端口号
-   * @returns {Promise<boolean>} 服务是否运行
-   */
-  async isDACPServiceRunning(host = 'localhost', port = 3002) {
-    // 🔧 Mock模式下始终返回false，因为不需要HTTP服务
-    return false;
-    
-    /* HTTP模式参考实现（已禁用）
-    const http = require('http');
-    
-    return new Promise((resolve) => {
-      const options = {
-        hostname: host,
-        port: port,
-        path: '/health',
-        method: 'GET',
-        timeout: 2000 // 2秒超时
-      };
 
-      const req = http.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        
-        res.on('end', () => {
-          try {
-            const healthData = JSON.parse(data);
-            // 检查是否是DACP服务且状态健康
-            const isHealthy = healthData.status === 'healthy';
-            const isDACPService = healthData.service && healthData.service.includes('DACP');
-            resolve(isHealthy && isDACPService);
-          } catch (error) {
-            resolve(false);
-          }
-        });
-      });
 
-      req.on('error', () => {
-        resolve(false);
-      });
-
-      req.on('timeout', () => {
-        req.destroy();
-        resolve(false);
-      });
-
-      req.end();
-    });
-    */
-  }
-
-  /**
-   * 获取DACP服务信息 (HTTP模式 - 仅作参考实现保留)
-   * @deprecated DACP已改为Mock模式，此方法仅保留作为参考
-   * @param {string} host - 主机地址  
-   * @param {number} port - 端口号
-   * @returns {Promise<Object|null>} 服务信息
-   */
-  async getDACPServiceInfo(host = 'localhost', port = 3002) {
-    // 🔧 Mock模式下返回模拟的服务信息
-    return {
-      service: {
-        name: 'PromptX DACP Mock Service',
-        version: '1.0.0-mock'
-      },
-      available_actions: ['calculate', 'send_email'],
-      mode: 'local_mock'
-    };
-    
-    /* HTTP模式参考实现（已禁用）
-    const http = require('http');
-    
-    return new Promise((resolve) => {
-      const options = {
-        hostname: host,
-        port: port,
-        path: '/info',
-        method: 'GET',
-        timeout: 2000
-      };
-
-      const req = http.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        
-        res.on('end', () => {
-          try {
-            const serviceInfo = JSON.parse(data);
-            resolve(serviceInfo);
-          } catch (error) {
-            resolve(null);
-          }
-        });
-      });
-
-      req.on('error', () => {
-        resolve(null);
-      });
-
-      req.on('timeout', () => {
-        req.destroy();
-        resolve(null);
-      });
-
-      req.end();
-    });
-    */
-  }
-
-  /**
-   * 启动DACP服务 (HTTP模式 - 仅作参考实现保留)
-   * @deprecated DACP已改为Mock模式，此方法仅保留作为参考
-   */
-  async startDACPService() {
-    // 🔧 Mock模式下输出提示信息即可
-    console.error('');
-    console.error('=====================================');
-    console.error('🔧 DACP Mock模式已启用');
-    console.error('📦 本地函数调用模式：无需HTTP服务');
-    console.error('🔧 支持的Actions: send_email, calculate');
-    console.error('✅ Mock模式启动成功');
-    console.error('=====================================');
-    console.error('');
-    
-    /* HTTP模式参考实现（已禁用）
-    const { spawn } = require('child_process');
-    const path = require('path');
-    
-    try {
-      this.log('🔍 检测DACP服务状态...');
-      
-      // 先检测是否已有DACP服务运行
-      const isRunning = await this.isDACPServiceRunning();
-      
-      if (isRunning) {
-        // 服务已存在，获取服务信息并直接使用
-        const serviceInfo = await this.getDACPServiceInfo();
-        console.error(''); // 空行分隔
-        console.error('=====================================');
-        console.error('🔄 发现现有DACP服务，直接复用');
-        console.error('📍 DACP服务地址: http://localhost:3002');
-        if (serviceInfo) {
-          console.error(`🏷️ 服务名称: ${serviceInfo.service?.name || 'Unknown'}`);
-          console.error(`📦 服务版本: ${serviceInfo.service?.version || 'Unknown'}`);
-          console.error(`🔧 可用操作: ${serviceInfo.available_actions?.join(', ') || 'Unknown'}`);
-        }
-        console.error('=====================================');
-        console.error(''); // 空行分隔
-        return; // 直接返回，不启动新服务
-      }
-      
-      this.log('🚀 启动新的DACP服务...');
-      
-      // DACP服务路径
-      const dacpPath = path.join(__dirname, '../../dacp/dacp-promptx-service');
-      
-      // 启动DACP服务作为子进程
-      // 注意：不能直接使用 'inherit'，因为会干扰MCP的stdio通信
-      // 但我们需要看到DACP的启动信息
-      this.dacpProcess = spawn('node', ['server.js'], {
-        cwd: dacpPath,
-        stdio: ['ignore', 'pipe', 'pipe'], // stdin忽略, stdout和stderr都输出到pipe
-        shell: true,
-        detached: false // tree-kill 会处理整个进程树，不需要 detached
-      });
-      
-      // 将DACP的输出转发到stderr（这样不会干扰MCP的stdout）
-      this.dacpProcess.stdout.on('data', (data) => {
-        const output = data.toString().trim();
-        if (output) {
-          console.error(`[DACP] ${output}`);
-        }
-      });
-      
-      this.dacpProcess.stderr.on('data', (data) => {
-        const output = data.toString().trim();
-        if (output) {
-          console.error(`[DACP ERROR] ${output}`);
-        }
-      });
-      
-      // 监听子进程退出
-      this.dacpProcess.on('exit', (code, signal) => {
-        this.log(`DACP服务已退出 (code: ${code}, signal: ${signal})`);
-        this.dacpProcess = null;
-      });
-      
-      // 监听子进程错误
-      this.dacpProcess.on('error', (err) => {
-        console.error(`DACP进程错误: ${err.message}`);
-      });
-      
-      // 等待服务启动 - 通过监听输出来判断
-      await new Promise((resolve, reject) => {
-        let started = false;
-        const timeout = setTimeout(() => {
-          if (!started) {
-            reject(new Error('DACP服务启动超时'));
-          }
-        }, 10000); // 10秒超时
-        
-        // 监听输出，判断服务是否启动
-        const checkStarted = (data) => {
-          const output = data.toString();
-          // 检查是否包含启动成功的标志
-          if (output.includes('Running at http://localhost:') || 
-              output.includes('🚀') || 
-              output.includes('DACP') ||
-              output.includes('3002')) {
-            if (!started) {
-              started = true;
-              clearTimeout(timeout);
-              console.error(''); // 空行分隔
-              console.error('=====================================');
-              console.error('✅ DACP服务启动成功');
-              console.error('📍 DACP服务地址: http://localhost:3002');
-              console.error('🔧 支持的Actions: send_email, schedule_meeting, create_document');
-              console.error('=====================================');
-              console.error(''); // 空行分隔
-              resolve();
-            }
-          }
-        };
-        
-        this.dacpProcess.stdout.on('data', checkStarted);
-        
-        this.dacpProcess.on('error', (err) => {
-          clearTimeout(timeout);
-          reject(new Error(`DACP服务启动失败: ${err.message}`));
-        });
-        
-        this.dacpProcess.on('exit', (code) => {
-          if (!started) {
-            clearTimeout(timeout);
-            reject(new Error(`DACP服务意外退出，退出码: ${code}`));
-          }
-        });
-      });
-      
-    } catch (error) {
-      this.log(`❌ DACP服务启动失败: ${error.message}`);
-      throw error;
-    }
-    */
-  }
   
   /**
    * 设置MCP工具处理程序 - 使用正确的MCP SDK API
@@ -491,7 +236,6 @@ class MCPServerCommand {
         return result;
       },
       
-      'promptx_dacp': (args) => [args],
       
       'promptx_tool': (args) => [args]
     };
