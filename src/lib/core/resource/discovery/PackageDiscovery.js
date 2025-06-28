@@ -704,9 +704,9 @@ class PackageDiscovery extends BaseDiscovery {
    */
   async _isValidDevelopmentRoot(dir) {
     const hasPackageJson = await fs.pathExists(path.join(dir, 'package.json'))
-    const hasPromptDir = await fs.pathExists(path.join(dir, 'prompt'))
+    const hasResourceDir = await fs.pathExists(path.join(dir, 'resource'))
 
-    if (!hasPackageJson || !hasPromptDir) {
+    if (!hasPackageJson || !hasResourceDir) {
       return false
     }
 

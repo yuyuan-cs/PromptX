@@ -105,7 +105,7 @@ graph TD
 
     B --> B1[NPM包内置资源]
     B --> B2[src/resource.registry.json]
-    B --> B3[prompt/ 目录结构]
+    B --> B3[resource/ 目录结构]
 
     C --> C1[项目本地资源]
     C --> C2[.promptx/resource/]

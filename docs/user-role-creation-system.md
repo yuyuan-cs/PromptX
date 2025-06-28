@@ -23,7 +23,7 @@
 ```
 系统资源 (静态注册)
 ├── src/resource.registry.json     # 系统资源注册表
-└── prompt/domain/{role}/          # 系统资源文件
+└── resource/domain/{role}/          # 系统资源文件
 
 用户资源 (动态发现)
 └── .promptx/resource/domain/{role}/   # 用户资源文件
@@ -238,7 +238,7 @@ describe('ResourceManager', () => {
 // src/tests/commands/HelloCommand.unit.test.js  
 describe('HelloCommand - 重构后', () => {
   it('应该移除错误的系统路径扫描', async () => {
-    // 验证不再扫描 prompt/domain/ 路径
+    // 验证不再扫描 resource/domain/ 路径
   })
   
   it('应该集成ResourceManager统一注册表', async () => {
@@ -435,7 +435,7 @@ npx promptx action sales-analyst
 ## 🔄 设计决策
 
 ### 为什么选择 .promptx/resource/domain 结构？
-- **镜像一致性**：与系统 `prompt/domain` 结构保持一致
+- **镜像一致性**：与系统 `resource/domain` 结构保持一致
 - **类型扩展性**：未来可支持 thought、execution 等资源类型
 - **认知简单性**：用户理解成本最低
 
@@ -451,9 +451,9 @@ npx promptx action sales-analyst
 
 ## 📚 相关文档
 
-- [DPML协议](../prompt/protocol/dpml.protocol.md)
+- [DPML协议](../resource/protocol/dpml.protocol.md)
 - [ResourceManager 架构](../src/lib/core/resource/)
-- [角色标签规范](../prompt/protocol/tag/role.tag.md)
+- [角色标签规范](../resource/protocol/tag/role.tag.md)
 
 ---
 

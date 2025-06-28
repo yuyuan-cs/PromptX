@@ -31,7 +31,7 @@ ResourceRegistry.js (248行) + resource.registry.json (167行) + 内存协议注
 ```javascript
 // 问题1：协议前缀不统一
 "@package://resource/core/role.md"      // 正确
-"@packages://promptx/prompt/core/"    // 错误变换
+"@packages://promptx/resource/core/"    // 错误变换
 
 // 问题2：循环依赖
 ResourceManager → PackageProtocol → ResourceManager
@@ -302,7 +302,7 @@ class ResourceManager {
 
     // 2. 发现动态资源
     const discovered = await this.discovery.discoverResources([
-      'prompt/', // 包内资源
+      'resource/', // 包内资源
       '.promptx/', // 项目资源
       process.env.PROMPTX_USER_DIR // 用户资源
     ].filter(Boolean))

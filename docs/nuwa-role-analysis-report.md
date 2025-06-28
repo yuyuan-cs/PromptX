@@ -52,19 +52,19 @@
 
 | 引用 | 文件路径 | 存在状态 | 备注 |
 |-----|---------|---------|------|
-| `@!thought://remember` | `prompt/core/thought/remember.thought.md` | ✅ 存在 | 基础记忆能力 |
-| `@!thought://recall` | `prompt/core/thought/recall.thought.md` | ✅ 存在 | 基础回忆能力 |
-| `@!thought://role-creation` | `prompt/core/thought/role-creation.thought.md` | ✅ 存在 | 角色创建思维 |
+| `@!thought://remember` | `resource/core/thought/remember.thought.md` | ✅ 存在 | 基础记忆能力 |
+| `@!thought://recall` | `resource/core/thought/recall.thought.md` | ✅ 存在 | 基础回忆能力 |
+| `@!thought://role-creation` | `resource/core/thought/role-creation.thought.md` | ✅ 存在 | 角色创建思维 |
 
 ### ✅ Execution引用验证
 
 | 引用 | 文件路径 | 存在状态 | 备注 |
 |-----|---------|---------|------|
-| `@!execution://role-generation` | `prompt/core/execution/role-generation.execution.md` | ✅ 存在 | 角色生成流程 |
-| `@!execution://role-authoring` | `prompt/core/execution/role-authoring.execution.md` | ✅ 存在 | 角色编写规范 |
-| `@!execution://thought-authoring` | `prompt/core/execution/thought-authoring.execution.md` | ✅ 存在 | 思维编写规范 |
-| `@!execution://execution-authoring` | `prompt/core/execution/execution-authoring.execution.md` | ✅ 存在 | 执行编写规范 |
-| `@!execution://resource-authoring` | `prompt/core/execution/resource-authoring.execution.md` | ✅ 存在 | 资源编写规范 |
+| `@!execution://role-generation` | `resource/core/execution/role-generation.execution.md` | ✅ 存在 | 角色生成流程 |
+| `@!execution://role-authoring` | `resource/core/execution/role-authoring.execution.md` | ✅ 存在 | 角色编写规范 |
+| `@!execution://thought-authoring` | `resource/core/execution/thought-authoring.execution.md` | ✅ 存在 | 思维编写规范 |
+| `@!execution://execution-authoring` | `resource/core/execution/execution-authoring.execution.md` | ✅ 存在 | 执行编写规范 |
+| `@!execution://resource-authoring` | `resource/core/execution/resource-authoring.execution.md` | ✅ 存在 | 资源编写规范 |
 
 **引用完整性结论**: 所有@引用的资源文件均存在，无断链风险。
 
@@ -148,7 +148,7 @@
    - **建议**: 添加角色创建相关的知识体系引用
 
 2. **路径位置特殊性**：
-   - **现状**: nuwa角色位于`prompt/core/`而非`prompt/domain/`
+   - **现状**: nuwa角色位于`resource/core/`而非`resource/domain/`
    - **影响**: 与一般域角色位置不一致，可能造成概念混淆
    - **评估**: 作为核心系统角色可以接受，但需要明确定位
 
@@ -203,8 +203,8 @@
    ```
 
 2. **创建专门的知识execution文件**：
-   - `prompt/core/execution/dpml-protocol-knowledge.execution.md`
-   - `prompt/core/execution/role-design-patterns.execution.md`
+   - `resource/core/execution/dpml-protocol-knowledge.execution.md`
+   - `resource/core/execution/role-design-patterns.execution.md`
 
 ### 🔧 中优先级优化
 

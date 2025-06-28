@@ -94,7 +94,7 @@
 ```javascript
 // 当前状态（推测）
 ResourceManager.resolveResource("thought://test-verification")
-├── 查找系统级: prompt/thought/test-verification.thought.md ✅
+├── 查找系统级: resource/thought/test-verification.thought.md ✅
 ├── 查找项目级: 缓存中无记录 ❌
 └── 返回: Resource not found
 

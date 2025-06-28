@@ -250,7 +250,7 @@ DPML (Deepractice Prompt Markup Language) 采用三层协议架构，从底层�
     ↓ 上层协议解析
 @package://resource/core/**/*.md  
     ↓ 中层协议解析
-@file://[NPM包路径]/prompt/core/**/*.md
+@file://[NPM包路径]/resource/core/**/*.md
     ↓ 底层协议执行
 读取文件系统资源
 ```
@@ -337,7 +337,7 @@ class PathDetector {
 promptx learn @prompt://domain/scrum/role/product-owner
 
 # 等价于底层路径：
-promptx learn @file://[NPM包]/prompt/domain/scrum/role/product-owner.role.md
+promptx learn @file://[NPM包]/resource/domain/scrum/role/product-owner.role.md
 
 # 记忆保存：保存到项目记忆
 promptx remember "重要决策" @memory://declarative
@@ -354,7 +354,7 @@ promptx remember "重要决策" @file://[项目根]/.memory/declarative.md
   ↓
 @package://resource/core/**/*.md
   ↓  
-@file:///usr/local/lib/node_modules/promptx/prompt/core/**/*.md
+@file:///usr/local/lib/node_modules/promptx/resource/core/**/*.md
 ```
 
 ## 🎯 设计优势
@@ -373,7 +373,7 @@ promptx remember "重要决策" @file://[项目根]/.memory/declarative.md
 
 ### 🎯 用户体验
 
-- **简洁语法**：`@prompt://core` vs `@file://./node_modules/promptx/prompt/core/**/*.md`
+- **简洁语法**：`@prompt://core` vs `@file://./node_modules/promptx/resource/core/**/*.md`
 - **语义清晰**：协议名称直接表达意图
 - **智能解析**：自动处理环境差异
 

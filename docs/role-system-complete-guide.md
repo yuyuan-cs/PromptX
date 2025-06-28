@@ -733,6 +733,6 @@ PromptX角色系统通过以下核心机制实现了强大而灵活的AI角色�
 ---
 
 **参考文档**:
-- [DPML基础协议](../prompt/protocol/dpml.protocol.md)
+- [DPML基础协议](../resource/protocol/dpml.protocol.md)
 - [DPML语义渲染升级方案](./dpml-semantic-rendering-upgrade.md)
 - [角色发现优化文档](./role-discovery-optimization.md)

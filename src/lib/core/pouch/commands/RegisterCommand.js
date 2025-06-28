@@ -42,9 +42,9 @@ class RegisterCommand extends BasePouchCommand {
         return `❌ 角色文件不存在！
 
 请确保以下文件存在：
-- prompt/domain/${roleId}/${roleId}.role.md
-- prompt/domain/${roleId}/thought/${roleId}.thought.md
-- prompt/domain/${roleId}/execution/${roleId}.execution.md
+- resource/domain/${roleId}/${roleId}.role.md
+- resource/domain/${roleId}/thought/${roleId}.thought.md
+- resource/domain/${roleId}/execution/${roleId}.execution.md
 
 💡 您可以使用女娲来创建完整的角色套件：
 使用 MCP PromptX action 工具激活 'nuwa' 角色`
@@ -96,7 +96,7 @@ class RegisterCommand extends BasePouchCommand {
       
       // 通过ResourceManager获取项目路径（与ActionCommand一致）
       const projectPath = await this.getProjectPath()
-      const roleFile = path.join(projectPath, 'prompt', 'domain', roleId, `${roleId}.role.md`)
+      const roleFile = path.join(projectPath, 'resource', 'domain', roleId, `${roleId}.role.md`)
       
       return await fs.pathExists(roleFile)
     } catch (error) {

@@ -41,7 +41,7 @@
   },
   "files": [
     "src/",
-    "prompt/",
+    "resource/",
     "package.json",
     "README.md",
     "LICENSE",

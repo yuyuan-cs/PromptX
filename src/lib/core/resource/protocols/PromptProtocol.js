@@ -14,10 +14,10 @@ class PromptProtocol extends ResourceProtocol {
 
     // PromptX 内置资源注册表
     this.registry = new Map([
-      ['protocols', '@package://prompt/protocol/**/*.md'],
-      ['core', '@package://prompt/core/**/*.md'],
-      ['domain', '@package://prompt/domain/**/*.md'],
-      ['resource', '@package://prompt/resource/**/*.md'],
+      ['protocols', '@package://resource/protocol/**/*.md'],
+      ['core', '@package://resource/core/**/*.md'],
+      ['domain', '@package://resource/domain/**/*.md'],
+      ['resource', '@package://resource/resource/**/*.md'],
       ['bootstrap', '@package://bootstrap.md']
     ])
 
