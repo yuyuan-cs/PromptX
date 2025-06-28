@@ -1,7 +1,7 @@
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 const { cli } = require('../core/pouch');
-const { MCPOutputAdapter } = require('../adapters/MCPOutputAdapter');
+const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
 const { getExecutionContext, getDebugInfo } = require('../utils/executionContext');
 const { getToolDefinitions } = require('../mcp/toolDefinitions');
 const treeKill = require('tree-kill');

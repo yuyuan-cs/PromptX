@@ -5,7 +5,7 @@ const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/ser
 const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
 const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 const { cli } = require('../core/pouch');
-const { MCPOutputAdapter } = require('../adapters/MCPOutputAdapter');
+const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
 const { getToolDefinitions, getToolDefinition, getToolZodSchema } = require('../mcp/toolDefinitions');
 const logger = require('../utils/logger');
 
