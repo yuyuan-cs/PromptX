@@ -1,10 +1,8 @@
-const BaseDiscovery = require('./BaseDiscovery')
+const FilePatternDiscovery = require('./FilePatternDiscovery')
 const logger = require('../../../utils/logger')
 const fs = require('fs-extra')
 const path = require('path')
-const CrossPlatformFileScanner = require('./CrossPlatformFileScanner')
 const RegistryData = require('../RegistryData')
-const ResourceData = require('../ResourceData')
 
 /**
  * ProjectDiscovery - 项目级资源发现器
@@ -16,10 +14,9 @@ const ResourceData = require('../ResourceData')
  * 
  * 优先级：2
  */
-class ProjectDiscovery extends BaseDiscovery {
+class ProjectDiscovery extends FilePatternDiscovery {
   constructor() {
     super('PROJECT', 2)
-    this.fileScanner = new CrossPlatformFileScanner()
     this.registryData = null
   }
 
@@ -150,42 +147,32 @@ class ProjectDiscovery extends BaseDiscovery {
   }
 
   /**
-   * 扫描项目资源
+   * 实现基类要求的方法：获取项目扫描基础目录
+   * @returns {Promise<string>} 项目资源目录路径
+   */
+  async _getBaseDirectory() {
+    const projectRoot = await this._findProjectRoot()
+    return path.join(projectRoot, '.promptx', 'resource')
+  }
+
+  /**
+   * 扫描项目资源（使用新的基类方法）
    * @param {string} projectRoot - 项目根目录
    * @returns {Promise<Array>} 扫描发现的资源列表
    */
   async _scanProjectResources(projectRoot) {
     try {
-      const resourcesDir = path.join(projectRoot, '.promptx', 'resource')
+      // 使用新的基类扫描方法
+      const registryData = RegistryData.createEmpty('project', null)
+      await this._scanResourcesByFilePattern(registryData)
+      
+      // 转换为旧格式兼容性
       const resources = []
-
-      // 定义要扫描的资源类型
-      const resourceTypes = ['role', 'execution', 'thought', 'knowledge', 'tool']
-
-      // 并行扫描所有资源类型
-      for (const resourceType of resourceTypes) {
-        try {
-          const files = await this.fileScanner.scanResourceFiles(resourcesDir, resourceType)
-          
-          for (const filePath of files) {
-            // 验证文件内容
-            const isValid = await this._validateResourceFile(filePath, resourceType)
-            if (!isValid) {
-              continue
-            }
-
-            const suffix = `.${resourceType}.md`
-            const id = this._extractResourceId(filePath, resourceType, suffix)
-            const reference = this._generateProjectReference(filePath, projectRoot)
-
-            resources.push({
-              id: id,
-              reference: reference
-            })
-          }
-        } catch (error) {
-          logger.warn(`[ProjectDiscovery] Failed to scan ${resourceType} resources: ${error.message}`)
-        }
+      for (const resource of registryData.resources) {
+        resources.push({
+          id: resource.id,
+          reference: resource.reference
+        })
       }
 
       return resources
@@ -196,131 +183,12 @@ class ProjectDiscovery extends BaseDiscovery {
   }
 
   /**
-   * 文件扫描（可以被测试mock）
-   * @param {string} baseDir - 基础目录
-   * @param {string} resourceType - 资源类型
-   * @returns {Promise<Array>} 匹配的文件路径列表
-   */
-  async _scanFiles(baseDir, resourceType) {
-    return await this.fileScanner.scanResourceFiles(baseDir, resourceType)
-  }
-
-  /**
-   * 文件系统存在性检查（可以被测试mock）
+   * 文件系统存在性检查（保留用于向后兼容）
    * @param {string} filePath - 文件路径
    * @returns {Promise<boolean>} 文件是否存在
    */
   async _fsExists(filePath) {
     return await fs.pathExists(filePath)
-  }
-
-  /**
-   * 读取文件内容（可以被测试mock）
-   * @param {string} filePath - 文件路径
-   * @returns {Promise<string>} 文件内容
-   */
-  async _readFile(filePath) {
-    return await fs.readFile(filePath, 'utf8')
-  }
-
-  /**
-   * 验证资源文件格式
-   * @param {string} filePath - 文件路径
-   * @param {string} protocol - 协议类型
-   * @returns {Promise<boolean>} 是否是有效的资源文件
-   */
-  async _validateResourceFile(filePath, protocol) {
-    try {
-      const content = await this._readFile(filePath)
-
-      if (!content || typeof content !== 'string') {
-        return false
-      }
-
-      const trimmedContent = content.trim()
-      if (trimmedContent.length === 0) {
-        return false
-      }
-
-      // 根据协议类型验证DPML标签
-      switch (protocol) {
-        case 'role':
-          return trimmedContent.includes('<role>') && trimmedContent.includes('</role>')
-        case 'execution':
-          return trimmedContent.includes('<execution>') && trimmedContent.includes('</execution>')
-        case 'thought':
-          return trimmedContent.includes('<thought>') && trimmedContent.includes('</thought>')
-        case 'knowledge':
-          // knowledge类型比较灵活，只要文件有内容就认为是有效的
-          // 可以是纯文本、链接、图片等任何形式的知识内容
-          return true
-        case 'tool':
-          // tool类型必须是有效的JavaScript代码
-          return this._validateToolFile(content)
-        default:
-          return false
-      }
-    } catch (error) {
-      logger.warn(`[ProjectDiscovery] Failed to validate ${filePath}: ${error.message}`)
-      return false
-    }
-  }
-
-  /**
-   * 验证Tool文件是否为有效的JavaScript代码
-   * @param {string} content - 文件内容
-   * @returns {boolean} 是否为有效的Tool文件
-   */
-  _validateToolFile(content) {
-    try {
-      // 1. 基本的JavaScript语法检查
-      new Function(content);
-      
-      // 2. 检查是否包含module.exports（CommonJS格式）
-      if (!content.includes('module.exports')) {
-        return false;
-      }
-      
-      // 3. 检查是否包含工具必需的方法（getMetadata, execute等）
-      const requiredMethods = ['getMetadata', 'execute'];
-      const hasRequiredMethods = requiredMethods.some(method => 
-        content.includes(method)
-      );
-      
-      return hasRequiredMethods;
-    } catch (syntaxError) {
-      // JavaScript语法错误
-      return false;
-    }
-  }
-
-  /**
-   * 生成项目引用路径
-   * @param {string} filePath - 文件绝对路径
-   * @param {string} projectRoot - 项目根目录
-   * @returns {string} @project://相对路径
-   */
-  _generateProjectReference(filePath, projectRoot) {
-    const relativePath = this.fileScanner.getRelativePath(projectRoot, filePath)
-    return `@project://${relativePath}`
-  }
-
-  /**
-   * 提取资源ID
-   * @param {string} filePath - 文件路径
-   * @param {string} protocol - 协议类型
-   * @param {string} suffix - 文件后缀
-   * @returns {string} 资源ID (对于role类型返回resourceName，对于其他类型返回protocol:resourceName)
-   */
-  _extractResourceId(filePath, protocol, suffix) {
-    const fileName = path.basename(filePath, suffix)
-    
-    // role类型不需要前缀，其他类型需要前缀
-    if (protocol === 'role') {
-      return fileName
-    } else {
-      return `${protocol}:${fileName}`
-    }
   }
 
   /**
@@ -347,17 +215,14 @@ class ProjectDiscovery extends BaseDiscovery {
   }
 
   /**
-   * 扫描目录并添加资源到注册表
+   * 扫描目录并添加资源到注册表（使用新的基类方法）
    * @param {string} resourcesDir - 资源目录
    * @param {RegistryData} registryData - 注册表数据
    * @private
    */
   async _scanDirectory(resourcesDir, registryData) {
-    // 扫描role目录
-    const roleDir = path.join(resourcesDir, 'role')
-    if (await this._fsExists(roleDir)) {
-      await this._scanRoleDirectory(roleDir, registryData)
-    }
+    // 使用基类的统一文件模式扫描
+    await this._scanResourcesByFilePattern(registryData)
   }
 
   /**
@@ -476,13 +341,21 @@ class ProjectDiscovery extends BaseDiscovery {
   }
 
   /**
+   * 重写基类方法：获取注册表文件路径
+   * @returns {Promise<string>} 注册表文件路径
+   */
+  async _getRegistryPath() {
+    const projectRoot = await this._findProjectRoot()
+    return path.join(projectRoot, '.promptx', 'resource', 'project.registry.json')
+  }
+
+  /**
    * 获取RegistryData对象（新架构方法）
    * @returns {Promise<RegistryData>} 项目级RegistryData对象
    */
   async getRegistryData() {
     try {
-      const projectRoot = await this._findProjectRoot()
-      const registryPath = path.join(projectRoot, '.promptx', 'resource', 'project.registry.json')
+      const registryPath = await this._getRegistryPath()
       
       // 尝试加载现有的注册表文件
       if (await this._fsExists(registryPath)) {
@@ -499,11 +372,13 @@ class ProjectDiscovery extends BaseDiscovery {
         
         // 如果注册表无效，重新生成
         logger.info(`[ProjectDiscovery] 📋 项目注册表无效，重新生成`)
-        return await this.generateRegistry(projectRoot)
+        const baseDirectory = await this._getBaseDirectory()
+        return await this.generateRegistry(baseDirectory)
       } else {
         // 如果没有注册表文件，生成新的
         logger.info(`[ProjectDiscovery] 📋 项目注册表不存在，生成新注册表`)
-        return await this.generateRegistry(projectRoot)
+        const baseDirectory = await this._getBaseDirectory()
+        return await this.generateRegistry(baseDirectory)
       }
     } catch (error) {
       logger.warn(`[ProjectDiscovery] Failed to load RegistryData: ${error.message}`)

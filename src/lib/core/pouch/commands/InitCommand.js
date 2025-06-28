@@ -39,10 +39,8 @@ class InitCommand extends BasePouchCommand {
     } else if (args && typeof args[0] === 'string') {
       // CLI格式
       workingDirectory = args[0]
-    } else if (args && args.length > 0 && args[0]) {
-      // 兜底：直接取第一个参数
-      workingDirectory = args[0]
     }
+    // 注意：如果args[0]是空对象{}，workingDirectory保持undefined，走后续的自动检测逻辑
     
     let projectPath
     
