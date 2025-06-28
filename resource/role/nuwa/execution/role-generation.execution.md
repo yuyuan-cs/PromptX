@@ -5,7 +5,7 @@
     - **文件格式要求**：生成的角色文件必须是有效的Markdown格式并符合XML语法
     - **系统集成约束**：生成的角色必须与PromptX系统兼容，支持ResourceManager发现机制
     - **快速生成要求**：整个创建过程应在1-2分钟内完成
-    - **目录结构约束**：用户资源必须创建在`.promptx/resource/domain/{roleId}/`目录，镜像系统结构
+    - **目录结构约束**：用户资源必须创建在`.promptx/resource/role/{roleId}/`目录，镜像系统结构
     - **文件组织约束**：角色相关的所有文件（execution、thought等）必须统一存放在角色目录下
   </constraint>
 
@@ -16,7 +16,7 @@
     - **领域识别准确性**：必须准确识别用户需求的专业领域
     - **模板化生成**：基于标准模板快速生成，避免复杂的定制化过程
     - **一次性交付**：生成后直接交付，避免反复确认和修改
-    - **镜像结构强制**：用户资源必须创建在`.promptx/resource/domain/{roleId}/`，镜像系统`prompt/domain/`结构
+    - **镜像结构强制**：用户资源必须创建在`.promptx/resource/role/{roleId}/`，镜像系统`resource/role/`结构
     - **文件统一管理**：角色的execution、thought等扩展文件必须放在同一角色目录下，便于统一管理
     - **引用路径准确**：使用@!引用时必须指向正确的文件路径，确保引用关系有效
   </rule>
@@ -96,7 +96,7 @@
     **文件组织结构**：
     ```mermaid
     graph LR
-        A[.promptx/resource/domain/{roleId}/] --> B[{roleId}.role.md]
+        A[.promptx/resource/role/{roleId}/] --> B[{roleId}.role.md]
         A --> C[thought/]
         A --> D[execution/]
         C --> E[{specific}.thought.md]
@@ -132,7 +132,7 @@
     ✅ 角色创建成功！
     
     📁 文件结构：
-    .promptx/resource/domain/{roleId}/
+    .promptx/resource/role/{roleId}/
     ├── {roleId}.role.md
     └── [扩展文件...]
     

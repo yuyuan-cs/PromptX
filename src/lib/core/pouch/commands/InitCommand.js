@@ -136,11 +136,10 @@ ${registryStats.message}
       // 1. 使用统一的目录服务获取项目根目录
       const projectRoot = await this.directoryService.getProjectRoot(context)
       const resourceDir = await this.directoryService.getResourceDirectory(context)
-      const domainDir = path.join(resourceDir, 'domain')
       
-      // 2. 确保目录结构存在
-      await fs.ensureDir(domainDir)
-      logger.debug(`[InitCommand] 确保目录结构存在: ${domainDir}`)
+      // 2. 确保资源目录存在（具体子目录由ResourceManager扫描时按需创建）
+      await fs.ensureDir(resourceDir)
+      logger.debug(`[InitCommand] 确保资源目录存在: ${resourceDir}`)
 
       // 3. 使用 ProjectDiscovery 的正确方法生成注册表
       logger.step('正在扫描项目资源...')
