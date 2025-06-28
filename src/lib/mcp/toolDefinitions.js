@@ -112,43 +112,47 @@ const TOOL_DEFINITIONS = [
     })
   },
   {
-    name: 'promptx_dacp',
-    description: '🚀 [DACP专业服务工具] 专业执行工具 - 需要明确知道如何使用特定DACP服务时调用。工具存在但需要专业知识才能正确使用，不建议在不了解服务配置和参数的情况下尝试。',
+    name: 'promptx_tool',
+    description: '🔧 [工具执行器] 执行通过@tool协议声明的JavaScript工具 - 支持角色配置中定义的专业工具能力，如@tool://calculator数学计算、@tool://send-email邮件发送等。提供安全沙箱执行、参数验证、错误处理和性能监控。',
     inputSchema: {
       type: 'object',
       properties: {
-        service_id: {
+        tool_resource: {
           type: 'string',
-          description: 'DACP服务ID，如：dacp-email-service'
-        },
-        action: {
-          type: 'string',
-          description: '具体操作，如：send_email'
+          description: '工具资源引用，格式：@tool://tool-name，如@tool://calculator',
+          pattern: '^@tool://.+'
         },
         parameters: {
           type: 'object',
+          description: '传递给工具的参数对象'
+        },
+        context: {
+          type: 'object',
+          description: '执行上下文信息（可选）',
           properties: {
-            user_request: {
+            role_id: {
               type: 'string',
-              description: '用户自然语言需求'
+              description: '当前激活的角色ID'
             },
-            context: {
-              type: 'object',
-              description: '上下文信息'
+            session_id: {
+              type: 'string',
+              description: '会话ID'
             }
-          },
-          required: ['user_request']
+          }
         }
       },
-      required: ['service_id', 'action', 'parameters']
+      required: ['tool_resource', 'parameters']
     },
     zodSchema: z.object({
-      service_id: z.string().describe('DACP服务ID，如：dacp-email-service'),
-      action: z.string().describe('具体操作，如：send_email'),
-      parameters: z.object({
-        user_request: z.string().describe('用户自然语言需求'),
-        context: z.object({}).optional().describe('上下文信息')
-      })
+      tool_resource: z.string()
+        .regex(/^@tool:\/\/.+/, '工具资源必须以@tool://开头')
+        .describe('工具资源引用，格式：@tool://tool-name'),
+      parameters: z.object({}).passthrough()
+        .describe('传递给工具的参数对象'),
+      context: z.object({
+        role_id: z.string().optional().describe('当前激活的角色ID'),
+        session_id: z.string().optional().describe('会话ID')
+      }).optional().describe('执行上下文信息')
     })
   }
 ];

@@ -202,7 +202,7 @@ npx dpml-prompt@snapshot hello
 // 这是系统内部实现细节，用户不需要感知
 @prompt://core/execution/think.md
 @memory://declarative.md
-@package://prompt/domain/scrum/role.md
+@package://resource/domain/scrum/role.md
 ```
 
 #### 为什么不使用MCP Prompts？

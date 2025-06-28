@@ -39,10 +39,8 @@ class InitCommand extends BasePouchCommand {
     } else if (args && typeof args[0] === 'string') {
       // CLI格式
       workingDirectory = args[0]
-    } else if (args && args.length > 0 && args[0]) {
-      // 兜底：直接取第一个参数
-      workingDirectory = args[0]
     }
+    // 注意：如果args[0]是空对象{}，workingDirectory保持undefined，走后续的自动检测逻辑
     
     let projectPath
     
@@ -88,8 +86,9 @@ class InitCommand extends BasePouchCommand {
       startDir: projectPath,
       platform: process.platform,
       avoidUserHome: true,
-      // init命令特有：优先当前目录，不查找现有.promptx
+      // init命令特有：AI提供的路径优先级最高，然后是当前目录
       strategies: [
+        'aiProvidedProjectPath',              // 最高优先级：AI提供的项目路径
         'currentWorkingDirectoryIfHasMarkers',
         'currentWorkingDirectory'
       ]
@@ -138,11 +137,10 @@ ${registryStats.message}
       // 1. 使用统一的目录服务获取项目根目录
       const projectRoot = await this.directoryService.getProjectRoot(context)
       const resourceDir = await this.directoryService.getResourceDirectory(context)
-      const domainDir = path.join(resourceDir, 'domain')
       
-      // 2. 确保目录结构存在
-      await fs.ensureDir(domainDir)
-      logger.debug(`[InitCommand] 确保目录结构存在: ${domainDir}`)
+      // 2. 确保资源目录存在（具体子目录由ResourceManager扫描时按需创建）
+      await fs.ensureDir(resourceDir)
+      logger.debug(`[InitCommand] 确保资源目录存在: ${resourceDir}`)
 
       // 3. 使用 ProjectDiscovery 的正确方法生成注册表
       logger.step('正在扫描项目资源...')

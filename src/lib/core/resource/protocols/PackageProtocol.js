@@ -39,7 +39,7 @@ class PackageProtocol extends ResourceProtocol {
         '@package://package.json',
         '@package://src/index.js',
         '@package://docs/README.md',
-        '@package://prompt/core/thought.md',
+        '@package://resource/core/thought.md',
         '@package://templates/basic/template.md'
       ],
       installModes: [

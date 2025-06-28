@@ -15,8 +15,6 @@ const logger = require('../../../utils/logger')
 class ActionCommand extends BasePouchCommand {
   constructor () {
     super()
-    // 获取WelcomeCommand的角色注册表
-    this.welcomeCommand = null
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
     this.dpmlParser = new DPMLContentParser()
@@ -98,18 +96,32 @@ class ActionCommand extends BasePouchCommand {
   }
 
   /**
-   * 获取角色信息（从WelcomeCommand）
+   * 获取角色信息（直接从ResourceManager）
    */
   async getRoleInfo (roleId) {
     logger.debug(`[ActionCommand] getRoleInfo调用，角色ID: ${roleId}`)
     
-    // 总是创建新的WelcomeCommand实例，确保获取最新的角色信息
-    logger.debug(`[ActionCommand] 创建新的WelcomeCommand实例以获取最新角色信息`)
-    const WelcomeCommand = require('./WelcomeCommand')
-    this.welcomeCommand = new WelcomeCommand()
-
-    const result = await this.welcomeCommand.getRoleInfo(roleId)
-    logger.debug(`[ActionCommand] WelcomeCommand.getRoleInfo返回:`, result)
+    // 直接使用ResourceManager获取角色信息，移除对WelcomeCommand的依赖
+    logger.debug(`[ActionCommand] 直接从ResourceManager获取角色信息`)
+    
+    const roles = this.resourceManager.registryData.getResourcesByProtocol('role')
+    logger.debug(`[ActionCommand] 找到${roles.length}个角色`)
+    
+    const role = roles.find(r => r.id === roleId)
+    logger.debug(`[ActionCommand] 查找角色${roleId}结果:`, role ? '找到' : '未找到')
+    
+    if (!role) {
+      return null
+    }
+    
+    const result = {
+      id: role.id,
+      name: role.name,
+      description: role.description,
+      file: role.reference
+    }
+    
+    logger.debug(`[ActionCommand] 返回角色信息:`, result)
     return result
   }
 

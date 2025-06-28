@@ -21,7 +21,7 @@ const resourceRegex = /@([!?]?)([a-zA-Z][a-zA-Z0-9_-]*):\/\/([a-zA-Z0-9_\/.,-]+?
 
 #### 1. 系统角色（使用@引用）
 ```xml
-<!-- prompt/domain/assistant/assistant.role.md -->
+<!-- resource/domain/assistant/assistant.role.md -->
 <role>
   <personality>
     @!thought://remember

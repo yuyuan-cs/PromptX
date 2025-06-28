@@ -105,7 +105,7 @@ graph TD
 
     B --> B1[NPM包内置资源]
     B --> B2[src/resource.registry.json]
-    B --> B3[prompt/ 目录结构]
+    B --> B3[resource/ 目录结构]
 
     C --> C1[项目本地资源]
     C --> C2[.promptx/resource/]
@@ -257,7 +257,7 @@ sequenceDiagram
 
     Note over RM: 2. 解析逻辑协议 thought
     RM->>RR: resolve("thought:remember")
-    RR->>RM: "@package://prompt/core/thought/remember.thought.md"
+    RR->>RM: "@package://resource/core/thought/remember.thought.md"
 
     Note over RM: 3. 解析基础协议 @package
     RM->>RM: 委托给PackageProtocol

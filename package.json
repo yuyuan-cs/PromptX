@@ -8,9 +8,6 @@
   },
   "scripts": {
     "start": "PROMPTX_ENV=development node src/bin/promptx.js",
-    "dacp:start": "node src/dacp/dacp-promptx-service/server.js",
-    "dacp:dev": "node src/dacp/dacp-promptx-service/server.js",
-    "dacp:test": "jest src/dacp/",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",
@@ -44,7 +41,7 @@
   },
   "files": [
     "src/",
-    "prompt/",
+    "resource/",
     "package.json",
     "README.md",
     "LICENSE",
@@ -70,12 +67,13 @@
     "nodemailer": "^7.0.3",
     "ora": "^5.4.1",
     "pkg-dir": "^8.0.0",
+    "pnpm": "^10.12.4",
     "resolve": "^1.22.10",
     "resolve-package": "^1.0.1",
     "semver": "^7.5.0",
+    "tree-kill": "^1.2.2",
     "yaml": "^2.3.0",
-    "zod": "^3.25.62",
-    "tree-kill": "^1.2.2"
+    "zod": "^3.25.62"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",

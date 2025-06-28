@@ -146,8 +146,8 @@ DPML (Deepractice Prompt Markup Language) 采用三层协议架构，从底层�
 @package://lib/commands/hello.js
 
 # 包提示词资源
-@package://prompt/core/execution/think.md
-@package://prompt/domain/scrum/role/product-owner.md
+@package://resource/core/execution/think.md
+@package://resource/domain/scrum/role/product-owner.md
 
 # 包配置和模板
 @package://jest.config.js
@@ -194,25 +194,25 @@ DPML (Deepractice Prompt Markup Language) 采用三层协议架构，从底层�
 ```bash
 # 核心协议文档
 @prompt://protocols
-# → @package://prompt/protocol/**/*.md
+# → @package://resource/protocol/**/*.md
 
 # 核心提示词模块
 @prompt://core
-# → @package://prompt/core/**/*.md
+# → @package://resource/core/**/*.md
 
 # 领域提示词
 @prompt://domain/scrum
-# → @package://prompt/domain/scrum/**/*.md
+# → @package://resource/domain/scrum/**/*.md
 
 # 特定角色提示词
 @prompt://domain/scrum/role/product-owner
-# → @package://prompt/domain/scrum/role/product-owner.role.md
+# → @package://resource/domain/scrum/role/product-owner.role.md
 ```
 
 **注册表映射：**
-- `protocols` → `@package://prompt/protocol/**/*.md`
-- `core` → `@package://prompt/core/**/*.md`
-- `domain` → `@package://prompt/domain/**/*.md`
+- `protocols` → `@package://resource/protocol/**/*.md`
+- `core` → `@package://resource/core/**/*.md`
+- `domain` → `@package://resource/domain/**/*.md`
 - `bootstrap` → `@package://bootstrap.md`
 
 #### 2. `@memory://` - 记忆系统协议
@@ -248,9 +248,9 @@ DPML (Deepractice Prompt Markup Language) 采用三层协议架构，从底层�
 // 1. 协议分层解析
 @prompt://core
     ↓ 上层协议解析
-@package://prompt/core/**/*.md  
+@package://resource/core/**/*.md  
     ↓ 中层协议解析
-@file://[NPM包路径]/prompt/core/**/*.md
+@file://[NPM包路径]/resource/core/**/*.md
     ↓ 底层协议执行
 读取文件系统资源
 ```
@@ -337,7 +337,7 @@ class PathDetector {
 promptx learn @prompt://domain/scrum/role/product-owner
 
 # 等价于底层路径：
-promptx learn @file://[NPM包]/prompt/domain/scrum/role/product-owner.role.md
+promptx learn @file://[NPM包]/resource/domain/scrum/role/product-owner.role.md
 
 # 记忆保存：保存到项目记忆
 promptx remember "重要决策" @memory://declarative
@@ -352,9 +352,9 @@ promptx remember "重要决策" @file://[项目根]/.memory/declarative.md
 # 上层 → 中层 → 底层
 @prompt://core
   ↓
-@package://prompt/core/**/*.md
+@package://resource/core/**/*.md
   ↓  
-@file:///usr/local/lib/node_modules/promptx/prompt/core/**/*.md
+@file:///usr/local/lib/node_modules/promptx/resource/core/**/*.md
 ```
 
 ## 🎯 设计优势
@@ -373,7 +373,7 @@ promptx remember "重要决策" @file://[项目根]/.memory/declarative.md
 
 ### 🎯 用户体验
 
-- **简洁语法**：`@prompt://core` vs `@file://./node_modules/promptx/prompt/core/**/*.md`
+- **简洁语法**：`@prompt://core` vs `@file://./node_modules/promptx/resource/core/**/*.md`
 - **语义清晰**：协议名称直接表达意图
 - **智能解析**：自动处理环境差异
 

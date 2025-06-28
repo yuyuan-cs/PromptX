@@ -25,63 +25,13 @@ class WelcomeCommand extends BasePouchCommand {
    * 动态加载角色注册表 - 使用新的RegistryData架构
    */
   async loadRoleRegistry () {
-    try {
-      // 确保ResourceManager已初始化
-      if (!this.resourceManager.initialized) {
-        await this.resourceManager.initializeWithNewArchitecture()
-      }
-      
-      const roleRegistry = {}
-      
-      // 使用新的RegistryData获取角色资源
-      const registryData = this.resourceManager.registryData
-      
-      if (registryData && registryData.resources && registryData.resources.length > 0) {
-        const roleResources = registryData.getResourcesByProtocol('role')
-        
-        for (const resource of roleResources) {
-          const roleId = resource.id
-          
-          // 避免重复角色（同一个ID可能有多个来源）
-          if (!roleRegistry[roleId]) {
-            roleRegistry[roleId] = {
-              id: resource.id,
-              name: resource.name,
-              description: resource.description,
-              source: resource.source,
-              file: resource.reference,
-              protocol: resource.protocol
-            }
-          }
-        }
-      }
-
-      // 如果没有任何角色，使用基础角色
-      if (Object.keys(roleRegistry).length === 0) {
-        roleRegistry.assistant = {
-          id: 'assistant',
-          name: '🙋 智能助手',
-          description: '通用助理角色，提供基础的助理服务和记忆支持',
-          source: 'fallback',
-          file: '@package://prompt/domain/assistant/assistant.role.md',
-          protocol: 'role'
-        }
-      }
-      
-      return roleRegistry
-    } catch (error) {
-      // 使用基础角色作为fallback
-      return {
-        assistant: {
-          id: 'assistant',
-          name: '🙋 智能助手',
-          description: '通用助理角色，提供基础的助理服务和记忆支持',
-          source: 'fallback',
-          file: '@package://prompt/domain/assistant/assistant.role.md',
-          protocol: 'role'
-        }
-      }
+    // 确保ResourceManager已初始化
+    if (!this.resourceManager.initialized) {
+      await this.resourceManager.initializeWithNewArchitecture()
     }
+    
+    // 直接使用ResourceManager的注册表，无需重复处理
+    return this.resourceManager.registryData.getResourcesByProtocol('role')
   }
 
   /**

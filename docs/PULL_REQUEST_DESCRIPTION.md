@@ -82,10 +82,10 @@ this.roleRegistry = { ...registeredRoles, ...discoveredRoles }
 ### **创建本地角色**
 ```bash
 # 1. 创建角色目录结构
-mkdir -p prompt/domain/my-custom-role/{thought,execution}
+mkdir -p resource/domain/my-custom-role/{thought,execution}
 
 # 2. 创建主角色文件
-cat > prompt/domain/my-custom-role/my-custom-role.role.md << 'EOF'
+cat > resource/domain/my-custom-role/my-custom-role.role.md << 'EOF'
 <!--
 name: 🎯 项目专属角色
 description: 为当前项目量身定制的专业角色
@@ -167,7 +167,7 @@ npx dpml-prompt action my-custom-role
 ## 📚 相关文档
 
 - [详细技术文档](./role-activation-improvements.md)
-- [架构设计说明](../prompt/protocol/README.md)
+- [架构设计说明](../resource/protocol/README.md)
 - [用户使用指南](../README.md)
 
 ## 🤝 贡献说明
