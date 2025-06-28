@@ -84,10 +84,8 @@ class MCPServerCommand {
       // 设置进程清理处理器
       this.setupProcessCleanup();
       
-      // 如果需要启动DACP服务
-      if (options.withDacp) {
-        await this.startDACPService();
-      }
+      // 🔧 DACP现已改为Mock模式，无需启动独立服务
+      // 静默忽略任何withDacp选项，保持向后兼容
       
       this.log('🚀 启动MCP Server...');
       const transport = new StdioServerTransport();
@@ -145,44 +143,27 @@ class MCPServerCommand {
   }
   
   /**
-   * 清理子进程
+   * 清理子进程 (DACP现为Mock模式，此方法保留但无实际清理工作)
+   * @deprecated DACP已改为Mock模式，无需清理子进程
    */
   cleanup() {
-    if (this.dacpProcess && !this.dacpProcess.killed && this.dacpProcess.pid) {
-      this.log('🛑 正在终止DACP服务及其所有子进程...');
-      
-      // 使用 tree-kill 终止整个进程树
-      treeKill(this.dacpProcess.pid, 'SIGTERM', (err) => {
-        if (err) {
-          this.log(`⚠️ 优雅终止失败: ${err.message}`);
-          
-          // 3秒后强制终止
-          setTimeout(() => {
-            if (this.dacpProcess && !this.dacpProcess.killed && this.dacpProcess.pid) {
-              this.log('⚠️ DACP服务未响应SIGTERM，强制终止整个进程树...');
-              treeKill(this.dacpProcess.pid, 'SIGKILL', (killErr) => {
-                if (killErr) {
-                  this.log(`❌ 强制终止失败: ${killErr.message}`);
-                } else {
-                  this.log('✅ DACP服务进程树已强制终止');
-                }
-              });
-            }
-          }, 3000);
-        } else {
-          this.log('✅ DACP服务进程树已优雅终止');
-        }
-      });
-    }
+    // 🔧 DACP现已改为Mock模式，无需清理DACP子进程
+    // HTTP模式的进程清理代码已保留作为参考实现
+    this.log('🔧 Mock模式下无需清理DACP子进程');
   }
   
   /**
-   * 检测DACP服务是否已经运行
+   * 检测DACP服务是否已经运行 (HTTP模式 - 仅作参考实现保留)
+   * @deprecated DACP已改为Mock模式，此方法仅保留作为参考
    * @param {string} host - 主机地址
    * @param {number} port - 端口号
    * @returns {Promise<boolean>} 服务是否运行
    */
   async isDACPServiceRunning(host = 'localhost', port = 3002) {
+    // 🔧 Mock模式下始终返回false，因为不需要HTTP服务
+    return false;
+    
+    /* HTTP模式参考实现（已禁用）
     const http = require('http');
     
     return new Promise((resolve) => {
@@ -224,15 +205,28 @@ class MCPServerCommand {
 
       req.end();
     });
+    */
   }
 
   /**
-   * 获取DACP服务信息
+   * 获取DACP服务信息 (HTTP模式 - 仅作参考实现保留)
+   * @deprecated DACP已改为Mock模式，此方法仅保留作为参考
    * @param {string} host - 主机地址  
    * @param {number} port - 端口号
    * @returns {Promise<Object|null>} 服务信息
    */
   async getDACPServiceInfo(host = 'localhost', port = 3002) {
+    // 🔧 Mock模式下返回模拟的服务信息
+    return {
+      service: {
+        name: 'PromptX DACP Mock Service',
+        version: '1.0.0-mock'
+      },
+      available_actions: ['calculate', 'send_email'],
+      mode: 'local_mock'
+    };
+    
+    /* HTTP模式参考实现（已禁用）
     const http = require('http');
     
     return new Promise((resolve) => {
@@ -271,12 +265,25 @@ class MCPServerCommand {
 
       req.end();
     });
+    */
   }
 
   /**
-   * 启动DACP服务
+   * 启动DACP服务 (HTTP模式 - 仅作参考实现保留)
+   * @deprecated DACP已改为Mock模式，此方法仅保留作为参考
    */
   async startDACPService() {
+    // 🔧 Mock模式下输出提示信息即可
+    console.error('');
+    console.error('=====================================');
+    console.error('🔧 DACP Mock模式已启用');
+    console.error('📦 本地函数调用模式：无需HTTP服务');
+    console.error('🔧 支持的Actions: send_email, calculate');
+    console.error('✅ Mock模式启动成功');
+    console.error('=====================================');
+    console.error('');
+    
+    /* HTTP模式参考实现（已禁用）
     const { spawn } = require('child_process');
     const path = require('path');
     
@@ -395,6 +402,7 @@ class MCPServerCommand {
       this.log(`❌ DACP服务启动失败: ${error.message}`);
       throw error;
     }
+    */
   }
   
   /**

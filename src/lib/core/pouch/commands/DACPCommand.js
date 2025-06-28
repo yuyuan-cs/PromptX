@@ -1,9 +1,14 @@
 const BasePouchCommand = require('../BasePouchCommand');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * DACP服务调用命令
  * 负责调用DACP服务，实现从AI建议到AI行动的转换
+ * 
+ * 🔧 当前实现：Mock模式（本地函数调用）
+ * 🌐 HTTP模式代码保留作为参考实现
  */
 class DACPCommand extends BasePouchCommand {
   constructor() {
@@ -12,6 +17,10 @@ class DACPCommand extends BasePouchCommand {
     // 统一的DACP服务端点
     // 所有service_id都路由到同一个服务
     this.defaultEndpoint = 'http://localhost:3002/dacp';
+    
+    // 🔧 永久使用Mock模式（本地函数调用）
+    // 不再支持HTTP模式，简化架构复杂度
+    this.useMockMode = true;
   }
 
   /**
@@ -37,7 +46,8 @@ class DACPCommand extends BasePouchCommand {
   }
 
   /**
-   * 获取服务端点
+   * 获取服务端点（HTTP模式 - 仅作参考实现保留）
+   * @deprecated 当前使用Mock模式，此方法仅保留作为参考
    * @param {string} serviceId - 服务ID
    * @returns {string} 服务端点URL
    */
@@ -59,20 +69,8 @@ class DACPCommand extends BasePouchCommand {
       
       const { service_id, action, parameters } = args;
       
-      // 获取服务端点（现在是统一的）
-      const endpoint = this.getServiceEndpoint(service_id);
-      
-      // 构造DACP请求
-      const dacpRequest = {
-        service_id,
-        action,
-        parameters,
-        request_id: `req_${Date.now()}`
-      };
-      
-      // 调用DACP服务
-      const result = await this.makeHttpRequest(endpoint, dacpRequest);
-      return result;
+      // 🔧 直接使用本地Mock调用
+      return await this.callLocalService(args);
       
     } catch (error) {
       // 统一错误处理
@@ -87,7 +85,99 @@ class DACPCommand extends BasePouchCommand {
   }
 
   /**
-   * 发送HTTP请求
+   * 本地服务调用（Mock模式）
+   * @param {Object} args - 调用参数
+   * @returns {Promise<Object>} DACP标准响应
+   */
+  async callLocalService(args) {
+    const startTime = Date.now();
+    const { service_id, action, parameters } = args;
+    const request_id = `req_${Date.now()}`;
+    
+    try {
+      // 1. 读取DACP配置
+      const configPath = path.join(__dirname, '../../../dacp/dacp-promptx-service/dacp.config.json');
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      
+      // 2. 验证service_id
+      if (service_id !== config.service.id) {
+        throw new Error(`Service ${service_id} not found. This is ${config.service.id}`);
+      }
+      
+      // 3. 动态加载actions
+      const actionsDir = path.join(__dirname, '../../../dacp/dacp-promptx-service/actions');
+      const actions = {};
+      
+      if (fs.existsSync(actionsDir)) {
+        fs.readdirSync(actionsDir).forEach(file => {
+          if (file.endsWith('.js')) {
+            const actionName = file.replace('.js', '');
+            actions[actionName] = require(path.join(actionsDir, file));
+          }
+        });
+      }
+      
+      // 4. 查找action处理器
+      let handler = null;
+      
+      // 先按模块名查找
+      for (const [moduleName, module] of Object.entries(actions)) {
+        if (module[action] && typeof module[action] === 'function') {
+          handler = module[action];
+          break;
+        }
+      }
+      
+      // 找不到则按精确匹配查找
+      if (!handler && actions[action]) {
+        handler = actions[action];
+      }
+      
+      if (!handler) {
+        throw new Error(`Action ${action} is not supported`);
+      }
+      
+      // 5. 执行action
+      const result = await handler(parameters);
+      
+      // 6. 返回DACP标准格式响应
+      return {
+        request_id: request_id,
+        success: true,
+        data: {
+          execution_result: result,
+          evaluation: {
+            constraint_compliance: true,
+            rule_adherence: true,
+            guideline_alignment: true
+          },
+          applied_guidelines: [
+            'DACP protocol standard',
+            'Local mock execution'
+          ],
+          performance_metrics: {
+            execution_time: `${Date.now() - startTime}ms`,
+            resource_usage: 'minimal'
+          }
+        }
+      };
+      
+    } catch (error) {
+      return {
+        request_id: request_id,
+        success: false,
+        error: {
+          code: error.message.includes('not found') ? 'INVALID_SERVICE' : 
+                 error.message.includes('not supported') ? 'UNKNOWN_ACTION' : 'EXECUTION_ERROR',
+          message: error.message
+        }
+      };
+    }
+  }
+
+  /**
+   * 发送HTTP请求（HTTP模式 - 仅作参考实现保留）
+   * @deprecated 当前使用Mock模式，此方法仅保留作为参考
    * @param {string} url - 请求URL
    * @param {Object} data - 请求数据
    * @returns {Promise<Object>} 响应数据
@@ -149,8 +239,7 @@ class DACPCommand extends BasePouchCommand {
       if (result.success) {
         const executionResult = result.data.execution_result;
         const metrics = result.data.performance_metrics;
-        
-        return `🚀 DACP服务调用成功
+        return `🚀 DACP服务调用成功 (🔧 本地Mock模式)
 
 📋 执行结果:
 ${JSON.stringify(executionResult, null, 2)}
@@ -172,9 +261,10 @@ ${JSON.stringify(executionResult, null, 2)}
       return `❌ DACP服务调用异常
 
 错误详情: ${error.message}
+运行模式: 🔧 本地Mock模式
 
 💡 请检查:
-1. DACP服务是否运行 (http://localhost:3002/health)
+1. DACP action模块是否存在
 2. 服务ID是否正确
 3. 操作名称是否有效
 4. 参数格式是否正确`;

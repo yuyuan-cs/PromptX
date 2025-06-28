@@ -105,7 +105,7 @@ program
   .option('--host <address>', '绑定地址 (仅http/sse传输)', 'localhost')
   .option('--cors', '启用CORS (仅http/sse传输)', false)
   .option('--debug', '启用调试模式', false)
-  .option('--with-dacp', '同时启动DACP服务', false)
+  .option('--with-dacp', '(已废弃，静默忽略)', false)
   .action(async (options) => {
     try {
       // 设置调试模式
@@ -116,7 +116,8 @@ program
       // 根据传输类型选择命令
       if (options.transport === 'stdio') {
         const mcpServer = new MCPServerCommand();
-        await mcpServer.execute({ withDacp: options.withDacp });
+        // 🔧 DACP现为Mock模式，静默忽略用户的withDacp配置
+        await mcpServer.execute();
       } else if (options.transport === 'http' || options.transport === 'sse') {
         const mcpHttpServer = new MCPStreamableHttpCommand();
         const serverOptions = {
