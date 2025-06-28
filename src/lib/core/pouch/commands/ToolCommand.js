@@ -1,13 +1,13 @@
-const BasePouchCommand = require('../core/pouch/BasePouchCommand')
-const { getGlobalResourceManager } = require('../core/resource')
-const ToolExecutor = require('../tool/ToolExecutor')
-const logger = require('../utils/logger')
+const BasePouchCommand = require('../BasePouchCommand')
+const { getGlobalResourceManager } = require('../../resource')
+const ToolExecutor = require('../../../tool/ToolExecutor')
+const logger = require('../../../utils/logger')
 
 /**
- * PromptX Tool命令处理器
+ * Tool命令处理器
  * 实现promptx_tool MCP工具，执行通过@tool协议声明的工具
  */
-class PromptXToolCommand extends BasePouchCommand {
+class ToolCommand extends BasePouchCommand {
   constructor() {
     super()
     this.toolExecutor = new ToolExecutor()
@@ -268,4 +268,4 @@ ${JSON.stringify(result.result, null, 2)}
   }
 }
 
-module.exports = PromptXToolCommand
+module.exports = ToolCommand
