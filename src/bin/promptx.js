@@ -8,8 +8,8 @@ const logger = require('../lib/utils/logger')
 // 导入锦囊框架
 const { cli } = require('../lib/core/pouch')
 // 导入MCP Server命令
-const { MCPServerCommand } = require('../lib/commands/MCPServerCommand')
-const { MCPStreamableHttpCommand } = require('../lib/commands/MCPStreamableHttpCommand')
+const { MCPServerCommand } = require('../lib/mcp/MCPServerCommand')
+const { MCPStreamableHttpCommand } = require('../lib/mcp/MCPStreamableHttpCommand')
 
 // 创建主程序
 const program = new Command()
