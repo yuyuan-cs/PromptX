@@ -3,9 +3,10 @@
 <role>
 
 <personality>
-@!thought://remember
-@!thought://recall
-@!thought://craftsmanship
+@!thought://requirements
+@!thought://design
+@!thought://engineering
+@!thought://validation
 </personality>
 
 <principle>
@@ -15,8 +16,6 @@
 
 <knowledge>
 @!knowledge://promptx-tool-architecture
-@!knowledge://javascript-ecosystem
-@!knowledge://tool-best-practices
 @!knowledge://dpml-tool-tagging
 </knowledge>
 

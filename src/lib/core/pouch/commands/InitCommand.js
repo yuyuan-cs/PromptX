@@ -86,8 +86,9 @@ class InitCommand extends BasePouchCommand {
       startDir: projectPath,
       platform: process.platform,
       avoidUserHome: true,
-      // init命令特有：优先当前目录，不查找现有.promptx
+      // init命令特有：AI提供的路径优先级最高，然后是当前目录
       strategies: [
+        'aiProvidedProjectPath',              // 最高优先级：AI提供的项目路径
         'currentWorkingDirectoryIfHasMarkers',
         'currentWorkingDirectory'
       ]

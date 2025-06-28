@@ -1,6 +1,6 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
-const ToolExecutor = require('../../../tool/ToolExecutor')
+const ToolSandbox = require('../../../tool/ToolSandbox')
 const logger = require('../../../utils/logger')
 
 /**
@@ -10,7 +10,6 @@ const logger = require('../../../utils/logger')
 class ToolCommand extends BasePouchCommand {
   constructor() {
     super()
-    this.toolExecutor = new ToolExecutor()
     this.resourceManager = null
   }
 
@@ -94,7 +93,7 @@ ${JSON.stringify(result.result, null, 2)}
   }
 
   /**
-   * 内部工具执行方法
+   * 内部工具执行方法 - 使用ToolSandbox三阶段执行流程
    * @param {Object} args - 命令参数
    * @param {string} args.tool_resource - 工具资源引用，格式：@tool://tool-name
    * @param {Object} args.parameters - 传递给工具的参数
@@ -103,6 +102,7 @@ ${JSON.stringify(result.result, null, 2)}
    */
   async executeToolInternal(args) {
     const startTime = Date.now()
+    let sandbox = null
     
     try {
       // 1. 参数验证
@@ -112,32 +112,39 @@ ${JSON.stringify(result.result, null, 2)}
       
       logger.debug(`[PromptXTool] 开始执行工具: ${tool_resource}`)
       
-      // 2. 通过ResourceManager解析工具资源
+      // 2. 创建ToolSandbox实例
+      sandbox = new ToolSandbox(tool_resource)
+      
+      // 3. 设置ResourceManager
       const resourceManager = await this.getResourceManager()
-      const toolInfo = await resourceManager.loadResource(tool_resource)
+      sandbox.setResourceManager(resourceManager)
       
-      // 3. 准备工具执行上下文
-      const executionContext = {
-        ...context,
-        tool_resource,
-        timestamp: new Date().toISOString(),
-        execution_id: this.generateExecutionId()
-      }
+      // 4. ToolSandbox三阶段执行流程
+      logger.debug(`[PromptXTool] Phase 1: 分析工具`)
+      const analysisResult = await sandbox.analyze()
       
-      // 4. 使用ToolExecutor执行工具
-      const result = await this.toolExecutor.execute(
-        toolInfo.content, 
-        parameters, 
-        executionContext
-      )
+      logger.debug(`[PromptXTool] Phase 2: 准备依赖`, { dependencies: analysisResult.dependencies })
+      await sandbox.prepareDependencies()
       
-      // 5. 格式化成功结果
+      logger.debug(`[PromptXTool] Phase 3: 执行工具`)
+      const result = await sandbox.execute(parameters)
+      
+      // 5. 格式化成功结果 
       return this.formatSuccessResult(result, tool_resource, startTime)
       
     } catch (error) {
       // 6. 格式化错误结果
       logger.error(`[PromptXTool] 工具执行失败: ${error.message}`, error)
       return this.formatErrorResult(error, args.tool_resource, startTime)
+    } finally {
+      // 7. 清理沙箱资源
+      if (sandbox) {
+        try {
+          await sandbox.cleanup()
+        } catch (cleanupError) {
+          logger.warn(`[PromptXTool] 沙箱清理失败: ${cleanupError.message}`)
+        }
+      }
     }
   }
 
@@ -164,7 +171,7 @@ ${JSON.stringify(result.result, null, 2)}
   }
 
   /**
-   * 格式化成功结果
+   * 格式化成功结果 - 适配ToolSandbox返回格式
    * @param {*} result - 工具执行结果
    * @param {string} toolResource - 工具资源引用
    * @param {number} startTime - 开始时间
@@ -176,8 +183,9 @@ ${JSON.stringify(result.result, null, 2)}
     return {
       success: true,
       tool_resource: toolResource,
-      result: result,
+      result: result, // ToolSandbox直接返回工具结果
       metadata: {
+        executor: 'ToolSandbox',
         execution_time_ms: duration,
         timestamp: new Date().toISOString(),
         version: '1.0.0'
@@ -186,7 +194,7 @@ ${JSON.stringify(result.result, null, 2)}
   }
 
   /**
-   * 格式化错误结果
+   * 格式化错误结果 - 适配ToolSandbox错误格式
    * @param {Error} error - 错误对象
    * @param {string} toolResource - 工具资源引用（可能为空）
    * @param {number} startTime - 开始时间
@@ -194,44 +202,66 @@ ${JSON.stringify(result.result, null, 2)}
    */
   formatErrorResult(error, toolResource, startTime) {
     const duration = Date.now() - startTime
+    const executionId = this.generateExecutionId()
     
     return {
       success: false,
       tool_resource: toolResource || 'unknown',
       error: {
-        type: error.constructor.name,
+        code: this.getErrorCode(error),
         message: error.message,
-        code: this.getErrorCode(error)
+        details: {
+          executionId: executionId,
+          executionTime: `${duration}ms`,
+          stack: error.stack
+        }
       },
       metadata: {
-        execution_time_ms: duration,
-        timestamp: new Date().toISOString(),
-        version: '1.0.0'
+        executor: 'ToolSandbox',
+        timestamp: new Date().toISOString()
       }
     }
   }
 
   /**
-   * 根据错误类型获取错误代码
+   * 根据错误类型获取错误代码 - 增强支持ToolSandbox错误
    * @param {Error} error - 错误对象
    * @returns {string} 错误代码
    */
   getErrorCode(error) {
-    if (error.message.includes('not found')) {
+    const message = error.message.toLowerCase()
+    
+    // ToolSandbox特有错误
+    if (message.includes('analyze') || message.includes('analysis')) {
+      return 'ANALYSIS_ERROR'
+    }
+    if (message.includes('dependencies') || message.includes('pnpm')) {
+      return 'DEPENDENCY_ERROR'
+    }
+    if (message.includes('sandbox') || message.includes('execution')) {
+      return 'EXECUTION_ERROR'
+    }
+    if (message.includes('validation') || message.includes('validate')) {
+      return 'VALIDATION_ERROR'
+    }
+    
+    // 通用错误
+    if (message.includes('not found')) {
       return 'TOOL_NOT_FOUND'
     }
-    if (error.message.includes('Invalid tool_resource format')) {
+    if (message.includes('invalid tool_resource format')) {
       return 'INVALID_TOOL_RESOURCE'
     }
-    if (error.message.includes('Missing')) {
+    if (message.includes('missing')) {
       return 'MISSING_PARAMETER'
     }
-    if (error.message.includes('syntax')) {
+    if (message.includes('syntax')) {
       return 'TOOL_SYNTAX_ERROR'
     }
-    if (error.message.includes('timeout')) {
+    if (message.includes('timeout')) {
       return 'EXECUTION_TIMEOUT'
     }
+    
     return 'UNKNOWN_ERROR'
   }
 
@@ -244,24 +274,28 @@ ${JSON.stringify(result.result, null, 2)}
   }
 
   /**
-   * 获取工具命令的元信息
+   * 获取工具命令的元信息 - ToolSandbox版本
    * @returns {Object} 命令元信息
    */
   getMetadata() {
     return {
       name: 'promptx_tool',
-      description: '执行通过@tool协议声明的工具',
-      version: '1.0.0',
+      description: '使用ToolSandbox执行通过@tool协议声明的工具',
+      version: '2.0.0',
       author: 'PromptX Framework',
+      executor: 'ToolSandbox',
       supports: {
         protocols: ['@tool://'],
         formats: ['.tool.js'],
         features: [
-          'JavaScript工具执行',
+          'ToolSandbox沙箱执行',
+          '自动依赖管理',
+          '三阶段执行流程',
+          'pnpm依赖安装',
           '参数验证',
           '错误处理',
           '执行监控',
-          '上下文传递'
+          '资源清理'
         ]
       }
     }
