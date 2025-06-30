@@ -776,6 +776,9 @@ AI不仅仅是技术工具，更是重新定义生活方式的革命力量。我
 #### **🏆 使用Q Developer和PromptX MCP构建Kaggle打榜智能体** - 数据科学竞赛AI助手实战
 **作者：** vorale2 | **链接：** [视频教程](https://www.bilibili.com/video/BV1FA3wzJEKc) | **平台：** 哔哩哔哩
 
+#### **📚 AI-Prompts压箱底提示词库** - 可定制的专业编码助手提示词集合
+**作者：** 茵蒂克丝 | **链接：** [GitHub仓库](https://github.com/Blue-Soul-commits/AI-Prompts) | **特色：** 与PromptX完美集成
+
 ---
 
 ### 🌟 **分享你的案例**
