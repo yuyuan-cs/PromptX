@@ -773,6 +773,9 @@ AI不仅仅是技术工具，更是重新定义生活方式的革命力量。我
 #### **⚖️ AI模拟法庭** - 沉浸式庭审临场感体验，实战级5.7万字笔录及判决书临摹
 **作者：** 社区专业律师 | **链接：** [创新分享](https://mp.weixin.qq.com/s/gscpUqiApktaSO3Uio5Iiw) | [GitHub](https://github.com/jiangxia/ai-trial)
 
+#### **🏆 使用Q Developer和PromptX MCP构建Kaggle打榜智能体** - 数据科学竞赛AI助手实战
+**作者：** vorale2 | **链接：** [视频教程](https://www.bilibili.com/video/BV1FA3wzJEKc) | **平台：** 哔哩哔哩
+
 ---
 
 ### 🌟 **分享你的案例**
