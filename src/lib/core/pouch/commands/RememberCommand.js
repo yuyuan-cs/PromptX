@@ -24,7 +24,8 @@ class RememberCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    const content = args.join(' ')
+    // 解析参数：content, --tags, --context
+    const { content, tags, context } = this.parseArgs(args)
 
     if (!content) {
       return this.getUsageHelp()
@@ -37,7 +38,8 @@ class RememberCommand extends BasePouchCommand {
       logger.step('🧠 [RememberCommand] 开始记忆保存流程 (纯XML模式)')
       logger.info(`📝 [RememberCommand] 记忆内容: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`)
       
-      const memoryEntry = await this.saveMemoryXMLOnly(content)
+      // 🎯 传递context参数到保存方法
+      const memoryEntry = await this.saveMemoryXMLOnly(content, context)
 
       logger.success(`✅ [RememberCommand] XML记忆保存完成 - 路径: ${memoryEntry.filePath}`)
       return this.formatSaveResponse(content, memoryEntry)
@@ -48,6 +50,38 @@ class RememberCommand extends BasePouchCommand {
       
       return this.formatErrorWithRecovery(error)
     }
+  }
+
+  /**
+   * 🎯 解析命令行参数
+   */
+  parseArgs(args) {
+    let content = ''
+    let tags = ''
+    let context = null
+    
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--tags' && i + 1 < args.length) {
+        tags = args[i + 1]
+        i++ // 跳过下一个参数
+      } else if (args[i] === '--context' && i + 1 < args.length) {
+        try {
+          context = JSON.parse(args[i + 1])
+        } catch (error) {
+          logger.warn(`⚠️ [RememberCommand] context参数解析失败: ${args[i + 1]}`)
+        }
+        i++ // 跳过下一个参数
+      } else {
+        // 内容参数
+        if (content) {
+          content += ' ' + args[i]
+        } else {
+          content = args[i]
+        }
+      }
+    }
+    
+    return { content, tags, context }
   }
 
   /**
@@ -102,18 +136,38 @@ class RememberCommand extends BasePouchCommand {
   /**
    * 纯XML记忆保存（移除所有Markdown逻辑）
    */
-  async saveMemoryXMLOnly(value) {
-    logger.step('🔧 [RememberCommand] 执行纯XML保存模式')
+  async saveMemoryXMLOnly(value, context) {
+    logger.step('🔧 [RememberCommand] 执行角色专属记忆保存')
     
     const memoryDir = await this.ensureMemoryDirectory()
+    logger.info(`📁 [RememberCommand] 基础记忆目录: ${memoryDir}`)
     
-    // 🔄 保留一次性Legacy迁移（确保老用户数据不丢失）
-    await this.performSafeLegacyMigration(memoryDir)
+    // 🎯 角色专属记忆处理流程
+    logger.info(`🎯 [RememberCommand] === 角色专属记忆处理开始 ===`)
+    const currentRole = await this.getCurrentRole(context)
+    logger.info(`🎯 [RememberCommand] 当前激活角色: "${currentRole}"`)
     
-    // 🎯 纯DPML处理流程
-    const xmlFile = path.join(memoryDir, 'declarative.dpml')
+    const roleMemoryDir = path.join(memoryDir, currentRole)
+    logger.info(`🎯 [RememberCommand] 角色记忆目录: ${roleMemoryDir}`)
+    
+    const xmlFile = path.join(roleMemoryDir, 'declarative.dpml')
+    logger.info(`🎯 [RememberCommand] 角色记忆文件: ${xmlFile}`)
+    
+    // 确保角色目录存在
+    logger.info(`📁 [RememberCommand] 准备创建角色目录...`)
+    await fs.ensureDir(roleMemoryDir)
+    logger.success(`📁 [RememberCommand] 角色目录创建完成: ${roleMemoryDir}`)
+    
+    // 验证目录是否真的存在
+    const dirExists = await fs.pathExists(roleMemoryDir)
+    logger.info(`📁 [RememberCommand] 目录存在验证: ${dirExists}`)
+    
+    logger.info(`💾 [RememberCommand] 准备保存记忆到: ${xmlFile}`)
     const memoryItem = this.formatXMLMemoryItem(value)
     const action = await this.appendToXMLFile(xmlFile, memoryItem)
+    logger.success(`💾 [RememberCommand] 记忆保存完成，操作类型: ${action}`)
+    
+    logger.info(`🎯 [RememberCommand] === 角色专属记忆处理完成 ===`)
     
     return {
       value,
@@ -175,8 +229,6 @@ class RememberCommand extends BasePouchCommand {
 3. 如持续失败，查看备份数据`
   }
 
-
-
   /**
    * 确保AI记忆体系目录存在（使用ResourceManager路径获取）
    */
@@ -201,6 +253,32 @@ class RememberCommand extends BasePouchCommand {
     logger.success(`📁 [RememberCommand] 记忆目录确保完成: ${memoryDir}`)
     
     return memoryDir
+  }
+
+  /**
+   * 🎯 获取当前激活角色（Context参数优先，默认为default）
+   */
+  async getCurrentRole(context) {
+    try {
+      logger.info(`🎭 [RememberCommand] === getCurrentRole开始 ===`)
+      
+      // 🎯 优先使用context.role_id参数
+      if (context && context.role_id) {
+        logger.success(`🎭 [RememberCommand] 从context参数获取角色: "${context.role_id}"`)
+        logger.info(`🎭 [RememberCommand] === getCurrentRole完成 === 返回角色: ${context.role_id}`)
+        return context.role_id
+      }
+      
+      // 🎯 无Context时使用默认角色
+      logger.info(`🎭 [RememberCommand] 无context.role_id，使用默认角色: default`)
+      logger.info(`🎭 [RememberCommand] === getCurrentRole完成 === 返回默认角色: default`)
+      return 'default'
+      
+    } catch (error) {
+      logger.error(`❌ [RememberCommand] getCurrentRole失败: ${error.message}`)
+      logger.warn(`🎭 [RememberCommand] === getCurrentRole完成 === 返回默认角色: default (错误回退)`)
+      return 'default'
+    }
   }
 
   /**
