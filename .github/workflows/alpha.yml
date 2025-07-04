@@ -3,7 +3,7 @@ name: Alpha Release
 on:
   push:
     branches:
-      - develop
+      - test
   workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
@@ -39,7 +39,7 @@ jobs:
       - name: Release alpha version
         run: |
           # 确保在正确的分支
-          git checkout develop
+          git checkout test
           
           # 获取当前时间戳和短commit hash
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
@@ -81,7 +81,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              base: 'develop'
+              base: 'test'
             });
             
             const comment = `🚀 **Alpha版本已发布!**
@@ -97,9 +97,9 @@ jobs:
             npx dpml-prompt@${version} action <roleId>
             \`\`\`
             
-            💡 你可以使用这个alpha版本测试最新的develop分支功能。
+            💡 你可以使用这个alpha版本测试最新的test分支功能。
             
-            ⚠️ **迁移提示**: 推荐使用 \`@alpha\` 替代 \`@snapshot\` 进行开发测试。`;
+            🧪 **Alpha定位**: 精选功能测试版本，适合功能验证和用户测试。`;
             
             // 为每个相关PR添加评论
             for (const pr of prs) {
