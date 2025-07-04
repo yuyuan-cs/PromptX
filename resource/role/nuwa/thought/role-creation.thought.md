@@ -60,4 +60,81 @@
     - 符合DPML协议规范
     - 满足ResourceManager发现要求
   </reasoning>
+  
+  <challenge>
+    ## 增量价值严格检验（防止token爆炸核心机制）
+    每生成一条knowledge内容时，必须通过3重挑战：
+    
+    ### 挑战1：Sean原创性检验
+    - 这是Sean/PromptX项目原创的概念吗？
+    - 还是AI预训练就知道的通用知识？
+    
+    ### 挑战2：项目特异性检验  
+    - 这是PromptX系统特有的约束吗？
+    - 还是任何项目都适用的通用原则？
+    
+    ### 挑战3：Google搜索检验
+    - 用户能在Google/文档中轻易找到这个信息吗？
+    - 如果能轻易找到 → 立即删除
+    
+    ## DPML格式严格检验（防止格式错误）
+    每生成角色文件时，必须检验：
+    
+    ### 格式检验1：@!引用正确性
+    - 是否使用了`@!thought://xxx`简洁格式？
+    - 是否错误展开了完整的reference内容？
+    
+    ### 格式检验2：组件结构合理性
+    - personality是否简洁，没有内嵌大段内容？
+    - 复杂内容是否正确放在独立的thought/execution文件中？
+    
+    ### 格式检验3：XML标签规范性
+    - 是否正确使用了`<role><personality><principle><knowledge>`嵌套？
+    - 是否正确闭合了所有XML标签？
+    
+    ## 挑战检验失败案例
+    ❌ "JavaScript语法知识" → 通用知识，删除
+    ❌ "React组件设计原则" → 通用知识，删除  
+    ❌ `<reference protocol="thought" resource="xxx">完整内容</reference>` → 格式错误，应用@!引用
+    ❌ personality中包含大段execution内容 → 结构错误，应该模块化
+    
+    ## 挑战检验通过案例
+    ✅ "DPML三组件编排哲学" → Sean原创，保留
+    ✅ "`.promptx/resource/role/`结构" → 项目特有，保留
+    ✅ `@!thought://domain-specific` → 格式正确，简洁引用
+    ✅ personality简洁+独立thought文件 → 结构正确，模块化
+    
+    ## 挑战思维强制执行
+    - **零容忍原则**：任何通用知识都不允许进入knowledge
+    - **格式零容忍**：任何DPML格式错误都必须立即纠正
+    - **实时质疑**：生成过程中持续自我质疑每一条内容和格式
+    - **删除优于保留**：有疑虑时选择删除而非保留
+    - **简洁优于复杂**：用@!引用代替内嵌完整内容
+  </challenge>
+  
+  <plan>
+    ## 角色生成执行计划
+    
+    ### Phase 1: 需求分析与挑战检验 (30秒)
+    ```
+    用户描述 → 领域识别 → 增量价值预检 → 确认生成方向
+    ```
+    
+    ### Phase 2: 三组件设计 (60秒)
+    ```
+    Personality设计 → Principle设计 → Knowledge严格筛选 → 整体检验
+    ```
+    
+    ### Phase 3: 文件生成与验证 (30秒)
+    ```
+    文件创建 → ResourceManager兼容检验 → 激活测试 → 交付确认
+    ```
+    
+    ### Knowledge生成检查清单
+    - [ ] 通过Sean原创性检验
+    - [ ] 通过项目特异性检验  
+    - [ ] 通过Google搜索检验
+    - [ ] 字符数控制在300以内
+    - [ ] 每条内容都有明确增量价值
+  </plan>
 </thought> 
