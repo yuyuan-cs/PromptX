@@ -207,9 +207,12 @@ class ToolSandbox {
    * 在基础沙箱中分析工具
    */
   async analyzeToolInSandbox() {
-    const basicSandbox = this.createBasicSandbox();
+    const sandbox = this.createSandbox({
+      supportDependencies: false,
+      sandboxPath: process.cwd()
+    });
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
-    const context = vm.createContext(basicSandbox);
+    const context = vm.createContext(sandbox);
     
     try {
       script.runInContext(context);
@@ -442,7 +445,10 @@ class ToolSandbox {
    * 创建执行沙箱环境
    */
   async createExecutionSandbox() {
-    this.sandboxContext = this.createSmartSandbox();
+    this.sandboxContext = this.createSandbox({
+      supportDependencies: true,
+      sandboxPath: this.sandboxPath
+    });
     
     // 在智能沙箱中重新加载工具
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
@@ -459,19 +465,27 @@ class ToolSandbox {
   }
 
   /**
-   * 创建基础沙箱
+   * 创建统一沙箱环境
+   * @param {Object} options - 沙箱配置
+   * @param {boolean} options.supportDependencies - 是否支持依赖解析
+   * @param {string} options.sandboxPath - 沙箱工作目录
+   * @returns {Object} 沙箱环境对象
    */
-  createBasicSandbox() {
+  createSandbox(options = {}) {
+    const { 
+      supportDependencies = false, 
+      sandboxPath = process.cwd() 
+    } = options;
+    
     return {
-      require: require,
+      require: supportDependencies ? 
+        this.createSmartRequire(sandboxPath) : 
+        require,
       module: { exports: {} },
       exports: {},
       console: console,
       Buffer: Buffer,
-      process: {
-        env: process.env,
-        hrtime: process.hrtime
-      },
+      process: this.createProcessMock(sandboxPath),
       setTimeout: setTimeout,
       clearTimeout: clearTimeout,
       setInterval: setInterval,
@@ -491,48 +505,41 @@ class ToolSandbox {
   }
 
   /**
-   * 创建智能沙箱（支持依赖）
+   * 创建完整的process对象mock
+   * @param {string} sandboxPath - 沙箱工作目录
+   * @returns {Object} mock的process对象
    */
-  createSmartSandbox() {
+  createProcessMock(sandboxPath) {
     return {
-      require: (moduleName) => {
-        try {
-          // 优先从沙箱目录查找依赖
-          return require(require.resolve(moduleName, {
-            paths: [
-              path.join(this.sandboxPath, 'node_modules'),
-              this.sandboxPath,
-              process.cwd() + '/node_modules'
-            ]
-          }));
-        } catch (error) {
-          // 回退到默认require
-          return require(moduleName);
-        }
-      },
-      module: { exports: {} },
-      exports: {},
-      console: console,
-      Buffer: Buffer,
-      process: {
-        env: process.env,
-        hrtime: process.hrtime
-      },
-      setTimeout: setTimeout,
-      clearTimeout: clearTimeout,
-      setInterval: setInterval,
-      clearInterval: clearInterval,
-      Object: Object,
-      Array: Array,
-      String: String,
-      Number: Number,
-      Boolean: Boolean,
-      Date: Date,
-      JSON: JSON,
-      Math: Math,
-      RegExp: RegExp,
-      Error: Error,
-      URL: URL
+      env: process.env,
+      version: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      hrtime: process.hrtime,
+      cwd: () => sandboxPath,
+      pid: process.pid,
+      uptime: process.uptime
+    };
+  }
+
+  /**
+   * 创建支持依赖解析的require函数
+   * @param {string} sandboxPath - 沙箱路径
+   * @returns {Function} 智能require函数
+   */
+  createSmartRequire(sandboxPath) {
+    return (moduleName) => {
+      try {
+        return require(require.resolve(moduleName, {
+          paths: [
+            path.join(sandboxPath, 'node_modules'),
+            sandboxPath,
+            process.cwd() + '/node_modules'
+          ]
+        }));
+      } catch (error) {
+        return require(moduleName);
+      }
     };
   }
 
