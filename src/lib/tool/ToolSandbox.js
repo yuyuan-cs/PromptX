@@ -74,7 +74,7 @@ class ToolSandbox {
       
       this.toolContent = toolResult.content;
       
-      // 3. 设置沙箱路径
+      // 3. 设置沙箱路径（工具专用沙箱）
       this.sandboxPath = await this.resolveSandboxPath();
       
       // 4. 在基础沙箱中分析工具
@@ -207,9 +207,9 @@ class ToolSandbox {
    * 在基础沙箱中分析工具
    */
   async analyzeToolInSandbox() {
-    const sandbox = this.createSandbox({
-      supportDependencies: false,
-      sandboxPath: process.cwd()
+    const sandbox = await this.createSandbox({
+      supportDependencies: false
+      // 使用默认的@project://.promptx/cwd
     });
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
     const context = vm.createContext(sandbox);
@@ -445,9 +445,9 @@ class ToolSandbox {
    * 创建执行沙箱环境
    */
   async createExecutionSandbox() {
-    this.sandboxContext = this.createSandbox({
+    this.sandboxContext = await this.createSandbox({
       supportDependencies: true,
-      sandboxPath: this.sandboxPath
+      sandboxPath: this.sandboxPath  // 保持使用工具专用沙箱
     });
     
     // 在智能沙箱中重新加载工具
@@ -468,24 +468,27 @@ class ToolSandbox {
    * 创建统一沙箱环境
    * @param {Object} options - 沙箱配置
    * @param {boolean} options.supportDependencies - 是否支持依赖解析
-   * @param {string} options.sandboxPath - 沙箱工作目录
+   * @param {string} options.sandboxPath - 沙箱工作目录，支持协议路径
    * @returns {Object} 沙箱环境对象
    */
-  createSandbox(options = {}) {
+  async createSandbox(options = {}) {
     const { 
       supportDependencies = false, 
-      sandboxPath = process.cwd() 
+      sandboxPath = '@project://.promptx/cwd' 
     } = options;
+    
+    // 解析协议路径为实际路径
+    const resolvedPath = await this.resolveProtocolPath(sandboxPath);
     
     return {
       require: supportDependencies ? 
-        this.createSmartRequire(sandboxPath) : 
+        this.createSmartRequire(resolvedPath) : 
         this.createAnalysisRequire(),
       module: { exports: {} },
       exports: {},
       console: console,
       Buffer: Buffer,
-      process: this.createProcessMock(sandboxPath),
+      process: this.createProcessMock(resolvedPath),
       setTimeout: setTimeout,
       clearTimeout: clearTimeout,
       setInterval: setInterval,
@@ -502,6 +505,50 @@ class ToolSandbox {
       Error: Error,
       URL: URL
     };
+  }
+
+  /**
+   * 解析协议路径（支持@project://等协议）
+   * @param {string} protocolPath - 协议路径，如@project://.promptx/cwd
+   * @returns {Promise<string>} 解析后的绝对路径
+   */
+  async resolveProtocolPath(protocolPath) {
+    // 处理undefined或null的情况
+    if (!protocolPath) {
+      throw new Error('protocolPath is required but was undefined');
+    }
+    
+    // 如果是协议路径，使用ResourceManager解析
+    if (protocolPath.startsWith('@')) {
+      if (!this.resourceManager) {
+        throw new Error('ResourceManager not set. Cannot resolve protocol path.');
+      }
+      
+      const projectProtocol = this.resourceManager.protocols.get('project');
+      if (!projectProtocol) {
+        throw new Error('ProjectProtocol not found. Cannot resolve @project:// path.');
+      }
+      
+      // 提取协议路径的相对部分
+      const relativePath = protocolPath.replace(/^@project:\/\//, '');
+      const resolvedPath = await projectProtocol.resolvePath(relativePath, new Map());
+      
+      // 确保目录存在
+      const fs = require('fs').promises;
+      try {
+        await fs.access(resolvedPath);
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          await fs.mkdir(resolvedPath, { recursive: true });
+          console.log(`[ToolSandbox] 创建统一工作目录: ${resolvedPath}`);
+        }
+      }
+      
+      return resolvedPath;
+    }
+    
+    // 普通路径直接返回
+    return protocolPath;
   }
 
   /**
