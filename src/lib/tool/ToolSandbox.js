@@ -480,7 +480,7 @@ class ToolSandbox {
     return {
       require: supportDependencies ? 
         this.createSmartRequire(sandboxPath) : 
-        require,
+        this.createAnalysisRequire(),
       module: { exports: {} },
       exports: {},
       console: console,
@@ -519,6 +519,35 @@ class ToolSandbox {
       cwd: () => sandboxPath,
       pid: process.pid,
       uptime: process.uptime
+    };
+  }
+
+  /**
+   * 创建分析阶段的mock require
+   * 让所有require调用都成功，脚本能完整执行到module.exports
+   * @returns {Function} mock require函数
+   */
+  createAnalysisRequire() {
+    return (moduleName) => {
+      // Node.js内置模块使用真实require
+      const builtinModules = ['path', 'fs', 'url', 'crypto', 'util', 'os', 'events', 'stream'];
+      
+      try {
+        // 检查是否是内置模块
+        if (builtinModules.includes(moduleName) || moduleName.startsWith('node:')) {
+          return require(moduleName);
+        }
+      } catch (e) {
+        // 内置模块加载失败，继续mock处理
+      }
+      
+      // 第三方模块返回通用mock对象
+      console.log(`[ToolSandbox] 分析阶段mock模块: ${moduleName}`);
+      return new Proxy({}, {
+        get: () => () => ({}),  // 所有属性和方法都返回空函数/对象
+        apply: () => ({}),      // 如果被当作函数调用
+        construct: () => ({})   // 如果被当作构造函数
+      });
     };
   }
 
