@@ -113,7 +113,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'promptx_tool',
-    description: '🔧 [工具执行器] 执行通过@tool协议声明的JavaScript工具 - 支持角色配置中定义的专业工具能力，如@tool://calculator数学计算、@tool://send-email邮件发送等。提供安全沙箱执行、参数验证、错误处理和性能监控。',
+    description: '🔧 [工具执行器] 执行通过@tool协议声明的JavaScript工具 - 支持角色配置中定义的专业工具能力，如@tool://calculator数学计算、@tool://send-email邮件发送等。提供安全沙箱执行、参数验证、错误处理和性能监控。⚠️ **重要提醒**：请务必先查看具体工具的使用说明或通过welcome命令了解可用工具，不要在不了解工具功能和参数的情况下盲目调用。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -126,19 +126,15 @@ const TOOL_DEFINITIONS = [
           type: 'object',
           description: '传递给工具的参数对象'
         },
-        context: {
-          type: 'object',
-          description: '执行上下文信息（可选）',
-          properties: {
-            role_id: {
-              type: 'string',
-              description: '当前激活的角色ID'
-            },
-            session_id: {
-              type: 'string',
-              description: '会话ID'
-            }
-          }
+        forceReinstall: {
+          type: 'boolean',
+          description: '是否强制重新安装工具依赖（默认false）。当工具代码更新但缓存未失效时设为true，用于解决工具开发和调试中的缓存问题',
+          default: false
+        },
+        timeout: {
+          type: 'number',
+          description: '工具执行超时时间（毫秒），默认30000ms',
+          default: 30000
         }
       },
       required: ['tool_resource', 'parameters']
@@ -149,10 +145,10 @@ const TOOL_DEFINITIONS = [
         .describe('工具资源引用，格式：@tool://tool-name'),
       parameters: z.object({}).passthrough()
         .describe('传递给工具的参数对象'),
-      context: z.object({
-        role_id: z.string().optional().describe('当前激活的角色ID'),
-        session_id: z.string().optional().describe('会话ID')
-      }).optional().describe('执行上下文信息')
+      forceReinstall: z.boolean().optional().default(false)
+        .describe('是否强制重新安装工具依赖（默认false）'),
+      timeout: z.number().optional().default(30000)
+        .describe('工具执行超时时间（毫秒），默认30000ms')
     })
   }
 ];
