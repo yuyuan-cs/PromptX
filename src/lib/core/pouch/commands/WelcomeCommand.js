@@ -2,7 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { getGlobalResourceManager } = require('../../resource')
-const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
+const ProjectManager = require('../../../utils/ProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -14,7 +14,7 @@ class WelcomeCommand extends BasePouchCommand {
     super()
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
-    this.currentProjectManager = new CurrentProjectManager()
+    this.projectManager = new ProjectManager()
   }
 
   getPurpose () {
@@ -289,17 +289,58 @@ class WelcomeCommand extends BasePouchCommand {
   }
 
   /**
-   * 重写execute方法以添加项目状态检查
+   * 重写execute方法以添加多项目状态检查
    */
   async execute (args = []) {
-    // 获取项目状态提示
-    const projectPrompt = await this.currentProjectManager.generateTopLevelProjectPrompt('list')
+    // 从执行上下文获取MCP信息
+    const mcpId = this.detectMcpId()
+    const ideType = this.detectIdeType()
+    
+    // 获取多项目状态提示
+    const projectPrompt = await this.projectManager.generateTopLevelProjectPrompt('list', mcpId, ideType)
     
     const purpose = this.getPurpose()
     const content = await this.getContent(args)
     const pateoas = await this.getPATEOAS(args)
 
     return this.formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt)
+  }
+
+  /**
+   * 检测MCP进程ID
+   */
+  detectMcpId() {
+    // 尝试从环境变量或进程信息获取，如果没有则生成临时ID
+    return process.env.PROMPTX_MCP_ID || `temp-${process.pid}-${Date.now()}`
+  }
+
+  /**
+   * 检测IDE类型
+   */
+  detectIdeType() {
+    // 复用InitCommand的检测逻辑
+    const ideStrategies = [
+      { name: 'claude', vars: ['WORKSPACE_FOLDER_PATHS'] },
+      { name: 'cursor', vars: ['CURSOR_USER', 'CURSOR_SESSION_ID'] },
+      { name: 'vscode', vars: ['VSCODE_WORKSPACE_FOLDER', 'VSCODE_CWD', 'TERM_PROGRAM'] },
+      { name: 'jetbrains', vars: ['IDEA_INITIAL_DIRECTORY', 'PYCHARM_HOSTED'] },
+      { name: 'vim', vars: ['VIM', 'NVIM'] }
+    ]
+
+    for (const strategy of ideStrategies) {
+      for (const envVar of strategy.vars) {
+        if (process.env[envVar]) {
+          if (envVar === 'TERM_PROGRAM' && process.env[envVar] === 'vscode') {
+            return 'vscode'
+          }
+          if (envVar !== 'TERM_PROGRAM') {
+            return strategy.name
+          }
+        }
+      }
+    }
+
+    return 'unknown'
   }
   
   /**
