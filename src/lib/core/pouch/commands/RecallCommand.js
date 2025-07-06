@@ -25,13 +25,15 @@ class RecallCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    const [query] = args
+    // 解析参数：query, --context
+    const { query, context } = this.parseArgs(args)
 
     logger.step('🧠 [RecallCommand] 开始记忆检索流程 (纯XML模式)')
     logger.info(`🔍 [RecallCommand] 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
 
     try {
-      const memories = await this.getXMLMemoriesOnly(query)
+      // 🎯 传递context参数到检索方法
+      const memories = await this.getXMLMemoriesOnly(query, context)
 
       logger.success(`✅ [RecallCommand] XML记忆检索完成 - 找到 ${memories.length} 条匹配记忆`)
 
@@ -80,6 +82,34 @@ ${formattedMemories}
     }
   }
 
+  /**
+   * 🎯 解析命令行参数
+   */
+  parseArgs(args) {
+    let query = ''
+    let context = null
+    
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--context' && i + 1 < args.length) {
+        try {
+          context = JSON.parse(args[i + 1])
+        } catch (error) {
+          logger.warn(`⚠️ [RecallCommand] context参数解析失败: ${args[i + 1]}`)
+        }
+        i++ // 跳过下一个参数
+      } else {
+        // 查询参数
+        if (query) {
+          query += ' ' + args[i]
+        } else {
+          query = args[i]
+        }
+      }
+    }
+    
+    return { query, context }
+  }
+
   getPATEOAS (args) {
     const [query] = args
     const currentState = query ? `recalled-${query}` : 'recall-waiting'
@@ -121,7 +151,7 @@ ${formattedMemories}
   /**
    * 获取XML记忆（纯XML模式，移除Markdown兼容）
    */
-  async getXMLMemoriesOnly (query) {
+  async getXMLMemoriesOnly (query, context) {
     logger.step('🔧 [RecallCommand] 执行纯XML检索模式')
     
     this.lastSearchCount = 0
@@ -139,10 +169,13 @@ ${formattedMemories}
     const projectPath = await this.getProjectPath()
     logger.info(`📍 [RecallCommand] 项目根路径: ${projectPath}`)
     
+    // 🎯 从角色专属目录读取记忆
+    const currentRole = await this.getCurrentRole(context)
     const memoryDir = path.join(projectPath, '.promptx', 'memory')
-    const xmlFile = path.join(memoryDir, 'declarative.dpml')
+    const roleMemoryDir = path.join(memoryDir, currentRole)
+    const xmlFile = path.join(roleMemoryDir, 'declarative.dpml')
     
-    logger.info(`📁 [RecallCommand] XML记忆文件路径: ${xmlFile}`)
+    logger.info(`📁 [RecallCommand] 检索角色记忆: ${xmlFile}`)
 
     try {
       // 🎯 只读取XML格式，不再兼容Markdown
@@ -166,6 +199,32 @@ ${formattedMemories}
   }
 
   /**
+   * 🎯 获取当前激活角色（Context参数优先，默认为default）
+   */
+  async getCurrentRole(context) {
+    try {
+      logger.debug(`🎭 [RecallCommand] === getCurrentRole开始 ===`)
+      
+      // 🎯 优先使用context.role_id参数
+      if (context && context.role_id) {
+        logger.success(`🎭 [RecallCommand] 从context参数获取角色: "${context.role_id}"`)
+        logger.debug(`🎭 [RecallCommand] === getCurrentRole完成 === 返回角色: ${context.role_id}`)
+        return context.role_id
+      }
+      
+      // 🎯 无Context时使用默认角色
+      logger.debug(`🎭 [RecallCommand] 无context.role_id，使用默认角色: default`)
+      logger.debug(`🎭 [RecallCommand] === getCurrentRole完成 === 返回默认角色: default`)
+      return 'default'
+      
+    } catch (error) {
+      logger.error(`❌ [RecallCommand] getCurrentRole失败: ${error.message}`)
+      logger.debug(`🎭 [RecallCommand] === getCurrentRole完成 === 返回默认角色: default (错误回退)`)
+      return 'default'
+    }
+  }
+
+  /**
    * 获取项目路径（复用ActionCommand逻辑）
    */
   async getProjectPath() {
@@ -186,8 +245,6 @@ ${formattedMemories}
     
     return projectPath
   }
-
-
 
   /**
    * 检查记忆是否匹配查询 - 增强版匹配算法

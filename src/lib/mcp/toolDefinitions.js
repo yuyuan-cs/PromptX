@@ -81,12 +81,30 @@ const TOOL_DEFINITIONS = [
         query: {
           type: 'string',
           description: '检索关键词，仅在确信能精确匹配时使用（如"女娲"、"PromptX"等具体词汇）。语义搜索或不确定时请留空以获取全量记忆，如果使用关键字无结果建议重试无参数方式'
+        },
+        context: {
+          type: 'object',
+          description: '执行上下文信息（可选）',
+          properties: {
+            role_id: {
+              type: 'string',
+              description: '当前激活的角色ID'
+            },
+            session_id: {
+              type: 'string',
+              description: '会话ID'
+            }
+          }
         }
       },
       required: ['random_string']
     },
     zodSchema: z.object({
-      query: z.string().optional().describe('检索关键词，仅在确信能精确匹配时使用（如"女娲"、"PromptX"等具体词汇）。语义搜索或不确定时请留空以获取全量记忆，如果使用关键字无结果建议重试无参数方式')
+      query: z.string().optional().describe('检索关键词，仅在确信能精确匹配时使用（如"女娲"、"PromptX"等具体词汇）。语义搜索或不确定时请留空以获取全量记忆，如果使用关键字无结果建议重试无参数方式'),
+      context: z.object({
+        role_id: z.string().optional().describe('当前激活的角色ID'),
+        session_id: z.string().optional().describe('会话ID')
+      }).optional().describe('执行上下文信息')
     })
   },
   {
@@ -102,13 +120,31 @@ const TOOL_DEFINITIONS = [
         tags: {
           type: 'string',
           description: '自定义标签，用空格分隔，可选'
+        },
+        context: {
+          type: 'object',
+          description: '执行上下文信息（可选）',
+          properties: {
+            role_id: {
+              type: 'string',
+              description: '当前激活的角色ID'
+            },
+            session_id: {
+              type: 'string',
+              description: '会话ID'
+            }
+          }
         }
       },
       required: ['content']
     },
     zodSchema: z.object({
       content: z.string().describe('要保存的重要信息或经验'),
-      tags: z.string().optional().describe('自定义标签，用空格分隔，可选')
+      tags: z.string().optional().describe('自定义标签，用空格分隔，可选'),
+      context: z.object({
+        role_id: z.string().optional().describe('当前激活的角色ID'),
+        session_id: z.string().optional().describe('会话ID')
+      }).optional().describe('执行上下文信息')
     })
   },
   {

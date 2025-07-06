@@ -220,19 +220,35 @@ class MCPServerCommand {
       'promptx_learn': (args) => args.resource ? [args.resource] : [],
       
       'promptx_recall': (args) => {
-        // 忽略random_string dummy参数，只处理query
-        // 处理各种空值情况：undefined、null、空对象、空字符串
-        if (!args || !args.query || typeof args.query !== 'string' || args.query.trim() === '') {
-          return [];
+        // 支持context.role_id参数传递
+        const result = [];
+        
+        // 处理query参数
+        if (args && args.query && typeof args.query === 'string' && args.query.trim() !== '') {
+          result.push(args.query);
         }
-        return [args.query];
+        
+        // 处理context参数
+        if (args && args.context) {
+          result.push('--context', JSON.stringify(args.context));
+        }
+        
+        return result;
       },
       
       'promptx_remember': (args) => {
         const result = [args.content];
+        
+        // 处理tags参数
         if (args.tags) {
           result.push('--tags', args.tags);
         }
+        
+        // 处理context参数
+        if (args.context) {
+          result.push('--context', JSON.stringify(args.context));
+        }
+        
         return result;
       },
       
