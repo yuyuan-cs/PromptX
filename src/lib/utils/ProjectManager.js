@@ -279,7 +279,8 @@ ${projectList}
   generateConfigFileName(mcpId, ideType, projectPath) {
     const projectHash = this.generateProjectHash(projectPath)
     const projectName = path.basename(projectPath).toLowerCase().replace(/[^a-z0-9-]/g, '-')
-    return `${mcpId}-${ideType.toLowerCase()}-${projectName}-${projectHash}.json`
+    const ideTypeSafe = ideType.replace(/[^a-z0-9-]/g, '').toLowerCase() || 'unknown'
+    return `${mcpId}-${ideTypeSafe}-${projectName}-${projectHash}.json`
   }
 
   /**

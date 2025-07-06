@@ -28,24 +28,30 @@ class InitCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    // 获取工作目录参数，支持两种格式：
-    // 1. 来自MCP的对象格式：{ workingDirectory: "path" }
+    // 获取参数，支持两种格式：
+    // 1. 来自MCP的对象格式：{ workingDirectory: "path", ideType: "cursor" }
     // 2. 来自CLI的字符串格式：["path"]
-    let workingDirectory
+    let workingDirectory, userIdeType
     
-    if (args && typeof args[0] === 'object' && args[0].workingDirectory) {
+    if (args && typeof args[0] === 'object') {
       // MCP格式
       workingDirectory = args[0].workingDirectory
+      userIdeType = args[0].ideType
     } else if (args && typeof args[0] === 'string') {
       // CLI格式
       workingDirectory = args[0]
+      // CLI格式暂不支持IDE类型参数，使用自动检测
     }
     
     if (!workingDirectory) {
       return `🎯 PromptX需要知道当前项目的工作目录。
 
-请在调用此工具时提供 workingDirectory 参数，例如：
+请在调用此工具时提供参数：
+📍 **必需参数**：
 - workingDirectory: "/Users/sean/WorkSpaces/DeepracticeProjects/PromptX"
+
+🎯 **可选参数**：
+- ideType: "cursor" | "vscode" | "claude" 等（不提供则自动检测为unknown）
 
 💡 你当前工作在哪个项目目录？请提供完整的绝对路径。`
     }
@@ -66,14 +72,23 @@ class InitCommand extends BasePouchCommand {
 💡 请提供一个有效的项目目录路径。`
     }
     
+    // 确定IDE类型：用户指定 > 自动检测 > unknown
+    const detectedIdeType = this.detectIdeType()
+    let ideType = userIdeType || detectedIdeType || 'unknown'
+    
+    // 规范化IDE类型（移除特殊字符，转小写）
+    if (userIdeType) {
+      ideType = userIdeType.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase() || 'unknown'
+    }
+    
     // 生成MCP进程信息
-    const mcpId = ProjectManager.generateMcpId()
-    const ideType = this.detectIdeType()
+    const mcpId = ProjectManager.generateMcpId(ideType)
     
     // 注册项目到MCP实例
     const projectConfig = await this.projectManager.registerProject(projectPath, mcpId, ideType)
     
     logger.debug(`[InitCommand] 项目已注册: ${projectConfig.projectPath} -> ${mcpId} (${ideType})`)
+    logger.debug(`[InitCommand] IDE类型: ${userIdeType ? `用户指定(${ideType})` : `自动检测(${detectedIdeType})`}`)
 
     // 构建统一的查找上下文，使用确定的项目路径
     const context = {
@@ -270,6 +285,7 @@ ${registryStats.message}
 
     return 'unknown'
   }
+
 
   async getPATEOAS (args) {
     const version = await this.getVersionInfo()

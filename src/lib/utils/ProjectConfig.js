@@ -67,7 +67,8 @@ class ProjectConfig {
   getConfigFileName() {
     const path = require('path')
     const projectName = path.basename(this.projectPath).toLowerCase().replace(/[^a-z0-9-]/g, '-')
-    return `${this.mcpId}-${this.ideType.toLowerCase()}-${projectName}-${this.projectHash}.json`
+    const ideTypeSafe = this.ideType.replace(/[^a-z0-9-]/g, '').toLowerCase() || 'unknown'
+    return `${this.mcpId}-${ideTypeSafe}-${projectName}-${this.projectHash}.json`
   }
 }
 
