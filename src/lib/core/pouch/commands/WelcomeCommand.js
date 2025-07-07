@@ -4,6 +4,7 @@ const path = require('path')
 const { getGlobalResourceManager } = require('../../resource')
 const ProjectManager = require('../../../utils/ProjectManager')
 const { getGlobalProjectManager } = require('../../../utils/ProjectManager')
+const { getGlobalServerEnvironment } = require('../../../utils/ServerEnvironment')
 const logger = require('../../../utils/logger')
 
 /**
@@ -311,8 +312,11 @@ class WelcomeCommand extends BasePouchCommand {
    * 检测MCP进程ID
    */
   detectMcpId() {
-    // 尝试从环境变量或进程信息获取，如果没有则生成临时ID
-    return process.env.PROMPTX_MCP_ID || ProjectManager.generateMcpId()
+    const serverEnv = getGlobalServerEnvironment()
+    if (serverEnv.isInitialized()) {
+      return serverEnv.getMcpId()
+    }
+    return ProjectManager.generateMcpId()
   }
 
   /**

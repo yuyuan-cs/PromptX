@@ -2,6 +2,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const os = require('os')
 const crypto = require('crypto')
+const { getGlobalServerEnvironment } = require('./ServerEnvironment')
 
 /**
  * 多项目管理器
@@ -318,7 +319,31 @@ ${projectList}
    * @returns {string} MCP进程ID
    */
   static generateMcpId(ideType = 'unknown') {
+    const serverEnv = getGlobalServerEnvironment()
+    if (serverEnv.isInitialized()) {
+      return serverEnv.getMcpId()
+    }
+    // fallback到原逻辑
     return `mcp-${process.pid}`
+  }
+
+  /**
+   * 统一项目注册方法 - 从ServerEnvironment获取服务信息
+   * @param {string} workingDirectory - 项目工作目录
+   * @param {string} ideType - IDE类型（可选，默认'unknown'）
+   * @returns {Promise<Object>} 项目配置对象
+   */
+  static async registerCurrentProject(workingDirectory, ideType = 'unknown') {
+    const serverEnv = getGlobalServerEnvironment()
+    if (!serverEnv.isInitialized()) {
+      throw new Error('ServerEnvironment not initialized')
+    }
+    
+    const mcpId = serverEnv.getMcpId()
+    const transport = serverEnv.getTransport()
+    const projectManager = getGlobalProjectManager()
+    
+    return await projectManager.registerProject(workingDirectory, mcpId, ideType, transport)
   }
 }
 

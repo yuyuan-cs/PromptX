@@ -9,6 +9,7 @@ const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
 const { getToolDefinitions, getToolDefinition } = require('../mcp/toolDefinitions');
 const ProjectManager = require('../utils/ProjectManager');
 const { getGlobalProjectManager } = require('../utils/ProjectManager');
+const { getGlobalServerEnvironment } = require('../utils/ServerEnvironment');
 const logger = require('../utils/logger');
 
 /**
@@ -38,6 +39,10 @@ class MCPServerHttpCommand {
       host = 'localhost' 
     } = options;
 
+    // 🚀 初始化ServerEnvironment - 在所有逻辑之前装配服务环境
+    const serverEnv = getGlobalServerEnvironment();
+    serverEnv.initialize({ transport, host, port });
+
     // 验证传输类型
     if (!['http', 'sse'].includes(transport)) {
       throw new Error(`Unsupported transport: ${transport}`);
@@ -46,24 +51,6 @@ class MCPServerHttpCommand {
     // 验证配置
     this.validatePort(port);
     this.validateHost(host);
-
-    // 🚀 项目注册逻辑 - 自动注册当前项目到HTTP MCP实例
-    try {
-      const projectManager = getGlobalProjectManager();
-      const mcpId = ProjectManager.generateMcpId();
-      const ideType = 'unknown'; // HTTP模式下IDE类型由客户端决定
-      const projectPath = process.cwd();
-      
-      // 注册项目，指定transport类型
-      const projectConfig = await projectManager.registerProject(projectPath, mcpId, ideType, transport);
-      console.log(`✅ 项目已注册: ${projectPath} -> ${mcpId} (${ideType}) [${transport}]`);
-      
-      // 生成配置文件名并显示（与stdio模式保持一致）
-      const fileName = projectManager.generateConfigFileName(mcpId, ideType, transport, projectPath);
-      console.log(`✅ 配置文件: ${fileName}`);
-    } catch (error) {
-      console.log(`⚠️ 项目注册失败: ${error.message}，继续启动服务器`);
-    }
 
     if (transport === 'http') {
       return this.startStreamableHttpServer(port, host);

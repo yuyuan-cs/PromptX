@@ -4,6 +4,7 @@ const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
 const { getExecutionContext, getDebugInfo } = require('../utils/executionContext');
 const { getToolDefinitions } = require('../mcp/toolDefinitions');
+const { getGlobalServerEnvironment } = require('../utils/ServerEnvironment');
 const treeKill = require('tree-kill');
 
 /**
@@ -16,6 +17,10 @@ class MCPServerStdioCommand {
     this.name = 'promptx-mcp-server';
     this.version = '1.0.0';
     this.debug = process.env.MCP_DEBUG === 'true';
+    
+    // 🚀 初始化ServerEnvironment - stdio模式
+    const serverEnv = getGlobalServerEnvironment();
+    serverEnv.initialize({ transport: 'stdio' });
     
     // 智能检测执行上下文
     this.executionContext = getExecutionContext();
