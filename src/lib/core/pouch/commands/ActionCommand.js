@@ -6,6 +6,7 @@ const { getGlobalResourceManager } = require('../../resource')
 const DPMLContentParser = require('../../dpml/DPMLContentParser')
 const SemanticRenderer = require('../../dpml/SemanticRenderer')
 const ProjectManager = require('../../../utils/ProjectManager')
+const { getGlobalProjectManager } = require('../../../utils/ProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -19,7 +20,7 @@ class ActionCommand extends BasePouchCommand {
     this.resourceManager = getGlobalResourceManager()
     this.dpmlParser = new DPMLContentParser()
     this.semanticRenderer = new SemanticRenderer()
-    this.projectManager = new ProjectManager()
+    this.projectManager = getGlobalProjectManager()
   }
 
   getPurpose () {

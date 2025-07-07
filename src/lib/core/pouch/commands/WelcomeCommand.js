@@ -3,6 +3,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const { getGlobalResourceManager } = require('../../resource')
 const ProjectManager = require('../../../utils/ProjectManager')
+const { getGlobalProjectManager } = require('../../../utils/ProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -14,7 +15,7 @@ class WelcomeCommand extends BasePouchCommand {
     super()
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
-    this.projectManager = new ProjectManager()
+    this.projectManager = getGlobalProjectManager()
   }
 
   getPurpose () {

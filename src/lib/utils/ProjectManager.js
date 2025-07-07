@@ -19,9 +19,10 @@ class ProjectManager {
    * @param {string} projectPath - 项目绝对路径
    * @param {string} mcpId - MCP进程ID
    * @param {string} ideType - IDE类型（cursor/vscode等）
+   * @param {string} transport - 传输协议类型（stdio/http/sse）
    * @returns {Promise<Object>} 项目配置对象
    */
-  async registerProject(projectPath, mcpId, ideType) {
+  async registerProject(projectPath, mcpId, ideType, transport = 'stdio') {
     // 验证项目路径
     if (!await this.validateProjectPath(projectPath)) {
       throw new Error(`无效的项目路径: ${projectPath}`)
@@ -31,6 +32,7 @@ class ProjectManager {
     const projectConfig = {
       mcpId: mcpId,
       ideType: ideType.toLowerCase(),
+      transport: transport.toLowerCase(),
       projectPath: path.resolve(projectPath),
       projectHash: this.generateProjectHash(projectPath)
     }
@@ -39,7 +41,7 @@ class ProjectManager {
     await fs.ensureDir(this.projectsDir)
 
     // 生成配置文件名并保存
-    const fileName = this.generateConfigFileName(mcpId, ideType, projectPath)
+    const fileName = this.generateConfigFileName(mcpId, ideType, transport, projectPath)
     const configPath = path.join(this.projectsDir, fileName)
     
     await fs.writeJson(configPath, projectConfig, { spaces: 2 })
@@ -71,7 +73,10 @@ class ProjectManager {
     const projects = []
 
     for (const file of files) {
-      if (file.startsWith(`${mcpId}-`) && file.endsWith('.json')) {
+      // 适配新的格式：mcp-transport-id-idetype-projectname-hash.json
+      // 需要匹配包含指定mcpId的文件（去掉mcp-前缀）
+      const idWithoutPrefix = mcpId.replace('mcp-', '')
+      if (file.startsWith('mcp-') && file.includes(`-${idWithoutPrefix}-`) && file.endsWith('.json')) {
         try {
           const configPath = path.join(this.projectsDir, file)
           const config = await fs.readJson(configPath)
@@ -103,6 +108,7 @@ class ProjectManager {
     const instances = []
 
     for (const file of files) {
+      // 适配新的四元组格式：包含transport的文件名
       if (file.includes(`-${projectHash}.json`)) {
         try {
           const configPath = path.join(this.projectsDir, file)
@@ -123,11 +129,12 @@ class ProjectManager {
    * 删除项目绑定
    * @param {string} mcpId - MCP进程ID
    * @param {string} ideType - IDE类型
+   * @param {string} transport - 传输协议类型
    * @param {string} projectPath - 项目路径
    * @returns {Promise<boolean>} 是否删除成功
    */
-  async removeProject(mcpId, ideType, projectPath) {
-    const fileName = this.generateConfigFileName(mcpId, ideType, projectPath)
+  async removeProject(mcpId, ideType, transport, projectPath) {
+    const fileName = this.generateConfigFileName(mcpId, ideType, transport, projectPath)
     const configPath = path.join(this.projectsDir, fileName)
     
     if (await fs.pathExists(configPath)) {
@@ -273,14 +280,17 @@ ${projectList}
    * 生成配置文件名
    * @param {string} mcpId - MCP进程ID
    * @param {string} ideType - IDE类型
+   * @param {string} transport - 传输协议类型
    * @param {string} projectPath - 项目路径
    * @returns {string} 配置文件名
    */
-  generateConfigFileName(mcpId, ideType, projectPath) {
+  generateConfigFileName(mcpId, ideType, transport, projectPath) {
     const projectHash = this.generateProjectHash(projectPath)
     const projectName = path.basename(projectPath).toLowerCase().replace(/[^a-z0-9-]/g, '-')
     const ideTypeSafe = ideType.replace(/[^a-z0-9-]/g, '').toLowerCase() || 'unknown'
-    return `${mcpId}-${ideTypeSafe}-${projectName}-${projectHash}.json`
+    const transportSafe = transport.replace(/[^a-z0-9-]/g, '').toLowerCase() || 'unknown'
+    // 格式：mcp-transport-id-idetype-projectname-hash.json
+    return `mcp-${transportSafe}-${mcpId.replace('mcp-', '')}-${ideTypeSafe}-${projectName}-${projectHash}.json`
   }
 
   /**
@@ -312,4 +322,19 @@ ${projectList}
   }
 }
 
+// 创建全局单例实例
+let globalProjectManager = null
+
+/**
+ * 获取全局ProjectManager单例
+ * @returns {ProjectManager} 全局ProjectManager实例
+ */
+function getGlobalProjectManager() {
+  if (!globalProjectManager) {
+    globalProjectManager = new ProjectManager()
+  }
+  return globalProjectManager
+}
+
 module.exports = ProjectManager
+module.exports.getGlobalProjectManager = getGlobalProjectManager

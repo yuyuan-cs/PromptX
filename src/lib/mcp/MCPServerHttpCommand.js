@@ -7,6 +7,8 @@ const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
 const { getToolDefinitions, getToolDefinition } = require('../mcp/toolDefinitions');
+const ProjectManager = require('../utils/ProjectManager');
+const { getGlobalProjectManager } = require('../utils/ProjectManager');
 const logger = require('../utils/logger');
 
 /**
@@ -44,6 +46,24 @@ class MCPServerHttpCommand {
     // 验证配置
     this.validatePort(port);
     this.validateHost(host);
+
+    // 🚀 项目注册逻辑 - 自动注册当前项目到HTTP MCP实例
+    try {
+      const projectManager = getGlobalProjectManager();
+      const mcpId = ProjectManager.generateMcpId();
+      const ideType = 'unknown'; // HTTP模式下IDE类型由客户端决定
+      const projectPath = process.cwd();
+      
+      // 注册项目，指定transport类型
+      const projectConfig = await projectManager.registerProject(projectPath, mcpId, ideType, transport);
+      console.log(`✅ 项目已注册: ${projectPath} -> ${mcpId} (${ideType}) [${transport}]`);
+      
+      // 生成配置文件名并显示（与stdio模式保持一致）
+      const fileName = projectManager.generateConfigFileName(mcpId, ideType, transport, projectPath);
+      console.log(`✅ 配置文件: ${fileName}`);
+    } catch (error) {
+      console.log(`⚠️ 项目注册失败: ${error.message}，继续启动服务器`);
+    }
 
     if (transport === 'http') {
       return this.startStreamableHttpServer(port, host);
@@ -361,15 +381,33 @@ class MCPServerHttpCommand {
           console.error('🔥 无状态请求处理错误:', error);
           throw error;
         }
+      } else if (sessionId && !this.transports[sessionId] && this.isStatelessRequest(req.body)) {
+        // 🔧 修复：sessionId已失效但是无状态请求，可以处理
+        console.log(`🔄 [修复模式] Session已失效，转为无状态处理: ${req.body.method}`);
+        
+        try {
+          const server = this.setupMCPServer();
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined, // 无状态模式
+            enableJsonResponse: true
+          });
+          
+          await server.connect(transport);
+          await transport.handleRequest(req, res, req.body);
+          return;
+        } catch (error) {
+          console.error('🔥 Session修复模式处理错误:', error);
+          throw error;
+        }
       } else {
-        // 无效请求
+        // 无效请求 - 只有真正无法处理的情况才报错
         return res.status(400).json({
           jsonrpc: '2.0',
           error: {
             code: -32000,
-            message: 'Bad Request: No valid session ID provided'
+            message: `Bad Request: ${sessionId ? 'Invalid session ID' : 'No valid session ID provided'}. Method: ${req.body?.method || 'unknown'}`
           },
-          id: null
+          id: req.body?.id || null
         });
       }
 
@@ -384,7 +422,7 @@ class MCPServerHttpCommand {
             code: -32603,
             message: 'Internal server error'
           },
-          id: null
+          id: req.body?.id || null
         });
       }
     }
@@ -569,14 +607,22 @@ class MCPServerHttpCommand {
   handleDynamicRegistration(req, res) {
     // 简化实现：直接返回一个客户端ID
     const clientId = `promptx-client-${Date.now()}`;
+    const baseUrl = `http://${req.get('host')}`;
     
     res.json({
       client_id: clientId,
       client_secret: "not-required", // 简化实现
       registration_access_token: `reg-token-${Date.now()}`,
-      registration_client_uri: `http://${req.get('host')}/register/${clientId}`,
+      registration_client_uri: `${baseUrl}/register/${clientId}`,
       client_id_issued_at: Math.floor(Date.now() / 1000),
-      client_secret_expires_at: 0 // 永不过期
+      client_secret_expires_at: 0, // 永不过期
+      redirect_uris: [
+        `${baseUrl}/callback`,
+        "urn:ietf:wg:oauth:2.0:oob"
+      ],
+      response_types: ["code"],
+      grant_types: ["authorization_code"],
+      token_endpoint_auth_method: "none"
     });
   }
 
@@ -586,7 +632,8 @@ class MCPServerHttpCommand {
   handleAuthorize(req, res) {
     // 简化实现：直接返回授权码
     const code = `auth-code-${Date.now()}`;
-    const redirectUri = req.query.redirect_uri || 'http://localhost:3000/callback';
+    const baseUrl = `http://${req.get('host')}`;
+    const redirectUri = req.query.redirect_uri || `${baseUrl}/callback`;
     
     res.redirect(`${redirectUri}?code=${code}&state=${req.query.state || ''}`);
   }

@@ -4,6 +4,7 @@ const { COMMANDS } = require('../../../../constants')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
 const ProjectManager = require('../../../utils/ProjectManager')
+const { getGlobalProjectManager } = require('../../../utils/ProjectManager')
 const logger = require('../../../utils/logger')
 const path = require('path')
 const fs = require('fs-extra')
@@ -18,7 +19,7 @@ class InitCommand extends BasePouchCommand {
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
     this.projectDiscovery = new ProjectDiscovery()
-    this.projectManager = new ProjectManager()
+    this.projectManager = getGlobalProjectManager()
   }
 
   getPurpose () {
@@ -82,10 +83,11 @@ class InitCommand extends BasePouchCommand {
     // 生成MCP进程信息
     const mcpId = ProjectManager.generateMcpId(ideType)
     
-    // 注册项目到MCP实例
-    const projectConfig = await this.projectManager.registerProject(projectPath, mcpId, ideType)
+    // 注册项目到MCP实例，自动检测传输协议
+    const transport = this.detectTransportType()
+    const projectConfig = await this.projectManager.registerProject(projectPath, mcpId, ideType, transport)
     
-    logger.debug(`[InitCommand] 项目已注册: ${projectConfig.projectPath} -> ${mcpId} (${ideType})`)
+    logger.debug(`[InitCommand] 项目已注册: ${projectConfig.projectPath} -> ${mcpId} (${ideType}) [${transport}]`)
     logger.debug(`[InitCommand] IDE类型: ${userIdeType ? `用户指定(${ideType})` : `自动检测(${detectedIdeType})`}`)
 
     // 1. 获取版本信息
@@ -101,7 +103,7 @@ class InitCommand extends BasePouchCommand {
     await this.refreshGlobalResourceManager()
 
     // 生成配置文件名
-    const configFileName = this.projectManager.generateConfigFileName(mcpId, ideType, projectPath)
+    const configFileName = this.projectManager.generateConfigFileName(mcpId, ideType, transport, projectPath)
 
     return `🎯 PromptX 初始化完成！
 
@@ -273,6 +275,43 @@ ${registryStats.message}
     return 'unknown'
   }
 
+  /**
+   * 检测传输协议类型
+   * @returns {string} 传输协议类型: 'http', 'sse', 'stdio'
+   */
+  detectTransportType() {
+    // 检测MCP调试环境变量
+    if (process.env.MCP_DEBUG) {
+      // 通过进程名称判断
+      const processTitle = process.title || ''
+      if (processTitle.includes('mcp') && processTitle.includes('http')) {
+        return 'http'
+      }
+    }
+
+    // 检测HTTP MCP服务器的特征
+    // 如果有HTTP相关的环境变量或端口监听
+    if (process.env.HTTP_MCP_PORT || process.env.MCP_HTTP_PORT) {
+      return 'http'
+    }
+
+    // 检测进程参数
+    const argv = process.argv.join(' ')
+    if (argv.includes('--transport')) {
+      const transportMatch = argv.match(/--transport\s+(\w+)/)
+      if (transportMatch) {
+        return transportMatch[1]
+      }
+    }
+
+    // 检测是否通过HTTP MCP调用（存在会话ID等特征）
+    if (process.env.MCP_SESSION_ID) {
+      return 'http'
+    }
+
+    // 默认为stdio
+    return 'stdio'
+  }
 
   async getPATEOAS (args) {
     const version = await this.getVersionInfo()
