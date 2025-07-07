@@ -129,11 +129,23 @@ class ProjectDiscovery extends FilePatternDiscovery {
    * @returns {Promise<string>} 项目根目录路径
    */
   async _findProjectRoot() {
-    // 使用新的统一目录服务
-    const { getDirectoryService } = require('../../../utils/DirectoryService')
-    const directoryService = getDirectoryService()
+    // 🚀 新架构：直接使用ProjectManager的当前项目状态
+    const ProjectManager = require('../../../utils/ProjectManager')
     
-    return await directoryService.getProjectRoot()
+    // ✅ 修复：检查项目是否已初始化，避免在init过程中抛出错误
+    if (ProjectManager.isInitialized()) {
+      try {
+        return ProjectManager.getCurrentProjectPath()
+      } catch (error) {
+        // 如果获取失败，使用回退路径
+        logger.debug(`[ProjectDiscovery] 获取当前项目路径失败，使用回退路径: ${error.message}`)
+        return process.cwd()
+      }
+    } else {
+      // 项目未初始化时使用当前工作目录作为回退
+      logger.debug(`[ProjectDiscovery] 项目未初始化，使用当前工作目录作为回退: ${process.cwd()}`)
+      return process.cwd()
+    }
   }
 
   /**
