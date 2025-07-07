@@ -293,6 +293,16 @@ ${projectList}
   }
 
   /**
+   * 从配置文件中获取IDE类型
+   * @param {string} mcpId - MCP进程ID
+   * @returns {Promise<string>} IDE类型
+   */
+  async getIdeType(mcpId) {
+    const project = await this.getProjectByMcpId(mcpId)
+    return project ? project.ideType : 'unknown'
+  }
+
+  /**
    * 生成MCP进程ID - 基于进程ID确保实例唯一
    * @param {string} ideType - IDE类型（保留参数兼容性，实际不使用）
    * @returns {string} MCP进程ID

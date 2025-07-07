@@ -294,7 +294,7 @@ class WelcomeCommand extends BasePouchCommand {
   async execute (args = []) {
     // 从执行上下文获取MCP信息
     const mcpId = this.detectMcpId()
-    const ideType = this.detectIdeType()
+    const ideType = await this.detectIdeType()
     
     // 获取多项目状态提示
     const projectPrompt = await this.projectManager.generateTopLevelProjectPrompt('list', mcpId, ideType)
@@ -311,36 +311,15 @@ class WelcomeCommand extends BasePouchCommand {
    */
   detectMcpId() {
     // 尝试从环境变量或进程信息获取，如果没有则生成临时ID
-    return process.env.PROMPTX_MCP_ID || `temp-${process.pid}-${Date.now()}`
+    return process.env.PROMPTX_MCP_ID || ProjectManager.generateMcpId()
   }
 
   /**
-   * 检测IDE类型
+   * 检测IDE类型 - 从配置文件读取，移除环境变量检测
    */
-  detectIdeType() {
-    // 复用InitCommand的检测逻辑
-    const ideStrategies = [
-      { name: 'claude', vars: ['WORKSPACE_FOLDER_PATHS'] },
-      { name: 'cursor', vars: ['CURSOR_USER', 'CURSOR_SESSION_ID'] },
-      { name: 'vscode', vars: ['VSCODE_WORKSPACE_FOLDER', 'VSCODE_CWD', 'TERM_PROGRAM'] },
-      { name: 'jetbrains', vars: ['IDEA_INITIAL_DIRECTORY', 'PYCHARM_HOSTED'] },
-      { name: 'vim', vars: ['VIM', 'NVIM'] }
-    ]
-
-    for (const strategy of ideStrategies) {
-      for (const envVar of strategy.vars) {
-        if (process.env[envVar]) {
-          if (envVar === 'TERM_PROGRAM' && process.env[envVar] === 'vscode') {
-            return 'vscode'
-          }
-          if (envVar !== 'TERM_PROGRAM') {
-            return strategy.name
-          }
-        }
-      }
-    }
-
-    return 'unknown'
+  async detectIdeType() {
+    const mcpId = this.detectMcpId()
+    return await this.projectManager.getIdeType(mcpId)
   }
   
   /**
