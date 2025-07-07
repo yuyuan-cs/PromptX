@@ -74,6 +74,13 @@ class MCPServerHttpCommand {
       });
     });
 
+    // OAuth 支持端点 (简化实现)
+    app.get('/.well-known/oauth-authorization-server', this.handleOAuthMetadata.bind(this));
+    app.get('/.well-known/openid-configuration', this.handleOAuthMetadata.bind(this));
+    app.post('/register', this.handleDynamicRegistration.bind(this));
+    app.get('/authorize', this.handleAuthorize.bind(this));
+    app.post('/token', this.handleToken.bind(this));
+
     // MCP 端点
     app.post('/mcp', this.handleMCPPostRequest.bind(this));
     app.get('/mcp', this.handleMCPGetRequest.bind(this));
@@ -536,6 +543,65 @@ class MCPServerHttpCommand {
     ];
 
     return statelessMethods.includes(requestBody.method);
+  }
+
+  /**
+   * OAuth 元数据端点 - 简化实现
+   */
+  handleOAuthMetadata(req, res) {
+    const baseUrl = `http://${req.get('host')}`;
+    
+    res.json({
+      issuer: baseUrl,
+      authorization_endpoint: `${baseUrl}/authorize`,
+      token_endpoint: `${baseUrl}/token`,
+      registration_endpoint: `${baseUrl}/register`,
+      response_types_supported: ["code"],
+      grant_types_supported: ["authorization_code"],
+      code_challenge_methods_supported: ["S256"],
+      client_registration_types_supported: ["dynamic"]
+    });
+  }
+
+  /**
+   * 动态客户端注册 - 简化实现
+   */
+  handleDynamicRegistration(req, res) {
+    // 简化实现：直接返回一个客户端ID
+    const clientId = `promptx-client-${Date.now()}`;
+    
+    res.json({
+      client_id: clientId,
+      client_secret: "not-required", // 简化实现
+      registration_access_token: `reg-token-${Date.now()}`,
+      registration_client_uri: `http://${req.get('host')}/register/${clientId}`,
+      client_id_issued_at: Math.floor(Date.now() / 1000),
+      client_secret_expires_at: 0 // 永不过期
+    });
+  }
+
+  /**
+   * OAuth 授权端点 - 简化实现
+   */
+  handleAuthorize(req, res) {
+    // 简化实现：直接返回授权码
+    const code = `auth-code-${Date.now()}`;
+    const redirectUri = req.query.redirect_uri || 'http://localhost:3000/callback';
+    
+    res.redirect(`${redirectUri}?code=${code}&state=${req.query.state || ''}`);
+  }
+
+  /**
+   * OAuth 令牌端点 - 简化实现
+   */
+  handleToken(req, res) {
+    // 简化实现：直接返回访问令牌
+    res.json({
+      access_token: `access-token-${Date.now()}`,
+      token_type: "Bearer",
+      expires_in: 3600,
+      scope: "mcp"
+    });
   }
 }
 

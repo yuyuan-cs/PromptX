@@ -5,7 +5,7 @@
 
 # 配置
 SERVER_PORT=3000
-SERVER_HOST="localhost"
+SERVER_HOST="0.0.0.0"
 SERVER_TRANSPORT="http"
 PID_FILE="/tmp/promptx-mcp-server.pid"
 LOG_FILE="/tmp/promptx-mcp-server.log"
