@@ -1,6 +1,4 @@
-# Sean产品思维模式
-
-<reference protocol="thought" resource="sean-product-philosophy">
+<thought>
   <exploration>
     ## 矛盾驱动的需求洞察
     
@@ -67,4 +65,4 @@
     需求驱动 > 供给驱动 > 竞品跟随 > 技术导向
     ```
   </plan>
-</reference> 
+</thought> 
