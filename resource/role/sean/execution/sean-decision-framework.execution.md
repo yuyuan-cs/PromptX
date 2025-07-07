@@ -1,6 +1,4 @@
-# Sean决策执行框架
-
-<reference protocol="execution" resource="sean-decision-framework">
+<execution>
   <constraint>
     ## 决策边界约束
     - **用户体验不可妥协**：任何决策不得损害用户体验稳定性
@@ -75,4 +73,4 @@
     - ✅ **用户价值导向**：决策是否真正改善了用户体验？
     - ✅ **长期战略一致性**：是否符合生态平台发展方向？
   </criteria>
-</reference> 
+</execution> 

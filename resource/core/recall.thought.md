@@ -1,4 +1,4 @@
-<thought protocol="recall-xml" extends="recall">
+<thought>
   <exploration>
     ## 基于通用回忆能力的XML记忆增强
     

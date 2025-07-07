@@ -5,7 +5,7 @@ const { COMMANDS } = require('../../../../constants')
 const { getGlobalResourceManager } = require('../../resource')
 const DPMLContentParser = require('../../dpml/DPMLContentParser')
 const SemanticRenderer = require('../../dpml/SemanticRenderer')
-const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
+const ProjectManager = require('../../../utils/ProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -19,7 +19,7 @@ class ActionCommand extends BasePouchCommand {
     this.resourceManager = getGlobalResourceManager()
     this.dpmlParser = new DPMLContentParser()
     this.semanticRenderer = new SemanticRenderer()
-    this.currentProjectManager = new CurrentProjectManager()
+    this.projectManager = new ProjectManager()
   }
 
   getPurpose () {
@@ -513,17 +513,36 @@ ${recallContent}
   }
 
   /**
-   * 重写execute方法以添加项目状态检查
+   * 重写execute方法以添加多项目状态检查
    */
   async execute (args = []) {
-    // 获取项目状态提示
-    const projectPrompt = await this.currentProjectManager.generateTopLevelProjectPrompt('action')
+    // 从执行上下文获取MCP信息
+    const mcpId = this.detectMcpId()
+    const ideType = await this.detectIdeType()
+    
+    // 获取多项目状态提示
+    const projectPrompt = await this.projectManager.generateTopLevelProjectPrompt('action', mcpId, ideType)
     
     const purpose = this.getPurpose()
     const content = await this.getContent(args)
     const pateoas = await this.getPATEOAS(args)
 
     return this.formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt)
+  }
+
+  /**
+   * 检测MCP进程ID
+   */
+  detectMcpId() {
+    return process.env.PROMPTX_MCP_ID || ProjectManager.generateMcpId()
+  }
+
+  /**
+   * 检测IDE类型 - 从配置文件读取，移除环境变量检测
+   */
+  async detectIdeType() {
+    const mcpId = this.detectMcpId()
+    return await this.projectManager.getIdeType(mcpId)
   }
   
   /**

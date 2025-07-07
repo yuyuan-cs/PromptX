@@ -1,7 +1,7 @@
 const fs = require('fs-extra')
 const path = require('path')
 const os = require('os')
-const CurrentProjectManager = require('./CurrentProjectManager')
+const ProjectManager = require('./ProjectManager')
 
 /**
  * 目录定位器基础抽象类
@@ -92,7 +92,7 @@ class ProjectRootLocator extends DirectoryLocator {
     super(options)
     
     // 初始化AI驱动的项目管理器
-    this.currentProjectManager = new CurrentProjectManager()
+    this.projectManager = new ProjectManager()
     
     // 可配置的查找策略优先级（按可靠性和准确性排序）
     this.strategies = options.strategies || [
@@ -177,7 +177,10 @@ class ProjectRootLocator extends DirectoryLocator {
    */
   async _findByAIProvidedPath() {
     try {
-      const aiProvidedPath = await this.currentProjectManager.getCurrentProject()
+      // 注意：多项目环境下需要传入mcpId，这里使用临时ID
+      const tempMcpId = process.env.PROMPTX_MCP_ID || `temp-${process.pid}`
+      const projects = await this.projectManager.getProjectsByMcpId(tempMcpId)
+      const aiProvidedPath = projects.length > 0 ? projects[0].projectPath : null
       if (aiProvidedPath && await this.isValidDirectory(aiProvidedPath)) {
         return aiProvidedPath
       }
@@ -293,7 +296,7 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
   constructor(options = {}) {
     super(options)
     this.projectRootLocator = options.projectRootLocator || new ProjectRootLocator(options)
-    this.currentProjectManager = new CurrentProjectManager()
+    this.projectManager = new ProjectManager()
   }
 
   /**
@@ -355,7 +358,10 @@ class PromptXWorkspaceLocator extends DirectoryLocator {
    */
   async _fromAIProvidedPath() {
     try {
-      const aiProvidedPath = await this.currentProjectManager.getCurrentProject()
+      // 注意：多项目环境下需要传入mcpId，这里使用临时ID
+      const tempMcpId = process.env.PROMPTX_MCP_ID || `temp-${process.pid}`
+      const projects = await this.projectManager.getProjectsByMcpId(tempMcpId)
+      const aiProvidedPath = projects.length > 0 ? projects[0].projectPath : null
       if (aiProvidedPath && await this.isValidDirectory(aiProvidedPath)) {
         return aiProvidedPath
       }

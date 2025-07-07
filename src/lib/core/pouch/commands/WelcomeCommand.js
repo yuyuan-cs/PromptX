@@ -2,7 +2,7 @@ const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
 const { getGlobalResourceManager } = require('../../resource')
-const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
+const ProjectManager = require('../../../utils/ProjectManager')
 const logger = require('../../../utils/logger')
 
 /**
@@ -14,7 +14,7 @@ class WelcomeCommand extends BasePouchCommand {
     super()
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
-    this.currentProjectManager = new CurrentProjectManager()
+    this.projectManager = new ProjectManager()
   }
 
   getPurpose () {
@@ -289,17 +289,37 @@ class WelcomeCommand extends BasePouchCommand {
   }
 
   /**
-   * 重写execute方法以添加项目状态检查
+   * 重写execute方法以添加多项目状态检查
    */
   async execute (args = []) {
-    // 获取项目状态提示
-    const projectPrompt = await this.currentProjectManager.generateTopLevelProjectPrompt('list')
+    // 从执行上下文获取MCP信息
+    const mcpId = this.detectMcpId()
+    const ideType = await this.detectIdeType()
+    
+    // 获取多项目状态提示
+    const projectPrompt = await this.projectManager.generateTopLevelProjectPrompt('list', mcpId, ideType)
     
     const purpose = this.getPurpose()
     const content = await this.getContent(args)
     const pateoas = await this.getPATEOAS(args)
 
     return this.formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt)
+  }
+
+  /**
+   * 检测MCP进程ID
+   */
+  detectMcpId() {
+    // 尝试从环境变量或进程信息获取，如果没有则生成临时ID
+    return process.env.PROMPTX_MCP_ID || ProjectManager.generateMcpId()
+  }
+
+  /**
+   * 检测IDE类型 - 从配置文件读取，移除环境变量检测
+   */
+  async detectIdeType() {
+    const mcpId = this.detectMcpId()
+    return await this.projectManager.getIdeType(mcpId)
   }
   
   /**

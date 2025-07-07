@@ -7,12 +7,12 @@ async function generatePackageRegistry() {
   try {
     console.log('🏗️ 开始生成Package级别注册表...');
     
-    // 获取项目根目录（PromptX子项目）
+    // 获取项目根目录（PromptX项目）
     const projectRoot = process.cwd();
     console.log(`📁 项目根目录: ${projectRoot}`);
     
-    // 获取包级资源目录（上级目录的resource）
-    const packageResourceRoot = path.dirname(path.dirname(projectRoot));
+    // 直接扫描当前PromptX项目的resource目录
+    const packageResourceRoot = projectRoot;
     console.log(`📦 包级资源根目录: ${packageResourceRoot}`);
     
     // 创建PackageDiscovery实例并设置注册表路径（保存到项目下）
@@ -21,7 +21,7 @@ async function generatePackageRegistry() {
     
     console.log(`📋 注册表路径: ${discovery.registryPath}`);
     
-    // 生成注册表（扫描包级资源目录）
+    // 生成注册表（扫描当前项目的resource目录）
     const registryData = await discovery.generateRegistry(packageResourceRoot);
     
     console.log('✅ Package注册表生成完成！');

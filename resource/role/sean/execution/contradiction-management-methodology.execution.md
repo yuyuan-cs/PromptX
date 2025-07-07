@@ -1,5 +1,4 @@
-# ContradictionManagement方法论执行框架
-
+<execution>
 <constraint>
   ## ContradictionManagement方法论技术约束
   - **GitHub Issues专用**：矛盾分析必须在ContradictionManagement仓库Issues中进行
@@ -74,3 +73,4 @@
   - ✅ 推动行业认知和采用
   - ✅ 产生标准化影响力
 </criteria>
+</execution>

@@ -1,10 +1,9 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
 const { COMMANDS } = require('../../../../constants')
-const { getDirectoryService } = require('../../../utils/DirectoryService')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
-const CurrentProjectManager = require('../../../utils/CurrentProjectManager')
+const ProjectManager = require('../../../utils/ProjectManager')
 const logger = require('../../../utils/logger')
 const path = require('path')
 const fs = require('fs-extra')
@@ -19,8 +18,7 @@ class InitCommand extends BasePouchCommand {
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
     this.projectDiscovery = new ProjectDiscovery()
-    this.directoryService = getDirectoryService()
-    this.currentProjectManager = new CurrentProjectManager()
+    this.projectManager = new ProjectManager()
   }
 
   getPurpose () {
@@ -28,93 +26,93 @@ class InitCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    // 获取工作目录参数，支持两种格式：
-    // 1. 来自MCP的对象格式：{ workingDirectory: "path" }
+    // 获取参数，支持两种格式：
+    // 1. 来自MCP的对象格式：{ workingDirectory: "path", ideType: "cursor" }
     // 2. 来自CLI的字符串格式：["path"]
-    let workingDirectory
+    let workingDirectory, userIdeType
     
-    if (args && typeof args[0] === 'object' && args[0].workingDirectory) {
+    if (args && typeof args[0] === 'object') {
       // MCP格式
       workingDirectory = args[0].workingDirectory
+      userIdeType = args[0].ideType
     } else if (args && typeof args[0] === 'string') {
       // CLI格式
       workingDirectory = args[0]
+      // CLI格式暂不支持IDE类型参数，使用自动检测
     }
-    // 注意：如果args[0]是空对象{}，workingDirectory保持undefined，走后续的自动检测逻辑
     
-    let projectPath
+    if (!workingDirectory) {
+      return `🎯 PromptX需要知道当前项目的工作目录。
+
+请在调用此工具时提供参数：
+📍 **必需参数**：
+- workingDirectory: "/Users/sean/WorkSpaces/DeepracticeProjects/PromptX"
+
+🎯 **可选参数**：
+- ideType: "cursor" | "vscode" | "claude" 等（不提供则自动检测为unknown）
+
+💡 你当前工作在哪个项目目录？请提供完整的绝对路径。`
+    }
     
-    if (workingDirectory) {
-      // AI提供了工作目录，先解码中文路径，然后使用
-      const decodedWorkingDirectory = decodeURIComponent(workingDirectory)
-      projectPath = path.resolve(decodedWorkingDirectory)
+    // 解码中文路径并解析
+    const decodedWorkingDirectory = decodeURIComponent(workingDirectory)
+    const projectPath = path.resolve(decodedWorkingDirectory)
+    
+    // 验证AI提供的路径是否有效
+    if (!await this.projectManager.validateProjectPath(projectPath)) {
+      return `❌ 提供的工作目录无效: ${projectPath}
       
-      // 验证AI提供的路径是否有效
-      if (!await this.currentProjectManager.validateProjectPath(projectPath)) {
-        return `❌ 提供的工作目录无效: ${projectPath}
-        
 请确保：
 1. 路径存在且为目录
 2. 不是用户主目录
 3. 具有适当的访问权限
 
 💡 请提供一个有效的项目目录路径。`
-      }
-      
-      // 保存AI提供的项目路径
-      await this.currentProjectManager.setCurrentProject(projectPath)
-      
-    } else {
-      // AI没有提供工作目录，检查是否已有保存的项目
-      const savedProject = await this.currentProjectManager.getCurrentProject()
-      
-      if (savedProject) {
-        // 使用之前保存的项目路径
-        projectPath = savedProject
-      } else {
-        // 没有保存的项目，要求AI提供
-        return `🎯 PromptX需要知道当前项目的工作目录。
-
-请在调用此工具时提供 workingDirectory 参数，例如：
-- workingDirectory: "/Users/sean/WorkSpaces/DeepracticeProjects/PromptX"
-
-💡 你当前工作在哪个项目目录？请提供完整的绝对路径。`
-      }
     }
-
-    // 构建统一的查找上下文，使用确定的项目路径
-    const context = {
-      startDir: projectPath,
-      platform: process.platform,
-      avoidUserHome: true,
-      // init命令特有：AI提供的路径优先级最高，然后是当前目录
-      strategies: [
-        'aiProvidedProjectPath',              // 最高优先级：AI提供的项目路径
-        'currentWorkingDirectoryIfHasMarkers',
-        'currentWorkingDirectory'
-      ]
+    
+    // 确定IDE类型：用户指定 > 自动检测 > unknown
+    const detectedIdeType = this.detectIdeType()
+    let ideType = userIdeType || detectedIdeType || 'unknown'
+    
+    // 规范化IDE类型（移除特殊字符，转小写）
+    if (userIdeType) {
+      ideType = userIdeType.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase() || 'unknown'
     }
+    
+    // 生成MCP进程信息
+    const mcpId = ProjectManager.generateMcpId(ideType)
+    
+    // 注册项目到MCP实例
+    const projectConfig = await this.projectManager.registerProject(projectPath, mcpId, ideType)
+    
+    logger.debug(`[InitCommand] 项目已注册: ${projectConfig.projectPath} -> ${mcpId} (${ideType})`)
+    logger.debug(`[InitCommand] IDE类型: ${userIdeType ? `用户指定(${ideType})` : `自动检测(${detectedIdeType})`}`)
 
     // 1. 获取版本信息
     const version = await this.getVersionInfo()
 
-    // 2. 基础环境准备 - 创建 .promptx 目录
-    await this.ensurePromptXDirectory(context)
+    // 2. 基础环境准备 - 直接使用AI提供的项目路径
+    await this.ensurePromptXDirectory(projectPath)
 
-    // 3. 生成项目级资源注册表
-    const registryStats = await this.generateProjectRegistry(context)
+    // 3. 生成项目级资源注册表 - 直接使用AI提供的项目路径
+    const registryStats = await this.generateProjectRegistry(projectPath)
 
     // 4. 刷新全局 ResourceManager（确保新资源立即可用）
     await this.refreshGlobalResourceManager()
+
+    // 生成配置文件名
+    const configFileName = this.projectManager.generateConfigFileName(mcpId, ideType, projectPath)
 
     return `🎯 PromptX 初始化完成！
 
 ## 📦 版本信息
 ✅ **PromptX v${version}** - AI专业能力增强框架
 
-## 🏗️ 环境准备
+## 🏗️ 多项目环境准备
 ✅ 创建了 \`.promptx\` 配置目录
-✅ 工作环境就绪
+✅ 项目已注册到MCP实例: **${mcpId}** (${ideType})
+✅ 项目路径: ${projectConfig.projectPath}
+✅ 配置文件: ${configFileName}
 
 ## 📋 项目资源注册表
 ${registryStats.message}
@@ -125,31 +123,31 @@ ${registryStats.message}
 - 使用 \`learn\` 深入学习专业知识
 - 使用 \`remember/recall\` 管理专业记忆
 
+💡 **多项目支持**: 现在支持同时在多个项目中使用PromptX，项目间完全隔离！
 💡 **提示**: ${registryStats.totalResources > 0 ? '项目资源已优化为注册表模式，性能大幅提升！' : '现在可以开始创建项目级资源了！'}`
   }
 
   /**
    * 生成项目级资源注册表
-   * @param {Object} context - 查找上下文
+   * @param {string} projectPath - AI提供的项目路径
    * @returns {Promise<Object>} 注册表生成统计信息
    */
-  async generateProjectRegistry(context) {
+  async generateProjectRegistry(projectPath) {
     try {
-      // 1. 使用统一的目录服务获取项目根目录
-      const projectRoot = await this.directoryService.getProjectRoot(context)
-      const resourceDir = await this.directoryService.getResourceDirectory(context)
+      // 1. 直接基于AI提供的项目路径计算资源目录
+      const resourceDir = path.join(projectPath, '.promptx', 'resource')
+      const registryPath = path.join(resourceDir, 'project.registry.json')
       
-      // 2. 确保资源目录存在（具体子目录由ResourceManager扫描时按需创建）
+      // 2. 确保资源目录存在
       await fs.ensureDir(resourceDir)
       logger.debug(`[InitCommand] 确保资源目录存在: ${resourceDir}`)
 
       // 3. 使用 ProjectDiscovery 的正确方法生成注册表
       logger.step('正在扫描项目资源...')
-      const registryData = await this.projectDiscovery.generateRegistry(projectRoot)
+      const registryData = await this.projectDiscovery.generateRegistry(projectPath)
       
       // 4. 生成统计信息
       const stats = registryData.getStats()
-      const registryPath = await this.directoryService.getRegistryPath(context)
 
       if (registryData.size === 0) {
         return {
@@ -180,10 +178,10 @@ ${registryStats.message}
 
   /**
    * 确保 .promptx 基础目录存在
-   * 使用统一的目录服务创建基础环境
+   * 直接基于AI提供的项目路径创建目录
    */
-  async ensurePromptXDirectory (context) {
-    const promptxDir = await this.directoryService.getPromptXDirectory(context)
+  async ensurePromptXDirectory (projectPath) {
+    const promptxDir = path.join(projectPath, '.promptx')
     await fs.ensureDir(promptxDir)
     logger.debug(`[InitCommand] 确保.promptx目录存在: ${promptxDir}`)
   }
@@ -225,6 +223,56 @@ ${registryStats.message}
     }
     return '未知版本'
   }
+
+  /**
+   * 检测IDE类型
+   * @returns {string} IDE类型
+   */
+  detectIdeType() {
+    // 检测常见的IDE环境变量
+    const ideStrategies = [
+      // Claude IDE
+      { name: 'claude', vars: ['WORKSPACE_FOLDER_PATHS'] },
+      // Cursor
+      { name: 'cursor', vars: ['CURSOR_USER', 'CURSOR_SESSION_ID'] },
+      // VSCode
+      { name: 'vscode', vars: ['VSCODE_WORKSPACE_FOLDER', 'VSCODE_CWD', 'TERM_PROGRAM'] },
+      // JetBrains IDEs  
+      { name: 'jetbrains', vars: ['IDEA_INITIAL_DIRECTORY', 'PYCHARM_HOSTED'] },
+      // Vim/Neovim
+      { name: 'vim', vars: ['VIM', 'NVIM'] }
+    ]
+
+    for (const strategy of ideStrategies) {
+      for (const envVar of strategy.vars) {
+        if (process.env[envVar]) {
+          // 特殊处理VSCode的TERM_PROGRAM
+          if (envVar === 'TERM_PROGRAM' && process.env[envVar] === 'vscode') {
+            return 'vscode'
+          }
+          // 其他环境变量存在即认为是对应IDE
+          if (envVar !== 'TERM_PROGRAM') {
+            return strategy.name
+          }
+        }
+      }
+    }
+
+    // 检测进程名称
+    const processTitle = process.title || ''
+    if (processTitle.includes('cursor')) return 'cursor'
+    if (processTitle.includes('code')) return 'vscode'
+    if (processTitle.includes('claude')) return 'claude'
+
+    // 检测命令行参数
+    const argv = process.argv.join(' ')
+    if (argv.includes('cursor')) return 'cursor'
+    if (argv.includes('code')) return 'vscode'
+    if (argv.includes('claude')) return 'claude'
+
+    return 'unknown'
+  }
+
 
   async getPATEOAS (args) {
     const version = await this.getVersionInfo()
