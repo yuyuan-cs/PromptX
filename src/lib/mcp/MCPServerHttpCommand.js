@@ -1,20 +1,20 @@
 const express = require('express');
 const { randomUUID } = require('node:crypto');
-const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
+const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
 const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
-const { getToolDefinitions, getToolDefinition, getToolZodSchema } = require('../mcp/toolDefinitions');
+const { getToolDefinitions, getToolDefinition } = require('../mcp/toolDefinitions');
 const logger = require('../utils/logger');
 
 /**
- * MCP Streamable HTTP Server Command
- * 实现基于 Streamable HTTP 传输的 MCP 服务器
- * 同时提供 SSE 向后兼容支持
+ * MCP HTTP Server Command
+ * 实现基于 HTTP 协议的 MCP 服务器
+ * 支持 Streamable HTTP 和 SSE 两种传输方式
  */
-class MCPStreamableHttpCommand {
+class MCPServerHttpCommand {
   constructor() {
     this.name = 'promptx-mcp-streamable-http-server';
     this.version = '1.0.0';
@@ -239,39 +239,47 @@ class MCPStreamableHttpCommand {
   }
 
   /**
-   * 设置 MCP 服务器
+   * 设置 MCP 服务器 - 使用与 stdio 模式完全相同的低级 API
    */
   setupMCPServer() {
-    const server = new McpServer({
+    const server = new Server({
       name: this.name,
       version: this.version
     }, {
       capabilities: {
-        tools: {},
-        logging: {}
+        tools: {}
       }
     });
 
-    // 注册所有 PromptX 工具
-    this.setupMCPTools(server);
+    // ✨ 使用与 stdio 模式相同的低级 API 注册处理器
+    this.setupMCPHandlers(server);
 
     return server;
   }
 
   /**
-   * 设置 MCP 工具
+   * 设置 MCP 处理器 - 与 stdio 模式完全一致的实现
    */
-  setupMCPTools(server) {
-    // 使用共享的工具定义
-    const toolDefinitions = getToolDefinitions();
+  setupMCPHandlers(server) {
+    const { 
+      ListToolsRequestSchema, 
+      CallToolRequestSchema 
+    } = require('@modelcontextprotocol/sdk/types.js');
     
-    toolDefinitions.forEach(toolDef => {
-      const zodSchema = getToolZodSchema(toolDef.name);
-      
-      server.tool(toolDef.name, toolDef.description, zodSchema, async (args, extra) => {
-        this.log(`🔧 调用工具: ${toolDef.name} 参数: ${JSON.stringify(args)}`);
-        return await this.callTool(toolDef.name, args || {});
-      });
+    // 注册工具列表处理程序 - 与 stdio 模式完全相同
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
+      this.log('📋 收到工具列表请求');
+      return {
+        tools: this.getToolDefinitions()  // ✅ 直接返回完整工具定义
+      };
+    });
+    
+    // 注册工具调用处理程序 - 与 stdio 模式完全相同
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+      this.log(`🔧 调用工具: ${name} 参数: ${JSON.stringify(args)}`);
+      console.log(`🔧 [强制调试] 工具: ${name} 正确参数: ${JSON.stringify(args)}`);
+      return await this.callTool(name, args || {});
     });
   }
 
@@ -322,17 +330,30 @@ class MCPStreamableHttpCommand {
         await transport.handleRequest(req, res, req.body);
         return;
       } else if (!sessionId && this.isStatelessRequest(req.body)) {
-        // 无状态请求（如 tools/list, prompts/list 等）
-        transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: undefined, // 无状态模式
-          enableJsonResponse: true
-        });
-
-        // 连接到 MCP 服务器
-        const server = this.setupMCPServer();
-        await server.connect(transport);
-        await transport.handleRequest(req, res, req.body);
-        return;
+        // 无状态请求（如 tools/list, prompts/list 等）- 使用官方推荐方式
+        console.log(`🎯 [官方模式] 无状态请求: ${req.body.method}`);
+        
+        try {
+          const server = this.setupMCPServer();
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined, // 无状态模式
+            enableJsonResponse: true
+          });
+          
+          // 请求结束时清理资源
+          res.on('close', () => {
+            console.log('🧹 清理无状态请求资源');
+            transport.close && transport.close();
+            server.close && server.close();
+          });
+          
+          await server.connect(transport);
+          await transport.handleRequest(req, res, req.body);
+          return;
+        } catch (error) {
+          console.error('🔥 无状态请求处理错误:', error);
+          throw error;
+        }
       } else {
         // 无效请求
         return res.status(400).json({
@@ -409,10 +430,13 @@ class MCPStreamableHttpCommand {
   async callTool(toolName, args) {
     try {
       // 将 MCP 参数转换为 CLI 函数调用参数
+      console.log(`🎯 [强制调试] 收到MCP参数: ${JSON.stringify(args)}`);
       const cliArgs = this.convertMCPToCliParams(toolName, args);
+      console.log(`🎯 [强制调试] 转换后CLI参数: ${JSON.stringify(cliArgs)}`);
       this.log(`🎯 CLI调用: ${toolName} -> ${JSON.stringify(cliArgs)}`);
       
       // 直接调用 PromptX CLI 函数
+      this.log(`🎯 传递给CLI的参数: ${JSON.stringify(cliArgs)}`);
       const result = await cli.execute(toolName.replace('promptx_', ''), cliArgs, true);
       this.log(`✅ CLI执行完成: ${toolName}`);
       
@@ -430,7 +454,12 @@ class MCPStreamableHttpCommand {
    */
   convertMCPToCliParams(toolName, mcpArgs) {
     const paramMapping = {
-      'promptx_init': () => [],
+      'promptx_init': (args) => {
+        if (args && args.workingDirectory) {
+          return [{ workingDirectory: args.workingDirectory, ideType: args.ideType }];
+        }
+        return [];
+      },
       'promptx_welcome': () => [],
       'promptx_action': (args) => args && args.role ? [args.role] : [],
       'promptx_learn': (args) => args && args.resource ? [args.resource] : [],
@@ -498,15 +527,16 @@ class MCPStreamableHttpCommand {
       return false;
     }
 
-    // 这些方法可以无状态处理
+    // 这些方法可以无状态处理 - 按照官方标准扩展支持所有工具调用
     const statelessMethods = [
       'tools/list',
-      'prompts/list',
-      'resources/list'
+      'prompts/list', 
+      'resources/list',
+      'tools/call'  // ✨ 添加工具调用支持无状态模式
     ];
 
     return statelessMethods.includes(requestBody.method);
   }
 }
 
-module.exports = { MCPStreamableHttpCommand };
+module.exports = { MCPServerHttpCommand };

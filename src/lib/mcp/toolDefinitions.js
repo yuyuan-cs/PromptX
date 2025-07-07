@@ -3,8 +3,6 @@
  * 统一管理所有MCP工具的描述和Schema定义，避免重复维护
  */
 
-const { z } = require('zod');
-
 /**
  * 工具定义配置
  */
@@ -25,11 +23,7 @@ const TOOL_DEFINITIONS = [
         }
       },
       required: ['workingDirectory']
-    },
-    zodSchema: z.object({
-      workingDirectory: z.string().describe('当前项目的工作目录绝对路径。AI应该知道当前工作的项目路径，请提供此参数。'),
-      ideType: z.string().optional().describe('IDE或编辑器类型，如：cursor, vscode, claude等。完全可选，不提供则自动检测为unknown。')
-    })
+    }
   },
   {
     name: 'promptx_welcome',
@@ -37,8 +31,7 @@ const TOOL_DEFINITIONS = [
     inputSchema: {
       type: 'object',
       properties: {}
-    },
-    zodSchema: z.object({})
+    }
   },
   {
     name: 'promptx_action',
@@ -52,10 +45,7 @@ const TOOL_DEFINITIONS = [
         }
       },
       required: ['role']
-    },
-    zodSchema: z.object({
-      role: z.string().describe('要激活的角色ID，如：copywriter, product-manager, java-backend-developer')
-    })
+    }
   },
   {
     name: 'promptx_learn',
@@ -69,10 +59,7 @@ const TOOL_DEFINITIONS = [
         }
       },
       required: ['resource']
-    },
-    zodSchema: z.object({
-      resource: z.string().describe('资源URL，支持格式：thought://creativity, execution://best-practice, knowledge://scrum')
-    })
+    }
   },
   {
     name: 'promptx_recall',
@@ -104,14 +91,7 @@ const TOOL_DEFINITIONS = [
         }
       },
       required: ['random_string']
-    },
-    zodSchema: z.object({
-      query: z.string().optional().describe('检索关键词，仅在确信能精确匹配时使用（如"女娲"、"PromptX"等具体词汇）。语义搜索或不确定时请留空以获取全量记忆，如果使用关键字无结果建议重试无参数方式'),
-      context: z.object({
-        role_id: z.string().optional().describe('当前激活的角色ID'),
-        session_id: z.string().optional().describe('会话ID')
-      }).optional().describe('执行上下文信息')
-    })
+    }
   },
   {
     name: 'promptx_remember',
@@ -143,15 +123,7 @@ const TOOL_DEFINITIONS = [
         }
       },
       required: ['content']
-    },
-    zodSchema: z.object({
-      content: z.string().describe('要保存的重要信息或经验'),
-      tags: z.string().optional().describe('自定义标签，用空格分隔，可选'),
-      context: z.object({
-        role_id: z.string().optional().describe('当前激活的角色ID'),
-        session_id: z.string().optional().describe('会话ID')
-      }).optional().describe('执行上下文信息')
-    })
+    }
   },
   {
     name: 'promptx_tool',
@@ -180,18 +152,7 @@ const TOOL_DEFINITIONS = [
         }
       },
       required: ['tool_resource', 'parameters']
-    },
-    zodSchema: z.object({
-      tool_resource: z.string()
-        .regex(/^@tool:\/\/.+/, '工具资源必须以@tool://开头')
-        .describe('工具资源引用，格式：@tool://tool-name'),
-      parameters: z.object({}).passthrough()
-        .describe('传递给工具的参数对象'),
-      forceReinstall: z.boolean().optional().default(false)
-        .describe('是否强制重新安装工具依赖（默认false）'),
-      timeout: z.number().optional().default(30000)
-        .describe('工具执行超时时间（毫秒），默认30000ms')
-    })
+    }
   }
 ];
 
@@ -213,13 +174,6 @@ function getToolDefinition(toolName) {
   return TOOL_DEFINITIONS.find(tool => tool.name === toolName);
 }
 
-/**
- * 获取工具的Zod Schema - 用于HTTP Server
- */
-function getToolZodSchema(toolName) {
-  const tool = getToolDefinition(toolName);
-  return tool ? tool.zodSchema : null;
-}
 
 /**
  * 获取所有工具名称
@@ -232,6 +186,5 @@ module.exports = {
   TOOL_DEFINITIONS,
   getToolDefinitions,
   getToolDefinition,
-  getToolZodSchema,
   getToolNames
 }; 

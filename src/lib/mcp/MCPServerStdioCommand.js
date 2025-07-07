@@ -7,11 +7,11 @@ const { getToolDefinitions } = require('../mcp/toolDefinitions');
 const treeKill = require('tree-kill');
 
 /**
- * MCP Server 适配器 - 函数调用架构
+ * MCP Server Stdio 适配器 - 函数调用架构
  * 将MCP协议请求转换为PromptX函数调用，实现零开销适配
  * 支持智能工作目录检测，确保MCP和CLI模式下的一致性
  */
-class MCPServerCommand {
+class MCPServerStdioCommand {
   constructor() {
     this.name = 'promptx-mcp-server';
     this.version = '1.0.0';
@@ -265,4 +265,4 @@ class MCPServerCommand {
   }
 }
 
-module.exports = { MCPServerCommand }; 
+module.exports = { MCPServerStdioCommand }; 
