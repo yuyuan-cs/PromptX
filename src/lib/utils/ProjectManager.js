@@ -293,15 +293,12 @@ ${projectList}
   }
 
   /**
-   * 生成MCP进程ID
-   * @param {string} ideType - IDE类型
+   * 生成MCP进程ID - 基于进程ID确保实例唯一
+   * @param {string} ideType - IDE类型（保留参数兼容性，实际不使用）
    * @returns {string} MCP进程ID
    */
   static generateMcpId(ideType = 'unknown') {
-    const timestamp = Date.now()
-    const processId = process.pid
-    const random = Math.random().toString(36).substr(2, 6)
-    return `mcp-${processId}-${timestamp}-${random}`
+    return `mcp-${process.pid}`
   }
 }
 

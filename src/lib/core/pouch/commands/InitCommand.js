@@ -1,7 +1,6 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
 const { COMMANDS } = require('../../../../constants')
-const { getDirectoryService } = require('../../../utils/DirectoryService')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
 const ProjectManager = require('../../../utils/ProjectManager')
@@ -19,7 +18,6 @@ class InitCommand extends BasePouchCommand {
     // 使用全局单例 ResourceManager
     this.resourceManager = getGlobalResourceManager()
     this.projectDiscovery = new ProjectDiscovery()
-    this.directoryService = getDirectoryService()
     this.projectManager = new ProjectManager()
   }
 
@@ -90,30 +88,20 @@ class InitCommand extends BasePouchCommand {
     logger.debug(`[InitCommand] 项目已注册: ${projectConfig.projectPath} -> ${mcpId} (${ideType})`)
     logger.debug(`[InitCommand] IDE类型: ${userIdeType ? `用户指定(${ideType})` : `自动检测(${detectedIdeType})`}`)
 
-    // 构建统一的查找上下文，使用确定的项目路径
-    const context = {
-      startDir: projectPath,
-      platform: process.platform,
-      avoidUserHome: true,
-      // init命令特有：AI提供的路径优先级最高，然后是当前目录
-      strategies: [
-        'aiProvidedProjectPath',              // 最高优先级：AI提供的项目路径
-        'currentWorkingDirectoryIfHasMarkers',
-        'currentWorkingDirectory'
-      ]
-    }
-
     // 1. 获取版本信息
     const version = await this.getVersionInfo()
 
-    // 2. 基础环境准备 - 创建 .promptx 目录
-    await this.ensurePromptXDirectory(context)
+    // 2. 基础环境准备 - 直接使用AI提供的项目路径
+    await this.ensurePromptXDirectory(projectPath)
 
-    // 3. 生成项目级资源注册表
-    const registryStats = await this.generateProjectRegistry(context)
+    // 3. 生成项目级资源注册表 - 直接使用AI提供的项目路径
+    const registryStats = await this.generateProjectRegistry(projectPath)
 
     // 4. 刷新全局 ResourceManager（确保新资源立即可用）
     await this.refreshGlobalResourceManager()
+
+    // 生成配置文件名
+    const configFileName = this.projectManager.generateConfigFileName(mcpId, ideType, projectPath)
 
     return `🎯 PromptX 初始化完成！
 
@@ -124,7 +112,7 @@ class InitCommand extends BasePouchCommand {
 ✅ 创建了 \`.promptx\` 配置目录
 ✅ 项目已注册到MCP实例: **${mcpId}** (${ideType})
 ✅ 项目路径: ${projectConfig.projectPath}
-✅ 配置文件: ${projectConfig.getConfigFileName()}
+✅ 配置文件: ${configFileName}
 
 ## 📋 项目资源注册表
 ${registryStats.message}
@@ -141,26 +129,25 @@ ${registryStats.message}
 
   /**
    * 生成项目级资源注册表
-   * @param {Object} context - 查找上下文
+   * @param {string} projectPath - AI提供的项目路径
    * @returns {Promise<Object>} 注册表生成统计信息
    */
-  async generateProjectRegistry(context) {
+  async generateProjectRegistry(projectPath) {
     try {
-      // 1. 使用统一的目录服务获取项目根目录
-      const projectRoot = await this.directoryService.getProjectRoot(context)
-      const resourceDir = await this.directoryService.getResourceDirectory(context)
+      // 1. 直接基于AI提供的项目路径计算资源目录
+      const resourceDir = path.join(projectPath, '.promptx', 'resource')
+      const registryPath = path.join(resourceDir, 'project.registry.json')
       
-      // 2. 确保资源目录存在（具体子目录由ResourceManager扫描时按需创建）
+      // 2. 确保资源目录存在
       await fs.ensureDir(resourceDir)
       logger.debug(`[InitCommand] 确保资源目录存在: ${resourceDir}`)
 
       // 3. 使用 ProjectDiscovery 的正确方法生成注册表
       logger.step('正在扫描项目资源...')
-      const registryData = await this.projectDiscovery.generateRegistry(projectRoot)
+      const registryData = await this.projectDiscovery.generateRegistry(projectPath)
       
       // 4. 生成统计信息
       const stats = registryData.getStats()
-      const registryPath = await this.directoryService.getRegistryPath(context)
 
       if (registryData.size === 0) {
         return {
@@ -191,10 +178,10 @@ ${registryStats.message}
 
   /**
    * 确保 .promptx 基础目录存在
-   * 使用统一的目录服务创建基础环境
+   * 直接基于AI提供的项目路径创建目录
    */
-  async ensurePromptXDirectory (context) {
-    const promptxDir = await this.directoryService.getPromptXDirectory(context)
+  async ensurePromptXDirectory (projectPath) {
+    const promptxDir = path.join(projectPath, '.promptx')
     await fs.ensureDir(promptxDir)
     logger.debug(`[InitCommand] 确保.promptx目录存在: ${promptxDir}`)
   }
