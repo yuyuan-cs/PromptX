@@ -23,11 +23,25 @@ class RememberCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    // 解析参数：content, --tags, --context
-    const { content, tags, context } = this.parseArgs(args)
+    // 解析参数：content, --role, --tags
+    const { content, role, tags } = this.parseArgs(args)
 
     if (!content) {
       return this.getUsageHelp()
+    }
+
+    if (!role) {
+      return `❌ 错误：缺少必填参数 role
+
+🎯 **使用方法**：
+remember 角色ID "记忆内容"
+
+📋 **示例**：
+remember java-developer "React Hooks最佳实践"
+remember product-manager "产品需求分析方法"
+remember copywriter "A/B测试文案优化" --tags "最佳实践"
+
+💡 **可用角色ID**：通过 welcome 工具查看所有可用角色`
     }
 
     try {
@@ -37,8 +51,8 @@ class RememberCommand extends BasePouchCommand {
       logger.step('🧠 [RememberCommand] 开始记忆保存流程 (纯XML模式)')
       logger.info(`📝 [RememberCommand] 记忆内容: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`)
       
-      // 🎯 传递context参数到保存方法
-      const memoryEntry = await this.saveMemoryXMLOnly(content, context)
+      // 🎯 传递role参数到保存方法
+      const memoryEntry = await this.saveMemoryXMLOnly(content, role)
 
       logger.success(`✅ [RememberCommand] XML记忆保存完成 - 路径: ${memoryEntry.filePath}`)
       return this.formatSaveResponse(content, memoryEntry)
@@ -52,23 +66,24 @@ class RememberCommand extends BasePouchCommand {
   }
 
   /**
-   * 🎯 解析命令行参数
+   * 🎯 解析命令行参数 - role作为第一个位置参数
    */
   parseArgs(args) {
     let content = ''
+    let role = ''
     let tags = ''
-    let context = null
+    let argIndex = 0
     
-    for (let i = 0; i < args.length; i++) {
+    // 第一个参数是role
+    if (args.length > 0) {
+      role = args[0]
+      argIndex = 1
+    }
+    
+    // 从第二个参数开始解析
+    for (let i = argIndex; i < args.length; i++) {
       if (args[i] === '--tags' && i + 1 < args.length) {
         tags = args[i + 1]
-        i++ // 跳过下一个参数
-      } else if (args[i] === '--context' && i + 1 < args.length) {
-        try {
-          context = JSON.parse(args[i + 1])
-        } catch (error) {
-          logger.warn(`⚠️ [RememberCommand] context参数解析失败: ${args[i + 1]}`)
-        }
         i++ // 跳过下一个参数
       } else {
         // 内容参数
@@ -80,7 +95,7 @@ class RememberCommand extends BasePouchCommand {
       }
     }
     
-    return { content, tags, context }
+    return { content, role, tags }
   }
 
   /**
@@ -140,7 +155,7 @@ class RememberCommand extends BasePouchCommand {
   /**
    * 纯XML记忆保存（移除所有Markdown逻辑）
    */
-  async saveMemoryXMLOnly(value, context) {
+  async saveMemoryXMLOnly(value, role) {
     logger.step('🔧 [RememberCommand] 执行角色专属记忆保存')
     
     const memoryDir = await this.ensureMemoryDirectory()
@@ -148,8 +163,8 @@ class RememberCommand extends BasePouchCommand {
     
     // 🎯 角色专属记忆处理流程
     logger.info(`🎯 [RememberCommand] === 角色专属记忆处理开始 ===`)
-    const currentRole = await this.getCurrentRole(context)
-    logger.info(`🎯 [RememberCommand] 当前激活角色: "${currentRole}"`)
+    const currentRole = role
+    logger.info(`🎯 [RememberCommand] 指定保存角色: "${currentRole}"`)
     
     const roleMemoryDir = path.join(memoryDir, currentRole)
     logger.info(`🎯 [RememberCommand] 角色记忆目录: ${roleMemoryDir}`)
@@ -259,31 +274,6 @@ class RememberCommand extends BasePouchCommand {
     return memoryDir
   }
 
-  /**
-   * 🎯 获取当前激活角色（Context参数优先，默认为default）
-   */
-  async getCurrentRole(context) {
-    try {
-      logger.info(`🎭 [RememberCommand] === getCurrentRole开始 ===`)
-      
-      // 🎯 优先使用context.role_id参数
-      if (context && context.role_id) {
-        logger.success(`🎭 [RememberCommand] 从context参数获取角色: "${context.role_id}"`)
-        logger.info(`🎭 [RememberCommand] === getCurrentRole完成 === 返回角色: ${context.role_id}`)
-        return context.role_id
-      }
-      
-      // 🎯 无Context时使用默认角色
-      logger.info(`🎭 [RememberCommand] 无context.role_id，使用默认角色: default`)
-      logger.info(`🎭 [RememberCommand] === getCurrentRole完成 === 返回默认角色: default`)
-      return 'default'
-      
-    } catch (error) {
-      logger.error(`❌ [RememberCommand] getCurrentRole失败: ${error.message}`)
-      logger.warn(`🎭 [RememberCommand] === getCurrentRole完成 === 返回默认角色: default (错误回退)`)
-      return 'default'
-    }
-  }
 
 
   /**
@@ -760,47 +750,44 @@ class RememberCommand extends BasePouchCommand {
   }
 
   /**
-   * 获取使用帮助（纯XML模式）
+   * 获取使用帮助（角色专属记忆模式）
    */
   getUsageHelp () {
-    return `🧠 **Remember锦囊 - AI记忆增强系统（纯XML模式）**
+    return `🧠 **Remember锦囊 - AI角色专属记忆系统**
 
 ## 📖 基本用法
-通过 MCP PromptX remember 工具内化知识
+remember 角色ID "记忆内容"
 
-## 🆕 升级特性
-- **纯XML存储**: 统一使用XML格式，性能更优
-- **自动备份**: 升级前自动创建安全备份
-- **Legacy迁移**: 自动迁移旧格式数据
-- **数据安全**: 多重备份保护机制
+## 🎯 必填参数
+- **角色ID**: 要保存记忆的角色ID（第一个参数）
+- **记忆内容**: 要保存的重要信息或经验
 
-## 🛡️ 安全保障
-- 升级前自动备份所有数据
-- Legacy数据自动迁移到XML格式
-- 出错时提供恢复建议和备份位置
+## 📋 使用示例
+\`\`\`bash
+remember java-developer "React Hooks最佳实践：使用useCallback优化性能"
+remember product-manager "用户研究三步法：观察-访谈-分析"  
+remember copywriter "A/B测试文案优化提升转化率15%" --tags "最佳实践"
+\`\`\`
 
-## 💡 记忆内化示例
+## 🎭 角色专属记忆特性
+- **完全隔离**: 每个角色拥有独立的记忆空间
+- **专业化**: 记忆按角色领域分类存储
+- **精准回忆**: recall时只检索当前角色的相关记忆
+- **防止污染**: 不同角色的记忆绝不混杂
 
-### 📝 AI记忆内化
-AI学习和内化各种专业知识：
-- "构建代码 → 运行测试 → 部署到staging → 验证功能 → 发布生产"
-- "用户反馈视频加载慢，排查发现是CDN配置问题，修改后加载速度提升60%"
-- "React Hooks允许在函数组件中使用state和其他React特性"
-- "每个PR至少需要2个人review，必须包含测试用例"
+## 💡 最佳实践建议
+- **Java开发者**: 保存技术解决方案、性能优化技巧
+- **产品经理**: 记录需求分析方法、用户反馈洞察  
+- **文案专家**: 存储高转化文案模板、创意灵感
 
-## 🆕 XML记忆模式特性
-- **结构化存储**: 使用XML格式存储，支持更精确的数据管理
-- **自动迁移**: 从legacy Markdown格式自动迁移到XML
-- **XML转义**: 自动处理特殊字符，确保数据完整性
-- **向后兼容**: 继续支持读取legacy格式记忆
-
-## 🔍 记忆检索与应用
-- 使用 MCP PromptX recall 工具主动检索记忆
-- 使用 MCP PromptX action 工具运用记忆激活角色
+## 🔍 配套工具
+- **查看角色**: welcome 工具查看所有可用角色ID
+- **检索记忆**: recall 工具检索角色专属记忆
+- **激活角色**: action 工具激活角色并自动加载记忆
 
 🔄 下一步行动：
-  - 开始记忆: 使用 MCP PromptX remember 工具内化第一条知识
-  - 学习资源: 使用 MCP PromptX learn 工具学习新知识再内化`
+  - 查看角色: 使用 welcome 工具了解可用角色ID
+  - 开始记忆: 为指定角色保存第一条专业知识`
   }
 
   /**

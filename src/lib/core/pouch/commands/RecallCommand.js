@@ -24,15 +24,29 @@ class RecallCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    // 解析参数：query, --context
-    const { query, context } = this.parseArgs(args)
+    // 解析参数：--role, query
+    const { role, query } = this.parseArgs(args)
+
+    if (!role) {
+      return `❌ 错误：缺少必填参数 role
+
+🎯 **使用方法**：
+recall 角色ID [查询关键词]
+
+📋 **示例**：
+recall java-developer "React Hooks"
+recall product-manager  # 查看所有产品经理记忆
+recall copywriter "A/B测试"
+
+💡 **可用角色ID**：通过 welcome 工具查看所有可用角色`
+    }
 
     logger.step('🧠 [RecallCommand] 开始记忆检索流程 (纯XML模式)')
-    logger.info(`🔍 [RecallCommand] 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
+    logger.info(`🔍 [RecallCommand] 角色: ${role}, 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
 
     try {
-      // 🎯 传递context参数到检索方法
-      const memories = await this.getXMLMemoriesOnly(query, context)
+      // 🎯 传递role参数到检索方法
+      const memories = await this.getXMLMemoriesOnly(query, role)
 
       logger.success(`✅ [RecallCommand] XML记忆检索完成 - 找到 ${memories.length} 条匹配记忆`)
 
@@ -82,31 +96,30 @@ ${formattedMemories}
   }
 
   /**
-   * 🎯 解析命令行参数
+   * 🎯 解析命令行参数 - role作为第一个位置参数
    */
   parseArgs(args) {
     let query = ''
-    let context = null
+    let role = ''
+    let argIndex = 0
     
-    for (let i = 0; i < args.length; i++) {
-      if (args[i] === '--context' && i + 1 < args.length) {
-        try {
-          context = JSON.parse(args[i + 1])
-        } catch (error) {
-          logger.warn(`⚠️ [RecallCommand] context参数解析失败: ${args[i + 1]}`)
-        }
-        i++ // 跳过下一个参数
+    // 第一个参数是role
+    if (args.length > 0) {
+      role = args[0]
+      argIndex = 1
+    }
+    
+    // 从第二个参数开始解析查询内容
+    for (let i = argIndex; i < args.length; i++) {
+      // 查询参数
+      if (query) {
+        query += ' ' + args[i]
       } else {
-        // 查询参数
-        if (query) {
-          query += ' ' + args[i]
-        } else {
-          query = args[i]
-        }
+        query = args[i]
       }
     }
     
-    return { query, context }
+    return { role, query }
   }
 
   getPATEOAS (args) {
@@ -150,7 +163,7 @@ ${formattedMemories}
   /**
    * 获取XML记忆（纯XML模式，移除Markdown兼容）
    */
-  async getXMLMemoriesOnly (query, context) {
+  async getXMLMemoriesOnly (query, role) {
     logger.step('🔧 [RecallCommand] 执行纯XML检索模式')
     
     this.lastSearchCount = 0
@@ -166,7 +179,7 @@ ${formattedMemories}
     }
     
     // 🎯 使用@project协议获取记忆目录（支持HTTP模式）
-    const currentRole = await this.getCurrentRole(context)
+    const currentRole = role
     logger.info(`📁 [RecallCommand] 通过@project协议解析角色记忆目录...`)
     
     const projectProtocol = this.resourceManager.protocols.get('project')
@@ -198,31 +211,6 @@ ${formattedMemories}
     return memories
   }
 
-  /**
-   * 🎯 获取当前激活角色（Context参数优先，默认为default）
-   */
-  async getCurrentRole(context) {
-    try {
-      logger.debug(`🎭 [RecallCommand] === getCurrentRole开始 ===`)
-      
-      // 🎯 优先使用context.role_id参数
-      if (context && context.role_id) {
-        logger.success(`🎭 [RecallCommand] 从context参数获取角色: "${context.role_id}"`)
-        logger.debug(`🎭 [RecallCommand] === getCurrentRole完成 === 返回角色: ${context.role_id}`)
-        return context.role_id
-      }
-      
-      // 🎯 无Context时使用默认角色
-      logger.debug(`🎭 [RecallCommand] 无context.role_id，使用默认角色: default`)
-      logger.debug(`🎭 [RecallCommand] === getCurrentRole完成 === 返回默认角色: default`)
-      return 'default'
-      
-    } catch (error) {
-      logger.error(`❌ [RecallCommand] getCurrentRole失败: ${error.message}`)
-      logger.debug(`🎭 [RecallCommand] === getCurrentRole完成 === 返回默认角色: default (错误回退)`)
-      return 'default'
-    }
-  }
 
 
   /**

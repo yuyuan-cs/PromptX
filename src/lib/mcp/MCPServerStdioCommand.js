@@ -3,7 +3,7 @@ const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
 const { getDirectoryService } = require('../utils/DirectoryService');
-const { getToolDefinitions } = require('../mcp/toolDefinitions');
+const { getToolDefinitions, getToolCliConverter } = require('../mcp/toolDefinitions');
 const { getGlobalServerEnvironment } = require('../utils/ServerEnvironment');
 const treeKill = require('tree-kill');
 
@@ -241,61 +241,15 @@ class MCPServerStdioCommand {
   }
   
   /**
-   * 转换MCP参数为CLI函数调用参数
+   * 转换MCP参数为CLI函数调用参数 - 使用统一转换逻辑
    */
   convertMCPToCliParams(toolName, mcpArgs) {
-    const paramMapping = {
-      'promptx_init': (args) => args.workingDirectory ? [args] : [],
-      
-      'promptx_welcome': () => [],
-      
-      'promptx_action': (args) => [args.role],
-      
-      'promptx_learn': (args) => args.resource ? [args.resource] : [],
-      
-      'promptx_recall': (args) => {
-        // 支持context.role_id参数传递
-        const result = [];
-        
-        // 处理query参数
-        if (args && args.query && typeof args.query === 'string' && args.query.trim() !== '') {
-          result.push(args.query);
-        }
-        
-        // 处理context参数
-        if (args && args.context) {
-          result.push('--context', JSON.stringify(args.context));
-        }
-        
-        return result;
-      },
-      
-      'promptx_remember': (args) => {
-        const result = [args.content];
-        
-        // 处理tags参数
-        if (args.tags) {
-          result.push('--tags', args.tags);
-        }
-        
-        // 处理context参数
-        if (args.context) {
-          result.push('--context', JSON.stringify(args.context));
-        }
-        
-        return result;
-      },
-      
-      
-      'promptx_tool': (args) => [args]
-    };
-    
-    const mapper = paramMapping[toolName];
-    if (!mapper) {
+    const converter = getToolCliConverter(toolName);
+    if (!converter) {
       throw new Error(`未知工具: ${toolName}`);
     }
     
-    return mapper(mcpArgs);
+    return converter(mcpArgs || {});
   }
 }
 

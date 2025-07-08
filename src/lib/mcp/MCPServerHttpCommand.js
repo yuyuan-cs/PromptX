@@ -6,7 +6,7 @@ const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js'
 const { isInitializeRequest } = require('@modelcontextprotocol/sdk/types.js');
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
-const { getToolDefinitions, getToolDefinition } = require('../mcp/toolDefinitions');
+const { getToolDefinitions, getToolDefinition, getToolCliConverter } = require('../mcp/toolDefinitions');
 const ProjectManager = require('../utils/ProjectManager');
 const { getGlobalProjectManager } = require('../utils/ProjectManager');
 const { getGlobalServerEnvironment } = require('../utils/ServerEnvironment');
@@ -482,43 +482,15 @@ class MCPServerHttpCommand {
   }
 
   /**
-   * 转换 MCP 参数为 CLI 函数调用参数
+   * 转换 MCP 参数为 CLI 函数调用参数 - 使用统一转换逻辑
    */
   convertMCPToCliParams(toolName, mcpArgs) {
-    const paramMapping = {
-      'promptx_init': (args) => {
-        if (args && args.workingDirectory) {
-          return [{ workingDirectory: args.workingDirectory, ideType: args.ideType }];
-        }
-        return [];
-      },
-      'promptx_welcome': () => [],
-      'promptx_action': (args) => args && args.role ? [args.role] : [],
-      'promptx_learn': (args) => args && args.resource ? [args.resource] : [],
-      'promptx_recall': (args) => {
-        if (!args || !args.query || typeof args.query !== 'string' || args.query.trim() === '') {
-          return [];
-        }
-        return [args.query];
-      },
-      'promptx_remember': (args) => {
-        if (!args || !args.content) {
-          throw new Error('content 参数是必需的');
-        }
-        const result = [args.content];
-        if (args.tags) {
-          result.push('--tags', args.tags);
-        }
-        return result;
-      },
-    };
-    
-    const mapper = paramMapping[toolName];
-    if (!mapper) {
+    const converter = getToolCliConverter(toolName);
+    if (!converter) {
       throw new Error(`未知工具: ${toolName}`);
     }
     
-    return mapper(mcpArgs || {});
+    return converter(mcpArgs || {});
   }
 
   /**
