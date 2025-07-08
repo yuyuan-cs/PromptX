@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const { spawn } = require('child_process');
 const vm = require('vm');
 const SandboxIsolationManager = require('./SandboxIsolationManager');
+const SandboxErrorManager = require('./SandboxErrorManager');
 
 /**
  * ToolSandbox - 工具沙箱环境管理器
@@ -24,6 +25,7 @@ class ToolSandbox {
     this.sandboxPath = null;             // 沙箱目录路径
     this.sandboxContext = null;          // VM沙箱上下文
     this.isolationManager = null;        // 沙箱隔离管理器
+    this.errorManager = new SandboxErrorManager(); // 智能错误管理器
     
     // 状态标志
     this.isAnalyzed = false;
@@ -169,17 +171,19 @@ class ToolSandbox {
       };
       
     } catch (error) {
-      return {
-        success: false,
-        error: {
-          message: error.message,
-          stack: error.stack
-        },
-        metadata: {
-          toolId: this.toolId,
-          sandboxPath: this.sandboxPath
-        }
-      };
+      // 使用智能错误管理器分析错误
+      const intelligentError = this.errorManager.analyzeError(error, {
+        toolId: this.toolId,
+        dependencies: this.dependencies,
+        sandboxPath: this.sandboxPath,
+        phase: 'execute'
+      });
+      
+      // 抛出增强的错误对象，供上层处理自动重试
+      const enhancedError = new Error(intelligentError.formattedMessage);
+      enhancedError.intelligentError = intelligentError;
+      enhancedError.originalError = error;
+      throw enhancedError;
     }
   }
 
