@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { spawn } = require('child_process');
 const vm = require('vm');
+const SandboxIsolationManager = require('./SandboxIsolationManager');
 
 /**
  * ToolSandbox - 工具沙箱环境管理器
@@ -22,6 +23,7 @@ class ToolSandbox {
     this.dependencies = [];              // 依赖列表
     this.sandboxPath = null;             // 沙箱目录路径
     this.sandboxContext = null;          // VM沙箱上下文
+    this.isolationManager = null;        // 沙箱隔离管理器
     
     // 状态标志
     this.isAnalyzed = false;
@@ -49,6 +51,14 @@ class ToolSandbox {
    * @returns {Promise<Object>} 分析结果
    */
   async analyze() {
+    // 强制重装时清空分析缓存
+    if (this.options.forceReinstall) {
+      this.isAnalyzed = false;
+      this.toolContent = null;
+      this.toolInstance = null;
+      this.dependencies = [];
+    }
+    
     if (this.isAnalyzed) {
       return this.getAnalysisResult();
     }
@@ -95,6 +105,12 @@ class ToolSandbox {
   async prepareDependencies() {
     if (!this.isAnalyzed) {
       await this.analyze();
+    }
+    
+    // 强制重装时清空准备缓存
+    if (this.options.forceReinstall) {
+      this.isPrepared = false;
+      this.sandboxContext = null;
     }
     
     if (this.isPrepared && !this.options.forceReinstall) {
@@ -207,10 +223,13 @@ class ToolSandbox {
    * 在基础沙箱中分析工具
    */
   async analyzeToolInSandbox() {
-    const sandbox = await this.createSandbox({
-      supportDependencies: false
-      // 使用默认的@project://.promptx/cwd
+    // 创建分析阶段的隔离管理器
+    this.isolationManager = new SandboxIsolationManager(this.sandboxPath, {
+      enableDependencyLoading: false,
+      analysisMode: true
     });
+    
+    const sandbox = this.isolationManager.createIsolatedContext();
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
     const context = vm.createContext(sandbox);
     
@@ -445,12 +464,15 @@ class ToolSandbox {
    * 创建执行沙箱环境
    */
   async createExecutionSandbox() {
-    this.sandboxContext = await this.createSandbox({
-      supportDependencies: true,
-      sandboxPath: this.sandboxPath  // 保持使用工具专用沙箱
+    // 创建执行阶段的隔离管理器
+    this.isolationManager = new SandboxIsolationManager(this.sandboxPath, {
+      enableDependencyLoading: true,
+      analysisMode: false
     });
     
-    // 在智能沙箱中重新加载工具
+    this.sandboxContext = this.isolationManager.createIsolatedContext();
+    
+    // 在完全隔离的沙箱中重新加载工具
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
     const context = vm.createContext(this.sandboxContext);
     
@@ -464,48 +486,6 @@ class ToolSandbox {
     }
   }
 
-  /**
-   * 创建统一沙箱环境
-   * @param {Object} options - 沙箱配置
-   * @param {boolean} options.supportDependencies - 是否支持依赖解析
-   * @param {string} options.sandboxPath - 沙箱工作目录，支持协议路径
-   * @returns {Object} 沙箱环境对象
-   */
-  async createSandbox(options = {}) {
-    const { 
-      supportDependencies = false, 
-      sandboxPath = '@project://.promptx/cwd' 
-    } = options;
-    
-    // 解析协议路径为实际路径
-    const resolvedPath = await this.resolveProtocolPath(sandboxPath);
-    
-    return {
-      require: supportDependencies ? 
-        this.createSmartRequire(resolvedPath) : 
-        this.createAnalysisRequire(),
-      module: { exports: {} },
-      exports: {},
-      console: console,
-      Buffer: Buffer,
-      process: this.createProcessMock(resolvedPath),
-      setTimeout: setTimeout,
-      clearTimeout: clearTimeout,
-      setInterval: setInterval,
-      clearInterval: clearInterval,
-      Object: Object,
-      Array: Array,
-      String: String,
-      Number: Number,
-      Boolean: Boolean,
-      Date: Date,
-      JSON: JSON,
-      Math: Math,
-      RegExp: RegExp,
-      Error: Error,
-      URL: URL
-    };
-  }
 
   /**
    * 解析协议路径（支持@project://等协议）
@@ -559,73 +539,8 @@ class ToolSandbox {
     return protocolPath;
   }
 
-  /**
-   * 创建完整的process对象mock
-   * @param {string} sandboxPath - 沙箱工作目录
-   * @returns {Object} mock的process对象
-   */
-  createProcessMock(sandboxPath) {
-    return {
-      env: process.env,
-      version: process.version,
-      platform: process.platform,
-      arch: process.arch,
-      hrtime: process.hrtime,
-      cwd: () => sandboxPath,
-      pid: process.pid,
-      uptime: process.uptime
-    };
-  }
 
-  /**
-   * 创建分析阶段的mock require
-   * 让所有require调用都成功，脚本能完整执行到module.exports
-   * @returns {Function} mock require函数
-   */
-  createAnalysisRequire() {
-    return (moduleName) => {
-      // Node.js内置模块使用真实require
-      const builtinModules = ['path', 'fs', 'url', 'crypto', 'util', 'os', 'events', 'stream'];
-      
-      try {
-        // 检查是否是内置模块
-        if (builtinModules.includes(moduleName) || moduleName.startsWith('node:')) {
-          return require(moduleName);
-        }
-      } catch (e) {
-        // 内置模块加载失败，继续mock处理
-      }
-      
-      // 第三方模块返回通用mock对象
-      console.log(`[ToolSandbox] 分析阶段mock模块: ${moduleName}`);
-      return new Proxy({}, {
-        get: () => () => ({}),  // 所有属性和方法都返回空函数/对象
-        apply: () => ({}),      // 如果被当作函数调用
-        construct: () => ({})   // 如果被当作构造函数
-      });
-    };
-  }
 
-  /**
-   * 创建支持依赖解析的require函数
-   * @param {string} sandboxPath - 沙箱路径
-   * @returns {Function} 智能require函数
-   */
-  createSmartRequire(sandboxPath) {
-    return (moduleName) => {
-      try {
-        return require(require.resolve(moduleName, {
-          paths: [
-            path.join(sandboxPath, 'node_modules'),
-            sandboxPath,
-            process.cwd() + '/node_modules'
-          ]
-        }));
-      } catch (error) {
-        return require(moduleName);
-      }
-    };
-  }
 
   /**
    * 参数验证
@@ -670,7 +585,13 @@ class ToolSandbox {
    * 清理沙箱资源
    */
   async cleanup() {
-    // 可选：清理临时文件、关闭连接等
+    // 清理隔离管理器
+    if (this.isolationManager) {
+      this.isolationManager.cleanup();
+      this.isolationManager = null;
+    }
+    
+    // 清理其他资源
     this.sandboxContext = null;
     this.toolInstance = null;
   }
