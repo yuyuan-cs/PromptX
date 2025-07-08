@@ -121,13 +121,14 @@
     **三组件快速填充**：
     ```mermaid
     flowchart LR
-        A[personality] --> A1[@!thought://remember]
-        A --> A2[@!thought://recall]
-        A --> A3[@!thought://domain-specific]
+        A[personality] --> A1[@!thought://domain-specific]
+        A --> A2[角色核心身份描述]
         
         B[principle] --> B1[@!execution://domain-workflow]
+        B --> B2[工作原则和标准]
         
-        C[knowledge] --> C1[领域专业知识]
+        C[knowledge] --> C1[仅写项目特定约束]
+        C --> C2[Sean原创概念]
     ```
 
     ### Step 3: 结果直接交付 (30秒内)
@@ -157,6 +158,8 @@
     - "我需要一个[领域]专家"
     - "帮我找个懂[技能]的专家"  
     - "我要和[角色]聊聊[话题]"
+    
+    🧠 该角色自动具备智能记忆能力，会记住重要信息并在需要时主动回忆
     
     🎯 Chat is All you Need - 自然表达，灵活调整，信任AI理解您的意图
     
