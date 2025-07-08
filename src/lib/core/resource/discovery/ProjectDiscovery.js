@@ -1,16 +1,17 @@
 const logger = require('../../../utils/logger')
 const RegistryData = require('../RegistryData')
+const ResourceData = require('../ResourceData')
 const fs = require('fs-extra')
 const path = require('path')
 
 /**
- * ProjectDiscovery - 项目级资源发现器（重构版）
+ * ProjectDiscovery - 项目级资源发现器（恢复重构前完整逻辑）
  * 
  * 核心设计原则：
  * 1. 完全基于@project协议，支持HTTP/本地模式
  * 2. 优先使用注册表，fallback到动态扫描  
- * 3. 零路径硬编码，零协议绕过
- * 4. 简洁高效，易维护
+ * 3. 恢复重构前的专业目录结构处理能力
+ * 4. 恢复完整的ResourceData构建和文件验证逻辑
  */
 class ProjectDiscovery {
   constructor() {
@@ -81,7 +82,7 @@ class ProjectDiscovery {
   }
 
   /**
-   * 动态扫描项目资源
+   * 动态扫描项目资源 - 恢复重构前的专业扫描逻辑
    * @returns {Promise<Array>} 资源列表
    */
   async scanProjectResources() {
@@ -96,23 +97,24 @@ class ProjectDiscovery {
         return []
       }
 
-      // 扫描所有资源文件
-      const resources = []
-      const domains = await fs.readdir(resourceDir)
+      // 创建临时注册表来收集资源
+      const tempRegistry = RegistryData.createEmpty('project', null)
       
-      for (const domain of domains) {
-        if (domain.startsWith('.')) continue
-        
-        const domainPath = path.join(resourceDir, domain)
-        const domainStats = await fs.stat(domainPath)
-        
-        if (domainStats.isDirectory()) {
-          const domainResources = await this.scanDomainDirectory(domainPath, domain)
-          resources.push(...domainResources)
-        }
+      // 扫描专业目录结构
+      await this._scanDirectory(resourceDir, tempRegistry)
+      
+      // 转换为资源列表
+      const resources = []
+      for (const resource of tempRegistry.resources) {
+        resources.push({
+          id: resource.id,
+          protocol: resource.protocol,
+          reference: resource.reference,
+          source: resource.source
+        })
       }
 
-      logger.info(`[ProjectDiscovery] ✅ 项目注册表生成完成，发现 ${resources.length} 个资源`)
+      logger.info(`[ProjectDiscovery] ✅ 项目扫描完成，发现 ${resources.length} 个资源`)
       return resources
       
     } catch (error) {
@@ -122,103 +124,191 @@ class ProjectDiscovery {
   }
 
   /**
-   * 扫描域目录（如domain/andersen/）
-   * @param {string} domainPath - 域目录路径
-   * @param {string} domainName - 域名称  
-   * @returns {Promise<Array>} 域内资源列表
+   * 扫描目录并添加资源到注册表（恢复重构前逻辑）
+   * @param {string} resourcesDir - 资源目录
+   * @param {RegistryData} registryData - 注册表数据
+   * @private
    */
-  async scanDomainDirectory(domainPath, domainName) {
-    const resources = []
-    
-    try {
-      const items = await fs.readdir(domainPath)
-      
-      for (const item of items) {
-        const itemPath = path.join(domainPath, item)
-        const itemStats = await fs.stat(itemPath)
-        
-        if (itemStats.isDirectory()) {
-          // 扫描类型目录（如role/, thought/等）
-          const typeResources = await this.scanTypeDirectory(itemPath, domainName, item)
-          resources.push(...typeResources)
-        } else if (itemStats.isFile()) {
-          // 直接在域目录下的资源文件
-          const resource = this.parseResourceFile(itemPath, domainName)
-          if (resource) resources.push(resource)
-        }
-      }
-      
-    } catch (error) {
-      logger.warn(`[ProjectDiscovery] 扫描域目录失败 ${domainPath}: ${error.message}`)
+  async _scanDirectory(resourcesDir, registryData) {
+    // 扫描role目录（恢复重构前逻辑）
+    const roleDir = path.join(resourcesDir, 'role')
+    if (await fs.pathExists(roleDir)) {
+      await this._scanRoleDirectory(roleDir, registryData)
     }
     
-    return resources
+    // 扫描domain目录（支持新的目录结构）
+    const domainDir = path.join(resourcesDir, 'domain')
+    if (await fs.pathExists(domainDir)) {
+      await this._scanDomainDirectory(domainDir, registryData)
+    }
   }
 
   /**
-   * 扫描类型目录（如thought/, execution/等）
-   * @param {string} typePath - 类型目录路径
-   * @param {string} domainName - 域名称
-   * @param {string} typeName - 类型名称
-   * @returns {Promise<Array>} 类型内资源列表
+   * 扫描role目录（项目角色资源）- 恢复重构前完整逻辑
+   * @param {string} roleDir - role目录路径
+   * @param {RegistryData} registryData - 注册表数据
+   * @private
    */
-  async scanTypeDirectory(typePath, domainName, typeName) {
-    const resources = []
+  async _scanRoleDirectory(roleDir, registryData) {
+    const items = await fs.readdir(roleDir)
     
-    try {
-      const files = await fs.readdir(typePath)
+    for (const item of items) {
+      const itemPath = path.join(roleDir, item)
+      const stat = await fs.stat(itemPath)
       
+      if (stat.isDirectory()) {
+        // 查找role文件
+        const roleFile = path.join(itemPath, `${item}.role.md`)
+        if (await fs.pathExists(roleFile)) {
+          // 验证文件内容
+          if (await this._validateResourceFile(roleFile, 'role')) {
+            const reference = `@project://.promptx/resource/role/${item}/${item}.role.md`
+            
+            const resourceData = new ResourceData({
+              id: item,
+              source: 'project',
+              protocol: 'role',
+              name: ResourceData._generateDefaultName(item, 'role'),
+              description: ResourceData._generateDefaultDescription(item, 'role'),
+              reference: reference,
+              metadata: {
+                scannedAt: new Date().toISOString()
+              }
+            })
+            
+            registryData.addResource(resourceData)
+          }
+        }
+        
+        // 查找子目录中的其他资源
+        await this._scanSubDirectory(itemPath, 'thought', item, registryData, 'role')
+        await this._scanSubDirectory(itemPath, 'execution', item, registryData, 'role')
+        await this._scanSubDirectory(itemPath, 'knowledge', item, registryData, 'role')
+      }
+    }
+  }
+
+  /**
+   * 扫描domain目录（新的目录结构支持）
+   * @param {string} domainDir - domain目录路径
+   * @param {RegistryData} registryData - 注册表数据
+   * @private
+   */
+  async _scanDomainDirectory(domainDir, registryData) {
+    const items = await fs.readdir(domainDir)
+    
+    for (const item of items) {
+      const itemPath = path.join(domainDir, item)
+      const stat = await fs.stat(itemPath)
+      
+      if (stat.isDirectory()) {
+        // 查找role文件
+        const roleFile = path.join(itemPath, `${item}.role.md`)
+        if (await fs.pathExists(roleFile)) {
+          // 验证文件内容
+          if (await this._validateResourceFile(roleFile, 'role')) {
+            const reference = `@project://.promptx/resource/domain/${item}/${item}.role.md`
+            
+            const resourceData = new ResourceData({
+              id: item,
+              source: 'project',
+              protocol: 'role',
+              name: ResourceData._generateDefaultName(item, 'role'),
+              description: ResourceData._generateDefaultDescription(item, 'role'),
+              reference: reference,
+              metadata: {
+                scannedAt: new Date().toISOString()
+              }
+            })
+            
+            registryData.addResource(resourceData)
+          }
+        }
+        
+        // 查找子目录中的其他资源
+        await this._scanSubDirectory(itemPath, 'thought', item, registryData, 'domain')
+        await this._scanSubDirectory(itemPath, 'execution', item, registryData, 'domain')
+        await this._scanSubDirectory(itemPath, 'knowledge', item, registryData, 'domain')
+      }
+    }
+  }
+
+  /**
+   * 扫描子目录（thought/execution/knowledge）
+   * @param {string} itemPath - 角色目录路径
+   * @param {string} resourceType - 资源类型
+   * @param {string} roleId - 角色ID
+   * @param {RegistryData} registryData - 注册表数据
+   * @param {string} parentDir - 父目录类型（'role' 或 'domain'）
+   * @private
+   */
+  async _scanSubDirectory(itemPath, resourceType, roleId, registryData, parentDir = 'role') {
+    const subDir = path.join(itemPath, resourceType)
+    if (await fs.pathExists(subDir)) {
+      const files = await fs.readdir(subDir)
       for (const file of files) {
-        const filePath = path.join(typePath, file)
-        const stats = await fs.stat(filePath)
-        
-        if (stats.isFile()) {
-          const resource = this.parseResourceFile(filePath, domainName, typeName)
-          if (resource) resources.push(resource)
+        if (file.endsWith(`.${resourceType}.md`)) {
+          const resourceId = path.basename(file, `.${resourceType}.md`)
+          const reference = `@project://.promptx/resource/${parentDir}/${roleId}/${resourceType}/${file}`
+          
+          // 验证文件内容
+          const filePath = path.join(subDir, file)
+          if (await this._validateResourceFile(filePath, resourceType)) {
+            const resourceData = new ResourceData({
+              id: resourceId,
+              source: 'project',
+              protocol: resourceType,
+              name: ResourceData._generateDefaultName(resourceId, resourceType),
+              description: ResourceData._generateDefaultDescription(resourceId, resourceType),
+              reference: reference,
+              metadata: {
+                scannedAt: new Date().toISOString()
+              }
+            })
+            
+            registryData.addResource(resourceData)
+          }
         }
       }
-      
-    } catch (error) {
-      logger.warn(`[ProjectDiscovery] 扫描类型目录失败 ${typePath}: ${error.message}`)
     }
-    
-    return resources
   }
 
   /**
-   * 解析资源文件
+   * 验证资源文件格式（恢复重构前逻辑）
    * @param {string} filePath - 文件路径
-   * @param {string} domainName - 域名称
-   * @param {string} typeName - 类型名称（可选）
-   * @returns {Object|null} 资源对象
+   * @param {string} protocol - 协议类型
+   * @returns {Promise<boolean>} 是否是有效的资源文件
    */
-  parseResourceFile(filePath, domainName, typeName = null) {
-    const fileName = path.basename(filePath)
-    const ext = path.extname(fileName)
-    const baseName = path.basename(fileName, ext)
-    
-    // 识别资源类型
-    let protocol = typeName
-    if (!protocol) {
-      if (fileName.includes('.role.')) protocol = 'role'
-      else if (fileName.includes('.thought.')) protocol = 'thought'  
-      else if (fileName.includes('.execution.')) protocol = 'execution'
-      else if (fileName.includes('.knowledge.')) protocol = 'knowledge'
-      else return null
-    }
-    
-    // 生成资源ID和引用
-    const resourceId = baseName.replace(/\.(role|thought|execution|knowledge)$/, '')
-    const reference = `@project://.promptx/resource/${path.relative(
-      path.dirname(path.dirname(path.dirname(filePath))), 
-      filePath
-    ).replace(/\\/g, '/')}`
-    
-    return {
-      id: resourceId,
-      protocol,
-      reference,
-      source: 'project'
+  async _validateResourceFile(filePath, protocol) {
+    try {
+      const content = await fs.readFile(filePath, 'utf8')
+
+      if (!content || typeof content !== 'string') {
+        return false
+      }
+
+      const trimmedContent = content.trim()
+      if (trimmedContent.length === 0) {
+        return false
+      }
+
+      // 根据协议类型验证DPML标签
+      switch (protocol) {
+        case 'role':
+          return trimmedContent.includes('<role>') && trimmedContent.includes('</role>')
+        case 'execution':
+          return trimmedContent.includes('<execution>') && trimmedContent.includes('</execution>')
+        case 'thought':
+          return trimmedContent.includes('<thought>') && trimmedContent.includes('</thought>')
+        case 'knowledge':
+          // knowledge类型比较灵活，只要文件有内容就认为是有效的
+          return true
+        default:
+          return false
+      }
+    } catch (error) {
+      logger.warn(`[ProjectDiscovery] Failed to validate ${filePath}: ${error.message}`)
+      return false
     }
   }
 
@@ -244,22 +334,19 @@ class ProjectDiscovery {
    */
   async generateRegistry() {
     try {
-      const resources = await this.scanProjectResources()
+      const protocol = this.getProjectProtocol()
       
       // 获取注册表文件路径
-      const protocol = this.getProjectProtocol()
       const registryPath = await protocol.resolvePath('.promptx/resource/project.registry.json')
       
-      // 创建注册表数据（即使没有资源也要创建空注册表文件）
+      // 创建注册表数据
       const registryData = RegistryData.createEmpty('project', registryPath)
       
-      if (resources.length === 0) {
-        logger.debug('[ProjectDiscovery] 没有发现项目资源，创建空注册表')
-      } else {
-        // 添加发现的资源
-        resources.forEach(resource => {
-          registryData.addResource(resource.id, resource.protocol, resource.reference, resource.source)
-        })
+      // 扫描资源目录
+      const resourceDir = await protocol.resolvePath('.promptx/resource')
+      
+      if (await fs.pathExists(resourceDir)) {
+        await this._scanDirectory(resourceDir, registryData)
       }
       
       // 确保目录存在
@@ -268,7 +355,7 @@ class ProjectDiscovery {
       // 保存注册表
       await registryData.save()
       
-      logger.info(`[ProjectDiscovery] ✅ 项目注册表生成完成，发现 ${resources.length} 个资源`)
+      logger.info(`[ProjectDiscovery] ✅ 项目注册表生成完成，发现 ${registryData.size} 个资源`)
       return registryData
       
     } catch (error) {
