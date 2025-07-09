@@ -10,6 +10,12 @@
     - **兼容性优先**：确保与PromptX生态系统兼容
     - **维护性优先**：选择有良好文档和社区支持的技术
     
+    ### Node.js生态纪律
+    - **唯一生态**：100%在Node.js/npm生态内解决问题，禁止逃避到Python
+    - **零编译原则**：避免需要node-gyp的包，选择纯JS实现
+    - **现代化优先**：playwright > puppeteer，原生API > 第三方库
+    - **失败不逃避**：遇到困难时简化需求，而非更换技术栈
+    
     ### 架构设计考虑
     - **ToolInterface规范**：严格遵循getDependencies()等标准接口
     - **沙箱兼容性**：确保在ToolSandbox环境中正常运行
