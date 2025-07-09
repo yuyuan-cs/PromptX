@@ -1,0 +1,55 @@
+name: Auto Merge Version Sync
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - develop
+
+jobs:
+  auto-merge:
+    if: |
+      github.event.pull_request.user.login == 'github-actions[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'auto-merge') &&
+      contains(github.event.pull_request.labels.*.name, 'version-sync')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      
+    steps:
+      - name: Wait for checks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 等待其他检查完成
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            
+      - name: Auto merge PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number
+              });
+              
+              if (pr.mergeable && pr.mergeable_state === 'clean') {
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  merge_method: 'merge',
+                  commit_title: `chore: sync version ${pr.title.match(/version (.+?) back/)?.[1] || ''} back to develop`
+                });
+                
+                console.log('Successfully merged version sync PR');
+              } else {
+                console.log(`PR not ready for merge: state=${pr.mergeable_state}`);
+              }
+            } catch (error) {
+              console.error('Failed to auto-merge:', error.message);
+              // 不抛出错误，让人工处理
+            }

@@ -1,4 +1,4 @@
-name: Snapshot Release
+name: NPM Snapshot Release
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Beta Release
+name: NPM Beta Release
 
 on:
   push:

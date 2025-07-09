@@ -1,4 +1,4 @@
-name: Test Branch Release
+name: NPM Alpha Release
 
 on:
   push:
