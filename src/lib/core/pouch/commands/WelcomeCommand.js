@@ -20,7 +20,7 @@ class WelcomeCommand extends BasePouchCommand {
   }
 
   getPurpose () {
-    return '为AI提供可用角色信息，以便AI向主人汇报专业服务选项'
+    return '为AI提供可用角色和工具信息，以便AI向主人汇报专业服务选项'
   }
 
   /**
@@ -34,6 +34,36 @@ class WelcomeCommand extends BasePouchCommand {
     
     // 直接使用ResourceManager的注册表，无需重复处理
     return this.resourceManager.registryData.getResourcesByProtocol('role')
+  }
+
+  /**
+   * 动态加载工具注册表
+   */
+  async loadToolRegistry () {
+    // 确保ResourceManager已初始化
+    if (!this.resourceManager.initialized) {
+      await this.resourceManager.initializeWithNewArchitecture()
+    }
+    
+    // 获取tool和manual资源
+    const tools = this.resourceManager.registryData.getResourcesByProtocol('tool')
+    const manuals = this.resourceManager.registryData.getResourcesByProtocol('manual')
+    
+    // 将工具和手册关联起来，保留source信息
+    const toolsWithManuals = {}
+    tools.forEach(tool => {
+      const manual = manuals.find(m => m.id === tool.id && m.source === tool.source)
+      toolsWithManuals[tool.id] = {
+        id: tool.id,
+        name: tool.name || tool.id,
+        description: tool.description || '工具功能描述',
+        source: tool.source || 'unknown',
+        reference: tool.reference,
+        manual: manual ? `@manual://${manual.id}` : null
+      }
+    })
+    
+    return toolsWithManuals
   }
 
   /**
@@ -98,16 +128,33 @@ class WelcomeCommand extends BasePouchCommand {
   /**
    * 获取来源标签
    * @param {string} source - 资源来源
+   * @param {string} type - 资源类型 ('role' 或 'tool')
    * @returns {string} 来源标签
    */
-  getSourceLabel(source) {
+  getSourceLabel(source, type = 'role') {
+    if (type === 'tool') {
+      switch (source) {
+        case 'package':
+          return '📦 系统工具'
+        case 'project':
+          return '🏗️ 项目工具'
+        case 'user':
+          return '👤 用户工具'
+        case 'merged':
+          return '📦 系统工具'
+        default:
+          return '❓ 未知来源'
+      }
+    }
+    
+    // 角色标签
     switch (source) {
       case 'package':
         return '📦 系统角色'
       case 'project':
         return '🏗️ 项目角色'
       case 'user':
-        return '�� 用户角色'
+        return '👤 用户角色'
       case 'merged':
         return '📦 系统角色' // merged来源的资源主要来自package
       case 'fallback':
@@ -119,12 +166,15 @@ class WelcomeCommand extends BasePouchCommand {
 
   async getContent (args) {
     const roleRegistry = await this.loadRoleRegistry()
+    const toolRegistry = await this.loadToolRegistry()
     const allRoles = Object.values(roleRegistry)
+    const allTools = Object.values(toolRegistry)
     const totalRoles = allRoles.length
+    const totalTools = allTools.length
 
-    let content = `🤖 **AI专业角色服务清单** (共 ${totalRoles} 个专业角色可供选择)
+    let content = `🤖 **AI专业服务清单** (共 ${totalRoles} 个专业角色 + ${totalTools} 个工具可供使用)
 
-> 💡 **使用说明**：以下是可激活的AI专业角色。每个角色都有唯一的ID，可通过MCP工具激活。
+> 💡 **使用说明**：以下是可激活的AI专业角色和可调用的工具。每个都有唯一的ID，可通过MCP工具使用。
 
 
 ## 📋 可用角色列表
@@ -164,17 +214,61 @@ class WelcomeCommand extends BasePouchCommand {
       })
     }
 
+    // 添加工具列表
     content += `
-## 🎯 **角色激活指南**
+## 🔧 可用工具列表
 
-### 🔧 激活方式
+`
+    
+    // 按来源分组显示工具
+    const toolsBySource = {}
+    allTools.forEach(tool => {
+      const source = tool.source || 'unknown'
+      if (!toolsBySource[source]) {
+        toolsBySource[source] = []
+      }
+      toolsBySource[source].push(tool)
+    })
+    
+    let toolIndex = 1
+    
+    for (const source of sourceOrder) {
+      if (!toolsBySource[source] || toolsBySource[source].length === 0) continue
+      
+      const sourceLabel = this.getSourceLabel(source, 'tool')
+      content += `### ${sourceLabel}\n\n`
+      
+      toolsBySource[source].forEach(tool => {
+        content += `#### ${toolIndex}. \`${tool.id}\` - ${tool.name}
+**功能描述**: ${tool.description}  
+**使用手册**: ${tool.manual || '暂无手册'}  
+**来源**: ${sourceLabel}
+
+---
+
+`
+        toolIndex++
+      })
+    }
+
+    content += `
+## 🎯 **使用指南**
+
+### 📋 角色激活
 - 使用 **MCP PromptX 工具** 中的 \`action\` 功能
 - 选择需要的角色ID进行激活
+- 激活后AI将具备该角色的专业技能
 
-### ⚡ 激活后效果
-- ✅ **获得专业能力** - AI将具备该角色的专业技能
-- ✅ **学习技能组合** - 自动学习角色需要的思维和行为模式
-- ✅ **即时专业化** - 立即可以提供该领域的专业服务
+### 🔧 工具使用
+- **第一步**：通过 \`@manual://tool-name\` 查看工具手册
+- **第二步**：理解工具功能和参数要求
+- **第三步**：使用 \`promptx_tool\` 执行工具
+- **重要**：禁止在未阅读手册的情况下使用工具！
+
+### ⚡ 效果说明
+- ✅ **角色激活** - 获得专业思维和技能
+- ✅ **工具调用** - 执行具体的功能操作
+- ✅ **安全使用** - 先读手册，再用工具
 `
 
     return content
@@ -182,30 +276,49 @@ class WelcomeCommand extends BasePouchCommand {
 
   async getPATEOAS (args) {
     const allRoles = await this.getAllRoles()
+    const toolRegistry = await this.loadToolRegistry()
+    const allTools = Object.values(toolRegistry)
+    
     const availableRoles = allRoles.map(role => ({
       roleId: role.id,
       name: role.name,
       source: role.source
     }))
+    
+    const availableTools = allTools.map(tool => ({
+      toolId: tool.id,
+      name: tool.name,
+      source: tool.source,
+      manual: tool.manual
+    }))
 
     return {
-      currentState: 'role_discovery',
-      availableTransitions: ['action', 'learn', 'init', 'recall'],
+      currentState: 'service_discovery',
+      availableTransitions: ['action', 'learn', 'init', 'recall', 'tool'],
       nextActions: [
         {
           name: '向主人汇报服务选项',
-          description: '将上述专业服务清单告知主人，并询问需求',
-          method: 'MCP PromptX action 工具',
+          description: '将上述专业角色和工具清单告知主人，并询问需求',
+          method: 'MCP PromptX action/tool 工具',
           priority: 'critical',
-          instruction: '必须先询问主人需求，不要自主选择角色'
+          instruction: '必须先询问主人需求，不要自主选择角色或工具'
+        },
+        {
+          name: '工具使用流程',
+          description: '如需使用工具，必须先查看manual手册',
+          method: '1. 查看@manual://tool-name 2. 使用promptx_tool',
+          priority: 'high',
+          instruction: '严格遵循先读手册后使用的原则'
         }
       ],
       metadata: {
         totalRoles: allRoles.length,
+        totalTools: allTools.length,
         availableRoles,
+        availableTools,
         dataSource: 'RegistryData v2.0',
         systemVersion: '锦囊串联状态机 v1.0',
-        designPhilosophy: 'AI use MCP tools for role activation'
+        designPhilosophy: 'AI use MCP tools for role activation and tool execution'
       }
     }
   }
