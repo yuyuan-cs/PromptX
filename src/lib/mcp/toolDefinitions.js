@@ -297,9 +297,9 @@ const TOOL_DEFINITIONS = [
           type: 'object',
           description: '传递给工具的参数对象'
         },
-        forceReinstall: {
+        rebuild: {
           type: 'boolean',
-          description: '是否强制重新安装工具依赖（默认false）。当工具代码更新但缓存未失效时设为true，用于解决工具开发和调试中的缓存问题',
+          description: '是否强制重建沙箱（默认false）。用于处理异常情况如node_modules损坏、权限问题等。正常情况下会自动检测依赖变化',
           default: false
         },
         timeout: {
@@ -316,8 +316,8 @@ const TOOL_DEFINITIONS = [
       }
       const result = [args.tool_resource, args.parameters];
       
-      if (args.forceReinstall) {
-        result.push('--force-reinstall');
+      if (args.rebuild) {
+        result.push('--rebuild');
       }
       
       if (args.timeout) {

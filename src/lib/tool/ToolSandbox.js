@@ -35,7 +35,7 @@ class ToolSandbox {
     this.options = {
       timeout: 30000,
       enableDependencyInstall: true,
-      forceReinstall: false,
+      rebuild: false,  // 强制重建沙箱（用于处理异常情况）
       ...options
     };
   }
@@ -49,19 +49,39 @@ class ToolSandbox {
   }
 
   /**
+   * 清理沙箱状态和缓存
+   * @param {boolean} deleteDirectory - 是否删除沙箱目录
+   */
+  async clearSandbox(deleteDirectory = false) {
+    console.log(`[ToolSandbox] 清理沙箱状态${deleteDirectory ? '并删除目录' : ''}`);
+    
+    // 清空所有缓存和状态
+    this.isAnalyzed = false;
+    this.isPrepared = false;
+    this.toolContent = null;
+    this.toolInstance = null;
+    this.dependencies = [];
+    this.sandboxContext = null;
+    
+    // 如果需要，删除沙箱目录
+    if (deleteDirectory && this.sandboxPath && await this.sandboxExists()) {
+      try {
+        const { rmdir } = require('fs').promises;
+        await rmdir(this.sandboxPath, { recursive: true });
+        console.log(`[ToolSandbox] 已删除沙箱目录 ${this.sandboxPath}`);
+      } catch (error) {
+        console.log(`[ToolSandbox] 删除沙箱目录时出错（可忽略）: ${error.message}`);
+      }
+    }
+  }
+
+  /**
    * 分析工具：加载工具内容，提取元信息和依赖
    * @returns {Promise<Object>} 分析结果
    */
   async analyze() {
-    // 强制重装时清空分析缓存
-    if (this.options.forceReinstall) {
-      this.isAnalyzed = false;
-      this.toolContent = null;
-      this.toolInstance = null;
-      this.dependencies = [];
-    }
-    
-    if (this.isAnalyzed) {
+    if (this.isAnalyzed && !this.options.rebuild) {
+      console.log(`[ToolSandbox] 使用缓存的分析结果，依赖: ${JSON.stringify(this.dependencies)}`);
       return this.getAnalysisResult();
     }
 
@@ -73,8 +93,11 @@ class ToolSandbox {
       // 1. 解析工具引用，提取工具ID
       this.toolId = this.extractToolId(this.toolReference);
       
-      // 2. 通过协议系统加载工具
-      const toolResult = await this.resourceManager.loadResource(this.toolReference);
+      // 2. 通过协议系统加载工具（forceReinstall时强制重新加载）
+      const loadOptions = this.options.forceReinstall ? { noCache: true } : {};
+      console.log(`[ToolSandbox] 加载工具 ${this.toolReference}，选项:`, loadOptions);
+      
+      const toolResult = await this.resourceManager.loadResource(this.toolReference, loadOptions);
       if (!toolResult.success) {
         // 调试：尝试不同的查找方式
         console.log(`🔍 调试：尝试查找工具 ${this.toolReference}`);
@@ -85,6 +108,9 @@ class ToolSandbox {
       }
       
       this.toolContent = toolResult.content;
+      
+      // 调试：检查加载的工具内容
+      console.log(`[ToolSandbox] 加载的工具内容前200字符:`, this.toolContent.substring(0, 200));
       
       // 3. 设置沙箱路径（工具专用沙箱）
       this.sandboxPath = await this.resolveSandboxPath();
@@ -105,17 +131,26 @@ class ToolSandbox {
    * @returns {Promise<Object>} 准备结果
    */
   async prepareDependencies() {
+    // 处理rebuild选项
+    if (this.options.rebuild) {
+      console.log(`[ToolSandbox] 手动触发重建沙箱`);
+      await this.clearSandbox(true);
+    }
+    
+    // 分析工具（如果需要）
     if (!this.isAnalyzed) {
       await this.analyze();
     }
     
-    // 强制重装时清空准备缓存
-    if (this.options.forceReinstall) {
-      this.isPrepared = false;
-      this.sandboxContext = null;
+    // 自动检测依赖是否需要更新
+    if (!this.options.rebuild && await this.checkDependenciesNeedUpdate()) {
+      console.log(`[ToolSandbox] 检测到依赖变化，自动重建沙箱`);
+      await this.clearSandbox(true);
+      // 重新分析以获取最新依赖
+      await this.analyze();
     }
     
-    if (this.isPrepared && !this.options.forceReinstall) {
+    if (this.isPrepared) {
       return { success: true, message: 'Dependencies already prepared' };
     }
 
@@ -234,6 +269,11 @@ class ToolSandbox {
     });
     
     const sandbox = this.isolationManager.createIsolatedContext();
+    
+    // 调试：检查即将执行的代码
+    console.log(`[ToolSandbox] 即将执行的工具代码中的getDependencies部分:`, 
+      this.toolContent.match(/getDependencies[\s\S]*?return[\s\S]*?\]/)?.[0] || '未找到getDependencies');
+    
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
     const context = vm.createContext(sandbox);
     
@@ -268,10 +308,14 @@ class ToolSandbox {
     if (typeof toolInstance.getDependencies === 'function') {
       try {
         this.dependencies = toolInstance.getDependencies() || [];
+        console.log(`[ToolSandbox] 提取到的依赖列表: ${JSON.stringify(this.dependencies)}`);
       } catch (error) {
         console.warn(`[ToolSandbox] Failed to get dependencies for ${this.toolId}: ${error.message}`);
         this.dependencies = [];
       }
+    } else {
+      console.log(`[ToolSandbox] 工具没有 getDependencies 方法`);
+      this.dependencies = [];
     }
     
     this.toolInstance = toolInstance;
@@ -359,6 +403,19 @@ class ToolSandbox {
   }
 
   /**
+   * 检查沙箱目录是否存在
+   * @returns {Promise<boolean>}
+   */
+  async sandboxExists() {
+    try {
+      await fs.access(this.sandboxPath);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * 确保沙箱目录存在
    */
   async ensureSandboxDirectory() {
@@ -389,20 +446,61 @@ class ToolSandbox {
   }
 
   /**
+   * 检查依赖是否需要更新
+   * @returns {Promise<boolean>} true表示需要更新
+   */
+  async checkDependenciesNeedUpdate() {
+    const packageJsonPath = path.join(this.sandboxPath, 'package.json');
+    
+    try {
+      // 读取现有的package.json
+      const existingContent = await fs.readFile(packageJsonPath, 'utf-8');
+      const existingPackageJson = JSON.parse(existingContent);
+      const existingDeps = existingPackageJson.dependencies || {};
+      
+      // 构建新的依赖对象
+      const newDeps = {};
+      for (const dep of this.dependencies) {
+        if (dep.includes('@')) {
+          const [name, version] = dep.split('@');
+          newDeps[name] = version;
+        } else {
+          newDeps[dep] = 'latest';
+        }
+      }
+      
+      // 比较依赖是否一致
+      const existingKeys = Object.keys(existingDeps).sort();
+      const newKeys = Object.keys(newDeps).sort();
+      
+      // 检查键是否相同
+      if (existingKeys.length !== newKeys.length || 
+          !existingKeys.every((key, index) => key === newKeys[index])) {
+        console.log(`[ToolSandbox] 依赖列表变化 - 旧: ${existingKeys.join(', ')} | 新: ${newKeys.join(', ')}`);
+        return true;
+      }
+      
+      // 检查版本是否相同
+      for (const key of existingKeys) {
+        if (existingDeps[key] !== newDeps[key]) {
+          console.log(`[ToolSandbox] 依赖版本变化 - ${key}: ${existingDeps[key]} -> ${newDeps[key]}`);
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      // 文件不存在或解析失败，需要创建
+      console.log(`[ToolSandbox] package.json不存在或无效，需要创建`);
+      return true;
+    }
+  }
+
+  /**
    * 创建package.json
    */
   async createPackageJson() {
     const packageJsonPath = path.join(this.sandboxPath, 'package.json');
-    
-    // 检查是否已存在且不强制重装
-    if (!this.options.forceReinstall) {
-      try {
-        await fs.access(packageJsonPath);
-        return; // 已存在，跳过
-      } catch (error) {
-        // 不存在，继续创建
-      }
-    }
     
     const packageJson = {
       name: `toolbox-${this.toolId}`,
@@ -413,9 +511,11 @@ class ToolSandbox {
     };
     
     // 解析依赖格式 ["validator@^13.11.0", "lodash"]
+    console.log(`[ToolSandbox] 正在处理依赖列表: ${JSON.stringify(this.dependencies)}`);
     for (const dep of this.dependencies) {
       if (dep.includes('@')) {
         const [name, version] = dep.split('@');
+        console.log(`[ToolSandbox] 解析依赖 "${dep}" => name="${name}", version="${version}"`);
         packageJson.dependencies[name] = version;
       } else {
         packageJson.dependencies[dep] = 'latest';
