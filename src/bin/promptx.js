@@ -8,8 +8,8 @@ const logger = require('../lib/utils/logger')
 // 导入锦囊框架
 const { cli } = require('../lib/core/pouch')
 // 导入MCP Server命令
-const { MCPServerCommand } = require('../lib/mcp/MCPServerCommand')
-const { MCPStreamableHttpCommand } = require('../lib/mcp/MCPStreamableHttpCommand')
+const { MCPServerStdioCommand } = require('../lib/mcp/MCPServerStdioCommand')
+const { MCPServerHttpCommand } = require('../lib/mcp/MCPServerHttpCommand')
 
 // 创建主程序
 const program = new Command()
@@ -123,10 +123,10 @@ program
 
       // 根据传输类型选择命令
       if (options.transport === 'stdio') {
-        const mcpServer = new MCPServerCommand();
+        const mcpServer = new MCPServerStdioCommand();
         await mcpServer.execute();
       } else if (options.transport === 'http' || options.transport === 'sse') {
-        const mcpHttpServer = new MCPStreamableHttpCommand();
+        const mcpHttpServer = new MCPServerHttpCommand();
         const serverOptions = {
           transport: options.transport,
           port: parseInt(options.port),

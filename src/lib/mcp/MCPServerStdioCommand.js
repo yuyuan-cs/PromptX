@@ -2,23 +2,28 @@ const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 const { cli } = require('../core/pouch');
 const { MCPOutputAdapter } = require('../mcp/MCPOutputAdapter');
-const { getExecutionContext, getDebugInfo } = require('../utils/executionContext');
-const { getToolDefinitions } = require('../mcp/toolDefinitions');
+const { getDirectoryService } = require('../utils/DirectoryService');
+const { getToolDefinitions, getToolCliConverter } = require('../mcp/toolDefinitions');
+const { getGlobalServerEnvironment } = require('../utils/ServerEnvironment');
 const treeKill = require('tree-kill');
 
 /**
- * MCP Server 适配器 - 函数调用架构
+ * MCP Server Stdio 适配器 - 函数调用架构
  * 将MCP协议请求转换为PromptX函数调用，实现零开销适配
  * 支持智能工作目录检测，确保MCP和CLI模式下的一致性
  */
-class MCPServerCommand {
+class MCPServerStdioCommand {
   constructor() {
     this.name = 'promptx-mcp-server';
     this.version = '1.0.0';
     this.debug = process.env.MCP_DEBUG === 'true';
     
-    // 智能检测执行上下文
-    this.executionContext = getExecutionContext();
+    // 🚀 初始化ServerEnvironment - stdio模式
+    const serverEnv = getGlobalServerEnvironment();
+    serverEnv.initialize({ transport: 'stdio' });
+    
+    // 🎯 新架构：智能检测执行上下文
+    this.executionContext = this.getExecutionContext();
     
     // 调试信息输出
     this.log(`🎯 检测到执行模式: ${this.executionContext.mode}`);
@@ -43,9 +48,9 @@ class MCPServerCommand {
     
     // DirectoryService路径信息将在需要时异步获取
     
-    // 输出完整调试信息
+    // 🎯 新架构：输出完整调试信息
     if (this.debug) {
-      this.log(`🔍 完整调试信息: ${JSON.stringify(getDebugInfo(), null, 2)}`);
+      this.initializeDebugInfo();
     }
     
     // 创建输出适配器
@@ -146,6 +151,35 @@ class MCPServerCommand {
   cleanup() {
     this.log('🔧 清理MCP Server资源');
   }
+
+  /**
+   * 🎯 新架构：智能检测执行上下文
+   */
+  getExecutionContext() {
+    const args = process.argv;
+    const command = args[2];
+    const isMCPMode = command === 'mcp-server';
+    
+    return {
+      mode: isMCPMode ? 'MCP' : 'CLI',
+      workingDirectory: process.cwd(),
+      originalCwd: process.cwd()
+    };
+  }
+
+  /**
+   * 🎯 新架构：初始化调试信息
+   */
+  async initializeDebugInfo() {
+    try {
+      const directoryService = getDirectoryService();
+      await directoryService.initialize();
+      const debugInfo = await directoryService.getDebugInfo();
+      this.log(`🔍 完整调试信息: ${JSON.stringify(debugInfo, null, 2)}`);
+    } catch (error) {
+      this.log(`⚠️ 调试信息获取失败: ${error.message}`);
+    }
+  }
   
 
 
@@ -207,46 +241,16 @@ class MCPServerCommand {
   }
   
   /**
-   * 转换MCP参数为CLI函数调用参数
+   * 转换MCP参数为CLI函数调用参数 - 使用统一转换逻辑
    */
   convertMCPToCliParams(toolName, mcpArgs) {
-    const paramMapping = {
-      'promptx_init': (args) => args.workingDirectory ? [args] : [],
-      
-      'promptx_welcome': () => [],
-      
-      'promptx_action': (args) => [args.role],
-      
-      'promptx_learn': (args) => args.resource ? [args.resource] : [],
-      
-      'promptx_recall': (args) => {
-        // 忽略random_string dummy参数，只处理query
-        // 处理各种空值情况：undefined、null、空对象、空字符串
-        if (!args || !args.query || typeof args.query !== 'string' || args.query.trim() === '') {
-          return [];
-        }
-        return [args.query];
-      },
-      
-      'promptx_remember': (args) => {
-        const result = [args.content];
-        if (args.tags) {
-          result.push('--tags', args.tags);
-        }
-        return result;
-      },
-      
-      
-      'promptx_tool': (args) => [args]
-    };
-    
-    const mapper = paramMapping[toolName];
-    if (!mapper) {
+    const converter = getToolCliConverter(toolName);
+    if (!converter) {
       throw new Error(`未知工具: ${toolName}`);
     }
     
-    return mapper(mcpArgs);
+    return converter(mcpArgs || {});
   }
 }
 
-module.exports = { MCPServerCommand }; 
+module.exports = { MCPServerStdioCommand }; 

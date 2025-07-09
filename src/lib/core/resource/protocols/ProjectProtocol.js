@@ -1,39 +1,35 @@
 const ResourceProtocol = require('./ResourceProtocol')
 const path = require('path')
 const fs = require('fs').promises
-const { getDirectoryService } = require('../../../utils/DirectoryService')
+const { getGlobalProjectPathResolver } = require('../../../utils/ProjectPathResolver')
+const ProjectManager = require('../../../utils/ProjectManager')
+const UserProtocol = require('./UserProtocol')
 
 /**
- * 项目协议实现
- * 实现@project://协议，通过查找.promptx目录确定项目根目录
+ * 项目协议实现 - 新架构
+ * 实现@project://协议，基于当前项目状态的高性能路径解析
+ * 移除.promptx目录查找，直接使用ProjectManager的当前项目信息
  */
 class ProjectProtocol extends ResourceProtocol {
   constructor (options = {}) {
     super('project', options)
+    
+    // 🎯 新架构：延迟初始化路径解析器，避免在项目未初始化时创建
+    this.pathResolver = null
+    
+    // HTTP模式支持：UserProtocol实例用于路径映射
+    this.userProtocol = new UserProtocol(options)
+  }
 
-    // 支持的项目结构目录映射
-    this.projectDirs = {
-      root: '', // 项目根目录
-      src: 'src', // 源代码目录
-      lib: 'lib', // 库目录
-      build: 'build', // 构建输出目录
-      dist: 'dist', // 分发目录
-      docs: 'docs', // 文档目录
-      test: 'test', // 测试目录
-      tests: 'tests', // 测试目录（复数）
-      spec: 'spec', // 规范测试目录
-      config: 'config', // 配置目录
-      scripts: 'scripts', // 脚本目录
-      assets: 'assets', // 资源目录
-      public: 'public', // 公共资源目录
-      static: 'static', // 静态资源目录
-      templates: 'templates', // 模板目录
-      examples: 'examples', // 示例目录
-      tools: 'tools' // 工具目录
+  /**
+   * 获取路径解析器（延迟初始化）
+   * @returns {ProjectPathResolver} 路径解析器实例
+   */
+  getPathResolver() {
+    if (!this.pathResolver) {
+      this.pathResolver = getGlobalProjectPathResolver()
     }
-
-    // 获取全局DirectoryService实例
-    this.directoryService = getDirectoryService()
+    return this.pathResolver
   }
 
   /**
@@ -51,7 +47,7 @@ class ProjectProtocol extends ResourceProtocol {
   getProtocolInfo () {
     return {
       name: 'project',
-      description: '项目协议，通过.promptx目录标识提供项目结构访问',
+      description: '项目协议，基于当前项目状态的高性能路径解析',
       location: 'project://{directory}/{path}',
       examples: [
         'project://src/index.js',
@@ -60,8 +56,8 @@ class ProjectProtocol extends ResourceProtocol {
         'project://root/package.json',
         'project://test/unit/'
       ],
-      supportedDirectories: Object.keys(this.projectDirs),
-      projectMarker: '.promptx',
+      supportedDirectories: this.getPathResolver().getSupportedDirectories(),
+      architecture: 'state-based',
       params: this.getSupportedParams()
     }
   }
@@ -99,135 +95,85 @@ class ProjectProtocol extends ResourceProtocol {
     const parts = resourcePath.split('/')
     const dirType = parts[0]
 
-    return this.projectDirs.hasOwnProperty(dirType)
+    return this.getPathResolver().isSupportedDirectory(dirType)
   }
 
-  /**
-   * 向上查找指定目录的同步版本
-   * @param {string} targetDir - 要查找的目录名（如 '.promptx'）
-   * @param {string} startDir - 开始搜索的目录
-   * @returns {string|null} 找到的目录路径或null
-   */
-  findUpDirectorySync (targetDir, startDir = process.cwd()) {
-    let currentDir = path.resolve(startDir)
-    const rootDir = path.parse(currentDir).root
-
-    while (currentDir !== rootDir) {
-      const targetPath = path.join(currentDir, targetDir)
-
-      try {
-        const stats = require('fs').statSync(targetPath)
-        if (stats.isDirectory()) {
-          return targetPath
-        }
-      } catch (error) {
-        // 目录不存在，继续向上查找
-      }
-
-      const parentDir = path.dirname(currentDir)
-      if (parentDir === currentDir) {
-        // 已到达根目录
-        break
-      }
-      currentDir = parentDir
-    }
-
-    return null
-  }
 
   /**
-   * 查找项目根目录
-   * @param {string} startDir - 开始搜索的目录
-   * @returns {Promise<string|null>} 项目根目录路径
-   */
-  async findProjectRoot (startDir = process.cwd()) {
-    try {
-      // 使用DirectoryService获取项目根目录
-      const context = {
-        startDir: path.resolve(startDir),
-        platform: process.platform,
-        avoidUserHome: true
-      }
-      
-      const projectRoot = await this.directoryService.getProjectRoot(context)
-      return projectRoot
-    } catch (error) {
-      throw new Error(`查找项目根目录失败: ${error.message}`)
-    }
-  }
-
-  /**
-   * 解析项目路径
+   * 解析项目路径 - 新架构：高性能零查找 + HTTP模式支持
    * @param {string} resourcePath - 原始资源路径，如 "src/index.js" 或 ".promptx/resource/..."
    * @param {QueryParams} queryParams - 查询参数
    * @returns {Promise<string>} 解析后的绝对路径
    */
   async resolvePath (resourcePath, queryParams) {
-    // 特殊处理：.promptx开头的路径直接相对于项目根目录
-    if (resourcePath.startsWith('.promptx/')) {
-      // 确定搜索起始点
-      const startDir = queryParams?.get('from') || process.cwd()
-
-      // 查找项目根目录
-      const projectRoot = await this.findProjectRoot(startDir)
-      if (!projectRoot) {
-        throw new Error('未找到项目根目录（.promptx标识）。请确保在项目目录内或使用 \'from\' 参数指定项目路径')
+    try {
+      // 🎯 检测当前项目的transport模式
+      const currentProject = ProjectManager.getCurrentProject()
+      const { transport } = currentProject
+      
+      if (transport === 'http') {
+        return await this.resolveHttpPath(resourcePath, queryParams, currentProject)
+      } else {
+        return this.resolveLocalPath(resourcePath, queryParams, currentProject)
       }
-
-      // 直接拼接完整路径
-      const fullPath = path.join(projectRoot, resourcePath)
-
-      // 安全检查：确保路径在项目目录内
-      const resolvedPath = path.resolve(fullPath)
-      const resolvedProjectRoot = path.resolve(projectRoot)
-
-      if (!resolvedPath.startsWith(resolvedProjectRoot)) {
-        throw new Error(`安全错误：路径超出项目目录范围: ${resolvedPath}`)
-      }
-
-      return resolvedPath
+    } catch (error) {
+      throw new Error(`解析@project://路径失败: ${error.message}`)
     }
+  }
 
-    // 标准路径处理逻辑
-    const parts = resourcePath.split('/')
-    const dirType = parts[0]
-    const relativePath = parts.slice(1).join('/')
+  /**
+   * 本地模式路径解析（原有逻辑）
+   * @param {string} resourcePath - 资源路径
+   * @param {QueryParams} queryParams - 查询参数
+   * @param {Object} currentProject - 当前项目信息
+   * @returns {string} 解析后的绝对路径
+   */
+  resolveLocalPath(resourcePath, queryParams, currentProject) {
+    // 🚀 新架构：直接使用路径解析器，无需查找.promptx
+    return this.getPathResolver().resolvePath(resourcePath)
+  }
 
-    // 验证目录类型
-    if (!this.projectDirs.hasOwnProperty(dirType)) {
-      throw new Error(`不支持的项目目录类型: ${dirType}。支持的类型: ${Object.keys(this.projectDirs).join(', ')}`)
+  /**
+   * HTTP模式路径解析（映射到用户目录的项目空间）
+   * @param {string} resourcePath - 资源路径，如".promptx/resource/xxx"
+   * @param {QueryParams} queryParams - 查询参数
+   * @param {Object} currentProject - 当前项目信息
+   * @returns {Promise<string>} 解析后的绝对路径
+   */
+  async resolveHttpPath(resourcePath, queryParams, currentProject) {
+    // 🎯 使用projectHash作为目录名
+    const projectHash = this.generateProjectHash(currentProject.workingDirectory)
+    
+    // 🔧 HTTP模式专用路径转换：将.promptx替换为data（仅HTTP模式）
+    // @project://.promptx → @user://.promptx/project/{projectHash}/data/
+    // @project://.promptx/resource/xxx → @user://.promptx/project/{projectHash}/data/resource/xxx
+    // @project://src/index.js → @user://.promptx/project/{projectHash}/data/src/index.js
+    let mappedResourcePath = resourcePath
+    if (resourcePath === '.promptx') {
+      // 特殊处理：.promptx根目录映射到data目录
+      mappedResourcePath = 'data'
+    } else if (resourcePath.startsWith('.promptx/')) {
+      // HTTP模式：将.promptx/替换为data/，提升用户体验
+      mappedResourcePath = resourcePath.replace(/^\.promptx\//, 'data/')
+    } else {
+      // 非.promptx路径直接映射到data目录下
+      mappedResourcePath = `data/${resourcePath}`
     }
+    
+    const mappedPath = `.promptx/project/${projectHash}/${mappedResourcePath}`
+    
+    // 委托给UserProtocol处理
+    return await this.userProtocol.resolvePath(mappedPath, queryParams)
+  }
 
-    // 确定搜索起始点
-    const startDir = queryParams?.get('from') || process.cwd()
-
-    // 查找项目根目录
-    const projectRoot = await this.findProjectRoot(startDir)
-    if (!projectRoot) {
-      throw new Error('未找到项目根目录（.promptx标识）。请确保在项目目录内或使用 \'from\' 参数指定项目路径')
-    }
-
-    // 构建目标目录路径
-    const projectDirPath = this.projectDirs[dirType]
-    const targetDir = projectDirPath ? path.join(projectRoot, projectDirPath) : projectRoot
-
-    // 如果没有相对路径，返回目录本身
-    if (!relativePath) {
-      return targetDir
-    }
-
-    // 拼接完整路径
-    const fullPath = path.join(targetDir, relativePath)
-
-    // 安全检查：确保路径在项目目录内
-    const resolvedPath = path.resolve(fullPath)
-    const resolvedProjectRoot = path.resolve(projectRoot)
-
-    if (!resolvedPath.startsWith(resolvedProjectRoot)) {
-      throw new Error(`安全错误：路径超出项目目录范围: ${resolvedPath}`)
-    }
-
-    return resolvedPath
+  /**
+   * 生成项目路径的Hash值（与ProjectManager保持一致）
+   * @param {string} projectPath - 项目路径
+   * @returns {string} 8位Hash值
+   */
+  generateProjectHash(projectPath) {
+    const crypto = require('crypto')
+    return crypto.createHash('md5').update(path.resolve(projectPath)).digest('hex').substr(0, 8)
   }
 
   /**
@@ -237,6 +183,30 @@ class ProjectProtocol extends ResourceProtocol {
    * @returns {Promise<string>} 资源内容
    */
   async loadContent (resolvedPath, queryParams) {
+    try {
+      // 🎯 检测transport模式
+      const currentProject = ProjectManager.getCurrentProject()
+      const { transport } = currentProject
+      
+      if (transport === 'http') {
+        // HTTP模式下，使用UserProtocol的loadContent方法
+        return await this.userProtocol.loadContent(resolvedPath, queryParams)
+      } else {
+        // 本地模式，使用原有逻辑
+        return await this.loadLocalContent(resolvedPath, queryParams)
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  /**
+   * 本地模式加载资源内容（原有逻辑）
+   * @param {string} resolvedPath - 解析后的路径
+   * @param {QueryParams} queryParams - 查询参数
+   * @returns {Promise<string>} 资源内容
+   */
+  async loadLocalContent (resolvedPath, queryParams) {
     try {
       // 检查路径是否存在
       const stats = await fs.stat(resolvedPath)
@@ -333,49 +303,55 @@ class ProjectProtocol extends ResourceProtocol {
   }
 
   /**
-   * 列出项目结构信息
-   * @param {string} startDir - 开始搜索的目录
+   * 列出项目结构信息 - 新架构
    * @returns {Promise<object>} 项目信息
    */
-  async getProjectInfo (startDir = process.cwd()) {
-    const projectRoot = await this.findProjectRoot(startDir)
-    if (!projectRoot) {
-      return { error: '未找到项目根目录' }
-    }
+  async getProjectInfo () {
+    try {
+      const projectRoot = this.getPathResolver().getProjectRoot()
+      const promptxPath = this.getPathResolver().getPromptXDirectory()
+      
+      const result = {
+        projectRoot,
+        promptxPath,
+        architecture: 'state-based',
+        supportedDirectories: this.getPathResolver().getSupportedDirectories(),
+        directories: {}
+      }
 
-    const result = {
-      projectRoot,
-      promptxPath: path.join(projectRoot, '.promptx'),
-      directories: {}
-    }
-
-    for (const [dirType, dirPath] of Object.entries(this.projectDirs)) {
-      const fullPath = dirPath ? path.join(projectRoot, dirPath) : projectRoot
-      try {
-        const stats = await fs.stat(fullPath)
-        result.directories[dirType] = {
-          path: fullPath,
-          exists: true,
-          type: stats.isDirectory() ? 'directory' : 'file'
-        }
-      } catch (error) {
-        result.directories[dirType] = {
-          path: fullPath,
-          exists: false
+      // 检查支持的目录是否存在
+      for (const dirType of this.getPathResolver().getSupportedDirectories()) {
+        try {
+          const fullPath = this.getPathResolver().resolvePath(dirType)
+          const stats = await fs.stat(fullPath)
+          result.directories[dirType] = {
+            path: fullPath,
+            exists: true,
+            type: stats.isDirectory() ? 'directory' : 'file'
+          }
+        } catch (error) {
+          result.directories[dirType] = {
+            path: 'N/A',
+            exists: false
+          }
         }
       }
-    }
 
-    return result
+      return result
+    } catch (error) {
+      return { 
+        error: `获取项目信息失败: ${error.message}`,
+        architecture: 'state-based'
+      }
+    }
   }
 
   /**
-   * 清除缓存
+   * 清除缓存 - 新架构：无需清除路径缓存
    */
   clearCache () {
     super.clearCache()
-    // 清除DirectoryService缓存
-    this.directoryService.clearCache()
+    // 🎯 新架构：基于状态管理，无需路径缓存
   }
 }
 

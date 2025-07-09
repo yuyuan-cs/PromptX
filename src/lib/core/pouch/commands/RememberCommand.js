@@ -15,7 +15,6 @@ class RememberCommand extends BasePouchCommand {
   constructor () {
     super()
     this.resourceManager = getGlobalResourceManager()
-    this.directoryService = getDirectoryService()
     this.FORCE_XML_MODE = true  // 🎯 强制XML模式标志
   }
 
@@ -24,10 +23,25 @@ class RememberCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    const content = args.join(' ')
+    // 解析参数：content, --role, --tags
+    const { content, role, tags } = this.parseArgs(args)
 
     if (!content) {
       return this.getUsageHelp()
+    }
+
+    if (!role) {
+      return `❌ 错误：缺少必填参数 role
+
+🎯 **使用方法**：
+remember 角色ID "记忆内容"
+
+📋 **示例**：
+remember java-developer "React Hooks最佳实践"
+remember product-manager "产品需求分析方法"
+remember copywriter "A/B测试文案优化" --tags "最佳实践"
+
+💡 **可用角色ID**：通过 welcome 工具查看所有可用角色`
     }
 
     try {
@@ -37,7 +51,8 @@ class RememberCommand extends BasePouchCommand {
       logger.step('🧠 [RememberCommand] 开始记忆保存流程 (纯XML模式)')
       logger.info(`📝 [RememberCommand] 记忆内容: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`)
       
-      const memoryEntry = await this.saveMemoryXMLOnly(content)
+      // 🎯 传递role参数到保存方法
+      const memoryEntry = await this.saveMemoryXMLOnly(content, role)
 
       logger.success(`✅ [RememberCommand] XML记忆保存完成 - 路径: ${memoryEntry.filePath}`)
       return this.formatSaveResponse(content, memoryEntry)
@@ -51,11 +66,46 @@ class RememberCommand extends BasePouchCommand {
   }
 
   /**
+   * 🎯 解析命令行参数 - role作为第一个位置参数
+   */
+  parseArgs(args) {
+    let content = ''
+    let role = ''
+    let tags = ''
+    let argIndex = 0
+    
+    // 第一个参数是role
+    if (args.length > 0) {
+      role = args[0]
+      argIndex = 1
+    }
+    
+    // 从第二个参数开始解析
+    for (let i = argIndex; i < args.length; i++) {
+      if (args[i] === '--tags' && i + 1 < args.length) {
+        tags = args[i + 1]
+        i++ // 跳过下一个参数
+      } else {
+        // 内容参数
+        if (content) {
+          content += ' ' + args[i]
+        } else {
+          content = args[i]
+        }
+      }
+    }
+    
+    return { content, role, tags }
+  }
+
+  /**
    * 🛡️ 确保安全备份存在
    */
   async ensureSafetyBackupExists() {
-    const projectPath = await this.getProjectPath()
-    const backupMarker = path.join(projectPath, '.promptx', '.xml-upgrade-backup-done')
+    // 🎯 使用@project协议获取.promptx目录
+    const projectProtocol = this.resourceManager.protocols.get('project')
+    const promptxDir = await projectProtocol.resolvePath('.promptx')
+    const backupMarker = path.join(promptxDir, '.xml-upgrade-backup-done')
     
     if (!await fs.pathExists(backupMarker)) {
       logger.step('🛡️ [RememberCommand] 执行升级前安全备份...')
@@ -69,9 +119,12 @@ class RememberCommand extends BasePouchCommand {
    * 🛡️ 创建安全备份
    */
   async createSafetyBackup() {
-    const projectPath = await this.getProjectPath()
-    const memoryDir = path.join(projectPath, '.promptx', 'memory')
-    const backupDir = path.join(projectPath, '.promptx', 'backup', `backup_${Date.now()}`)
+    // 🎯 使用@project协议获取目录
+    const projectProtocol = this.resourceManager.protocols.get('project')
+    const memoryDir = await projectProtocol.resolvePath('.promptx/memory')
+    const backupBaseDir = await projectProtocol.resolvePath('.promptx/backup')
+    
+    const backupDir = path.join(backupBaseDir, `backup_${Date.now()}`)
     
     await fs.ensureDir(backupDir)
     
@@ -102,18 +155,38 @@ class RememberCommand extends BasePouchCommand {
   /**
    * 纯XML记忆保存（移除所有Markdown逻辑）
    */
-  async saveMemoryXMLOnly(value) {
-    logger.step('🔧 [RememberCommand] 执行纯XML保存模式')
+  async saveMemoryXMLOnly(value, role) {
+    logger.step('🔧 [RememberCommand] 执行角色专属记忆保存')
     
     const memoryDir = await this.ensureMemoryDirectory()
+    logger.info(`📁 [RememberCommand] 基础记忆目录: ${memoryDir}`)
     
-    // 🔄 保留一次性Legacy迁移（确保老用户数据不丢失）
-    await this.performSafeLegacyMigration(memoryDir)
+    // 🎯 角色专属记忆处理流程
+    logger.info(`🎯 [RememberCommand] === 角色专属记忆处理开始 ===`)
+    const currentRole = role
+    logger.info(`🎯 [RememberCommand] 指定保存角色: "${currentRole}"`)
     
-    // 🎯 纯DPML处理流程
-    const xmlFile = path.join(memoryDir, 'declarative.dpml')
+    const roleMemoryDir = path.join(memoryDir, currentRole)
+    logger.info(`🎯 [RememberCommand] 角色记忆目录: ${roleMemoryDir}`)
+    
+    const xmlFile = path.join(roleMemoryDir, 'declarative.dpml')
+    logger.info(`🎯 [RememberCommand] 角色记忆文件: ${xmlFile}`)
+    
+    // 确保角色目录存在
+    logger.info(`📁 [RememberCommand] 准备创建角色目录...`)
+    await fs.ensureDir(roleMemoryDir)
+    logger.success(`📁 [RememberCommand] 角色目录创建完成: ${roleMemoryDir}`)
+    
+    // 验证目录是否真的存在
+    const dirExists = await fs.pathExists(roleMemoryDir)
+    logger.info(`📁 [RememberCommand] 目录存在验证: ${dirExists}`)
+    
+    logger.info(`💾 [RememberCommand] 准备保存记忆到: ${xmlFile}`)
     const memoryItem = this.formatXMLMemoryItem(value)
     const action = await this.appendToXMLFile(xmlFile, memoryItem)
+    logger.success(`💾 [RememberCommand] 记忆保存完成，操作类型: ${action}`)
+    
+    logger.info(`🎯 [RememberCommand] === 角色专属记忆处理完成 ===`)
     
     return {
       value,
@@ -175,10 +248,8 @@ class RememberCommand extends BasePouchCommand {
 3. 如持续失败，查看备份数据`
   }
 
-
-
   /**
-   * 确保AI记忆体系目录存在（使用ResourceManager路径获取）
+   * 确保AI记忆体系目录存在（使用@project协议）
    */
   async ensureMemoryDirectory () {
     logger.debug('🔍 [RememberCommand] 初始化ResourceManager...')
@@ -190,12 +261,12 @@ class RememberCommand extends BasePouchCommand {
       logger.success('⚙️ [RememberCommand] ResourceManager初始化完成')
     }
     
-    // 通过ResourceManager获取项目路径（与ActionCommand一致）
-    const projectPath = await this.getProjectPath()
-    logger.info(`📍 [RememberCommand] 项目根路径: ${projectPath}`)
+    // 🎯 使用@project协议获取记忆目录（支持HTTP模式）
+    logger.info('📁 [RememberCommand] 通过@project协议解析记忆目录...')
+    const projectProtocol = this.resourceManager.protocols.get('project')
+    const memoryDir = await projectProtocol.resolvePath('.promptx/memory')
     
-    const memoryDir = path.join(projectPath, '.promptx', 'memory')
-    logger.info(`📁 [RememberCommand] 创建记忆目录: ${memoryDir}`)
+    logger.info(`📁 [RememberCommand] @project协议解析结果: ${memoryDir}`)
     
     await fs.ensureDir(memoryDir)
     logger.success(`📁 [RememberCommand] 记忆目录确保完成: ${memoryDir}`)
@@ -203,27 +274,7 @@ class RememberCommand extends BasePouchCommand {
     return memoryDir
   }
 
-  /**
-   * 获取项目路径（复用ActionCommand逻辑）
-   */
-  async getProjectPath() {
-    logger.debug('📍 [RememberCommand] 获取项目路径...')
-    
-    // 使用DirectoryService统一获取项目路径（与InitCommand保持一致）
-    const context = {
-      startDir: process.cwd(),
-      platform: process.platform,
-      avoidUserHome: true
-    }
-    
-    const projectPath = await this.directoryService.getProjectRoot(context)
-    
-    if (process.env.PROMPTX_DEBUG === 'true') {
-      logger.debug(`📍 [RememberCommand] 项目路径解析结果: ${projectPath}`)
-    }
-    
-    return projectPath
-  }
+
 
   /**
    * 格式化为XML记忆项
@@ -699,47 +750,44 @@ class RememberCommand extends BasePouchCommand {
   }
 
   /**
-   * 获取使用帮助（纯XML模式）
+   * 获取使用帮助（角色专属记忆模式）
    */
   getUsageHelp () {
-    return `🧠 **Remember锦囊 - AI记忆增强系统（纯XML模式）**
+    return `🧠 **Remember锦囊 - AI角色专属记忆系统**
 
 ## 📖 基本用法
-通过 MCP PromptX remember 工具内化知识
+remember 角色ID "记忆内容"
 
-## 🆕 升级特性
-- **纯XML存储**: 统一使用XML格式，性能更优
-- **自动备份**: 升级前自动创建安全备份
-- **Legacy迁移**: 自动迁移旧格式数据
-- **数据安全**: 多重备份保护机制
+## 🎯 必填参数
+- **角色ID**: 要保存记忆的角色ID（第一个参数）
+- **记忆内容**: 要保存的重要信息或经验
 
-## 🛡️ 安全保障
-- 升级前自动备份所有数据
-- Legacy数据自动迁移到XML格式
-- 出错时提供恢复建议和备份位置
+## 📋 使用示例
+\`\`\`bash
+remember java-developer "React Hooks最佳实践：使用useCallback优化性能"
+remember product-manager "用户研究三步法：观察-访谈-分析"  
+remember copywriter "A/B测试文案优化提升转化率15%" --tags "最佳实践"
+\`\`\`
 
-## 💡 记忆内化示例
+## 🎭 角色专属记忆特性
+- **完全隔离**: 每个角色拥有独立的记忆空间
+- **专业化**: 记忆按角色领域分类存储
+- **精准回忆**: recall时只检索当前角色的相关记忆
+- **防止污染**: 不同角色的记忆绝不混杂
 
-### 📝 AI记忆内化
-AI学习和内化各种专业知识：
-- "构建代码 → 运行测试 → 部署到staging → 验证功能 → 发布生产"
-- "用户反馈视频加载慢，排查发现是CDN配置问题，修改后加载速度提升60%"
-- "React Hooks允许在函数组件中使用state和其他React特性"
-- "每个PR至少需要2个人review，必须包含测试用例"
+## 💡 最佳实践建议
+- **Java开发者**: 保存技术解决方案、性能优化技巧
+- **产品经理**: 记录需求分析方法、用户反馈洞察  
+- **文案专家**: 存储高转化文案模板、创意灵感
 
-## 🆕 XML记忆模式特性
-- **结构化存储**: 使用XML格式存储，支持更精确的数据管理
-- **自动迁移**: 从legacy Markdown格式自动迁移到XML
-- **XML转义**: 自动处理特殊字符，确保数据完整性
-- **向后兼容**: 继续支持读取legacy格式记忆
-
-## 🔍 记忆检索与应用
-- 使用 MCP PromptX recall 工具主动检索记忆
-- 使用 MCP PromptX action 工具运用记忆激活角色
+## 🔍 配套工具
+- **查看角色**: welcome 工具查看所有可用角色ID
+- **检索记忆**: recall 工具检索角色专属记忆
+- **激活角色**: action 工具激活角色并自动加载记忆
 
 🔄 下一步行动：
-  - 开始记忆: 使用 MCP PromptX remember 工具内化第一条知识
-  - 学习资源: 使用 MCP PromptX learn 工具学习新知识再内化`
+  - 查看角色: 使用 welcome 工具了解可用角色ID
+  - 开始记忆: 为指定角色保存第一条专业知识`
   }
 
   /**

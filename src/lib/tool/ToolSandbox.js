@@ -2,6 +2,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const { spawn } = require('child_process');
 const vm = require('vm');
+const SandboxIsolationManager = require('./SandboxIsolationManager');
+const SandboxErrorManager = require('./SandboxErrorManager');
 
 /**
  * ToolSandbox - 工具沙箱环境管理器
@@ -22,6 +24,8 @@ class ToolSandbox {
     this.dependencies = [];              // 依赖列表
     this.sandboxPath = null;             // 沙箱目录路径
     this.sandboxContext = null;          // VM沙箱上下文
+    this.isolationManager = null;        // 沙箱隔离管理器
+    this.errorManager = new SandboxErrorManager(); // 智能错误管理器
     
     // 状态标志
     this.isAnalyzed = false;
@@ -49,6 +53,14 @@ class ToolSandbox {
    * @returns {Promise<Object>} 分析结果
    */
   async analyze() {
+    // 强制重装时清空分析缓存
+    if (this.options.forceReinstall) {
+      this.isAnalyzed = false;
+      this.toolContent = null;
+      this.toolInstance = null;
+      this.dependencies = [];
+    }
+    
     if (this.isAnalyzed) {
       return this.getAnalysisResult();
     }
@@ -74,7 +86,7 @@ class ToolSandbox {
       
       this.toolContent = toolResult.content;
       
-      // 3. 设置沙箱路径
+      // 3. 设置沙箱路径（工具专用沙箱）
       this.sandboxPath = await this.resolveSandboxPath();
       
       // 4. 在基础沙箱中分析工具
@@ -95,6 +107,12 @@ class ToolSandbox {
   async prepareDependencies() {
     if (!this.isAnalyzed) {
       await this.analyze();
+    }
+    
+    // 强制重装时清空准备缓存
+    if (this.options.forceReinstall) {
+      this.isPrepared = false;
+      this.sandboxContext = null;
     }
     
     if (this.isPrepared && !this.options.forceReinstall) {
@@ -153,17 +171,19 @@ class ToolSandbox {
       };
       
     } catch (error) {
-      return {
-        success: false,
-        error: {
-          message: error.message,
-          stack: error.stack
-        },
-        metadata: {
-          toolId: this.toolId,
-          sandboxPath: this.sandboxPath
-        }
-      };
+      // 使用智能错误管理器分析错误
+      const intelligentError = this.errorManager.analyzeError(error, {
+        toolId: this.toolId,
+        dependencies: this.dependencies,
+        sandboxPath: this.sandboxPath,
+        phase: 'execute'
+      });
+      
+      // 抛出增强的错误对象，供上层处理自动重试
+      const enhancedError = new Error(intelligentError.formattedMessage);
+      enhancedError.intelligentError = intelligentError;
+      enhancedError.originalError = error;
+      throw enhancedError;
     }
   }
 
@@ -207,11 +227,27 @@ class ToolSandbox {
    * 在基础沙箱中分析工具
    */
   async analyzeToolInSandbox() {
-    const basicSandbox = this.createBasicSandbox();
-    const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
-    const context = vm.createContext(basicSandbox);
+    // 创建分析阶段的隔离管理器
+    this.isolationManager = new SandboxIsolationManager(this.sandboxPath, {
+      enableDependencyLoading: false,
+      analysisMode: true
+    });
     
-    script.runInContext(context);
+    const sandbox = this.isolationManager.createIsolatedContext();
+    const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
+    const context = vm.createContext(sandbox);
+    
+    try {
+      script.runInContext(context);
+    } catch (error) {
+      // 使用智能错误过滤处理require错误
+      const filteredError = this._filterRequireError(error);
+      if (filteredError) {
+        throw filteredError;
+      }
+      // 如果是预期的require错误，继续执行
+    }
+    
     const exported = context.module.exports;
     
     if (!exported) {
@@ -239,6 +275,87 @@ class ToolSandbox {
     }
     
     this.toolInstance = toolInstance;
+  }
+
+  /**
+   * 智能过滤require错误
+   * @param {Error} error - 捕获的错误
+   * @returns {Error|null} - 如果是真正的错误则返回Error对象，如果是预期的require错误则返回null
+   * @private
+   */
+  _filterRequireError(error) {
+    // 检查是否是MODULE_NOT_FOUND错误
+    if (error.code === 'MODULE_NOT_FOUND') {
+      const missingModule = this._extractMissingModuleName(error.message);
+      
+      if (missingModule) {
+        // 获取已声明的依赖列表
+        const declaredDependencies = this._extractDeclaredDependencies();
+        
+        // 检查缺失的模块是否在依赖声明中
+        if (this._isDeclaredInDependencies(missingModule, declaredDependencies)) {
+          console.log(`[ToolSandbox] 依赖 ${missingModule} 未安装，将在prepareDependencies阶段安装`);
+          return null; // 预期的错误，忽略
+        } else {
+          return new Error(`未声明的依赖: ${missingModule}，请在getDependencies()中添加此依赖`);
+        }
+      }
+    }
+    
+    // 其他错误直接返回
+    return error;
+  }
+
+  /**
+   * 从错误信息中提取缺失的模块名
+   * @param {string} errorMessage - 错误信息
+   * @returns {string|null} - 模块名或null
+   * @private
+   */
+  _extractMissingModuleName(errorMessage) {
+    // 匹配 "Cannot find module 'moduleName'" 或 "Cannot resolve module 'moduleName'"
+    const match = errorMessage.match(/Cannot (?:find|resolve) module ['"]([^'"]+)['"]/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * 尝试从工具代码中提取已声明的依赖
+   * @returns {string[]} - 依赖列表
+   * @private
+   */
+  _extractDeclaredDependencies() {
+    try {
+      // 尝试通过正则表达式从代码中提取getDependencies的返回值
+      const dependencyMatch = this.toolContent.match(/getDependencies\s*\(\s*\)\s*\{[\s\S]*?return\s*\[([\s\S]*?)\]/);
+      
+      if (dependencyMatch) {
+        const dependencyString = dependencyMatch[1];
+        // 提取字符串字面量
+        const stringMatches = dependencyString.match(/['"]([^'"]+)['"]/g);
+        if (stringMatches) {
+          return stringMatches.map(str => str.slice(1, -1)); // 去掉引号
+        }
+      }
+    } catch (error) {
+      console.warn(`[ToolSandbox] 无法解析依赖声明: ${error.message}`);
+    }
+    
+    return [];
+  }
+
+  /**
+   * 检查模块是否在依赖声明中
+   * @param {string} moduleName - 模块名
+   * @param {string[]} declaredDependencies - 已声明的依赖列表
+   * @returns {boolean} - 是否已声明
+   * @private
+   */
+  _isDeclaredInDependencies(moduleName, declaredDependencies) {
+    return declaredDependencies.some(dep => {
+      // 支持 "axios@^1.6.0" 格式，提取模块名部分
+      const depName = dep.split('@')[0];
+      return depName === moduleName;
+    });
   }
 
   /**
@@ -351,9 +468,15 @@ class ToolSandbox {
    * 创建执行沙箱环境
    */
   async createExecutionSandbox() {
-    this.sandboxContext = this.createSmartSandbox();
+    // 创建执行阶段的隔离管理器
+    this.isolationManager = new SandboxIsolationManager(this.sandboxPath, {
+      enableDependencyLoading: true,
+      analysisMode: false
+    });
     
-    // 在智能沙箱中重新加载工具
+    this.sandboxContext = this.isolationManager.createIsolatedContext();
+    
+    // 在完全隔离的沙箱中重新加载工具
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
     const context = vm.createContext(this.sandboxContext);
     
@@ -367,83 +490,61 @@ class ToolSandbox {
     }
   }
 
-  /**
-   * 创建基础沙箱
-   */
-  createBasicSandbox() {
-    return {
-      require: require,
-      module: { exports: {} },
-      exports: {},
-      console: console,
-      Buffer: Buffer,
-      process: {
-        env: process.env,
-        hrtime: process.hrtime
-      },
-      setTimeout: setTimeout,
-      clearTimeout: clearTimeout,
-      setInterval: setInterval,
-      clearInterval: clearInterval,
-      Object: Object,
-      Array: Array,
-      String: String,
-      Number: Number,
-      Boolean: Boolean,
-      Date: Date,
-      JSON: JSON,
-      Math: Math,
-      RegExp: RegExp,
-      Error: Error,
-      URL: URL
-    };
-  }
 
   /**
-   * 创建智能沙箱（支持依赖）
+   * 解析协议路径（支持@project://等协议）
+   * @param {string} protocolPath - 协议路径，如@project://.promptx/cwd
+   * @returns {Promise<string>} 解析后的绝对路径
    */
-  createSmartSandbox() {
-    return {
-      require: (moduleName) => {
+  async resolveProtocolPath(protocolPath) {
+    // 处理undefined或null的情况
+    if (!protocolPath) {
+      throw new Error('protocolPath is required but was undefined');
+    }
+    
+    // 🚀 新架构：@project协议直接使用ProjectPathResolver
+    if (protocolPath.startsWith('@project://')) {
+      const { getGlobalProjectPathResolver } = require('../utils/ProjectPathResolver');
+      const pathResolver = getGlobalProjectPathResolver();
+      
+      try {
+        // 提取协议路径的相对部分
+        const relativePath = protocolPath.replace(/^@project:\/\//, '');
+        const resolvedPath = pathResolver.resolvePath(relativePath);
+        
+        // 确保目录存在
+        const fs = require('fs').promises;
         try {
-          // 优先从沙箱目录查找依赖
-          return require(require.resolve(moduleName, {
-            paths: [
-              path.join(this.sandboxPath, 'node_modules'),
-              this.sandboxPath,
-              process.cwd() + '/node_modules'
-            ]
-          }));
+          await fs.access(resolvedPath);
         } catch (error) {
-          // 回退到默认require
-          return require(moduleName);
+          if (error.code === 'ENOENT') {
+            await fs.mkdir(resolvedPath, { recursive: true });
+            console.log(`[ToolSandbox] 创建统一工作目录: ${resolvedPath}`);
+          }
         }
-      },
-      module: { exports: {} },
-      exports: {},
-      console: console,
-      Buffer: Buffer,
-      process: {
-        env: process.env,
-        hrtime: process.hrtime
-      },
-      setTimeout: setTimeout,
-      clearTimeout: clearTimeout,
-      setInterval: setInterval,
-      clearInterval: clearInterval,
-      Object: Object,
-      Array: Array,
-      String: String,
-      Number: Number,
-      Boolean: Boolean,
-      Date: Date,
-      JSON: JSON,
-      Math: Math,
-      RegExp: RegExp,
-      Error: Error,
-      URL: URL
-    };
+        
+        return resolvedPath;
+      } catch (error) {
+        throw new Error(`解析@project://路径失败: ${error.message}`);
+      }
+    }
+    
+    // 其他协议路径使用ResourceManager解析
+    if (protocolPath.startsWith('@')) {
+      if (!this.resourceManager) {
+        throw new Error('ResourceManager not set. Cannot resolve protocol path.');
+      }
+      
+      // 其他协议处理逻辑保持不变
+      throw new Error(`暂不支持的协议路径: ${protocolPath}`);
+    }
+    
+    // 普通路径直接返回
+    return protocolPath;
   }
+
+
+
 
   /**
    * 参数验证
@@ -488,7 +589,13 @@ class ToolSandbox {
    * 清理沙箱资源
    */
   async cleanup() {
-    // 可选：清理临时文件、关闭连接等
+    // 清理隔离管理器
+    if (this.isolationManager) {
+      this.isolationManager.cleanup();
+      this.isolationManager = null;
+    }
+    
+    // 清理其他资源
     this.sandboxContext = null;
     this.toolInstance = null;
   }
