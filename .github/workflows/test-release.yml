@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - test
-    paths:
-      - 'package.json'
-      - 'CHANGELOG.md'
 
 permissions:
   contents: write
@@ -16,10 +13,6 @@ jobs:
   release-alpha:
     name: Release Alpha Version
     runs-on: ubuntu-latest
-    # 只在版本号变更时运行
-    if: |
-      contains(github.event.head_commit.message, 'chore: release') ||
-      contains(github.event.head_commit.message, 'chore(release)')
     
     steps:
       - name: Checkout repository
@@ -54,8 +47,21 @@ jobs:
       
       - name: Publish alpha version
         run: |
-          # 发布为alpha版本
-          npm version ${{ env.PACKAGE_VERSION }}-alpha.0 --no-git-tag-version
+          # 检查是否已存在alpha版本
+          EXISTING_ALPHA=$(npm view dpml-prompt versions --json | jq -r '.[]' | grep "^${{ env.PACKAGE_VERSION }}-alpha" | sort -V | tail -1 || echo "")
+          
+          if [ -z "$EXISTING_ALPHA" ]; then
+            # 第一个alpha版本
+            ALPHA_VERSION="${{ env.PACKAGE_VERSION }}-alpha.0"
+          else
+            # 提取现有版本号并递增
+            CURRENT_NUM=$(echo $EXISTING_ALPHA | sed -E 's/.*-alpha\.([0-9]+)$/\1/')
+            NEXT_NUM=$((CURRENT_NUM + 1))
+            ALPHA_VERSION="${{ env.PACKAGE_VERSION }}-alpha.$NEXT_NUM"
+          fi
+          
+          echo "Publishing alpha version: $ALPHA_VERSION"
+          npm version $ALPHA_VERSION --no-git-tag-version
           npm publish --tag alpha --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ORG_NPM_TOKEN }}
