@@ -34,8 +34,24 @@ class ToolCommand extends BasePouchCommand {
 
   async getContent(args) {
     try {
-      // 处理参数：如果是数组，取第一个元素；否则直接使用
-      const toolArgs = Array.isArray(args) ? args[0] : args
+      // 处理参数：如果是数组格式，需要转换为对象格式
+      let toolArgs;
+      if (Array.isArray(args)) {
+        // 从CLI调用时，args是数组：[tool_resource, parameters, ...options]
+        if (args.length >= 2) {
+          toolArgs = {
+            tool_resource: args[0],
+            parameters: args[1],
+            rebuild: args.includes('--rebuild'),
+            timeout: this.extractTimeout(args)
+          };
+        } else {
+          throw new Error('Invalid arguments: expected [tool_resource, parameters]');
+        }
+      } else {
+        // 从其他方式调用时，args已经是对象格式
+        toolArgs = args;
+      }
       
       // 执行工具调用
       const result = await this.executeToolInternal(toolArgs)
@@ -109,7 +125,7 @@ ${JSON.stringify(actualToolResult, null, 2)}
    * @param {Object} args - 命令参数
    * @param {string} args.tool_resource - 工具资源引用，格式：@tool://tool-name
    * @param {Object} args.parameters - 传递给工具的参数
-   * @param {boolean} args.forceReinstall - 是否强制重新安装工具依赖（默认false）
+   * @param {boolean} args.rebuild - 是否强制重建沙箱（默认false）
    * @param {number} args.timeout - 工具执行超时时间（毫秒，默认30000ms）
    * @returns {Promise<Object>} 执行结果
    */
@@ -121,12 +137,12 @@ ${JSON.stringify(actualToolResult, null, 2)}
       // 1. 参数验证
       this.validateArguments(args)
       
-      const { tool_resource, parameters, forceReinstall = false, timeout = 30000 } = args
+      const { tool_resource, parameters, rebuild = false, timeout = 30000 } = args
       
       logger.debug(`[PromptXTool] 开始执行工具: ${tool_resource}`)
       
       // 2. 构建沙箱选项并创建ToolSandbox实例
-      const sandboxOptions = { forceReinstall, timeout }
+      const sandboxOptions = { rebuild, timeout }
       logger.debug(`[PromptXTool] 沙箱选项:`, sandboxOptions)
       sandbox = new ToolSandbox(tool_resource, sandboxOptions)
       
@@ -364,6 +380,20 @@ ${JSON.stringify(actualToolResult, null, 2)}
   }
 
   /**
+   * 从参数数组中提取timeout值
+   * @param {Array} args - 参数数组
+   * @returns {number|undefined} timeout值
+   */
+  extractTimeout(args) {
+    const timeoutIndex = args.indexOf('--timeout');
+    if (timeoutIndex !== -1 && timeoutIndex < args.length - 1) {
+      const timeout = parseInt(args[timeoutIndex + 1]);
+      return isNaN(timeout) ? undefined : timeout;
+    }
+    return undefined;
+  }
+
+  /**
    * 检查智能错误是否可以自动重试
    * @param {Object} intelligentError - 智能错误对象
    * @returns {boolean} 是否可自动重试
@@ -472,10 +502,10 @@ ${intelligentError.suggestion}
         suggestion: `🔧 依赖使用错误：
 • 检查依赖的正确用法
 • 确认依赖版本兼容性
-• 可能需要使用 "forceReinstall": true 重新安装
+• 可能需要使用 "rebuild": true 重建沙箱
 
 💡 建议操作：
-promptx_tool ${toolResource} {"forceReinstall": true, ...其他参数}`
+promptx_tool ${toolResource} {"rebuild": true, ...其他参数}`
       }
     }
     

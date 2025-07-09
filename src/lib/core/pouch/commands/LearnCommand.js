@@ -23,7 +23,7 @@ class LearnCommand extends BasePouchCommand {
   }
 
   getPurpose () {
-    return '智能学习指定协议的资源内容，支持thought、execution、memory等DPML协议以及角色组件，支持@引用的语义渲染'
+    return '智能学习指定协议的资源内容，支持thought、execution、memory、manual等协议以及角色组件，支持@引用的语义渲染'
   }
 
   /**
@@ -63,7 +63,8 @@ class LearnCommand extends BasePouchCommand {
       // 检查内容是否包含@引用，如果包含则进行语义渲染
       let finalContent = result.content
 
-      if (this.containsReferences(result.content)) {
+      // 对于manual协议，不进行语义渲染，保持原始内容
+      if (protocol !== 'manual' && this.containsReferences(result.content)) {
         // 对于完整的DPML标签（如<execution>...</execution>），提取标签内容进行渲染
         const innerContent = this.extractTagInnerContent(result.content, protocol)
         
@@ -119,7 +120,9 @@ class LearnCommand extends BasePouchCommand {
       memory: '💾 记忆模式',
       personality: '👤 角色人格',
       principle: '⚖️ 行为原则',
-      knowledge: '📚 专业知识'
+      knowledge: '📚 专业知识',
+      manual: '📖 工具手册',
+      tool: '🔧 工具代码'
     }
 
     const label = protocolLabels[protocol] || `📄 ${protocol}`
@@ -159,6 +162,8 @@ ${errorMessage}
 - \`personality://role-id\` - 学习角色思维
 - \`principle://role-id\` - 学习角色原则
 - \`knowledge://role-id\` - 学习角色知识
+- \`manual://tool-name\` - 学习工具手册
+- \`tool://tool-name\` - 学习工具代码
 
 🔍 查看可用资源：
 使用 MCP PromptX action 工具查看角色的所有依赖
