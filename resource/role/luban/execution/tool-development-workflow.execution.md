@@ -3,19 +3,22 @@
 <constraint>
 ## 技术架构约束
 - **单文件工具**：每个工具必须是独立的.tool.js文件
+- **工具手册分离**：工具说明书使用.manual.md文件，与执行代码分离
 - **ToolInterface规范**：必须实现execute()、getDependencies()、getMetadata()等标准接口
 - **ToolSandbox兼容**：工具必须能在沙箱环境中正常运行
-- **协议统一**：通过@tool://协议访问，沙箱位于@user://.promptx/toolbox/
+- **协议区分**：工具代码通过@tool://协议访问，手册通过@manual://协议访问
 - **依赖隔离**：每个工具的依赖安装在独立的沙箱目录中
 </constraint>
 
 <rule>
 ## 开发强制规则
+- **文件命名规范**：工具代码必须命名为`{tool-name}.tool.js`，手册必须命名为`{tool-name}.manual.md`
 - **接口完整性**：必须实现所有必要的接口方法
 - **依赖声明**：所有外部依赖必须在getDependencies()中明确声明
 - **参数验证**：必须实现validate()方法验证输入参数
 - **错误处理**：必须有完善的异常处理机制
 - **安全第一**：禁止执行危险操作，确保沙箱安全
+- **手册强制**：每个工具必须配套完整的manual文件
 </rule>
 
 <guideline>
@@ -54,8 +57,8 @@ flowchart TD
 
 **Step 1.3: 工具说明书设计**
 ```xml
-<!-- {tool-name}.tool.md 模板 -->
-<tool>
+<!-- {tool-name}.manual.md 模板 -->
+<manual>
 <identity>
 ## 工具名称
 @tool://{tool-name}
@@ -91,7 +94,7 @@ flowchart TD
 <outcome>
 <!-- 返回结果格式说明 -->
 </outcome>
-</tool>
+</manual>
 ```
 
 **Step 1.4: 接口规范设计**
@@ -107,7 +110,8 @@ module.exports = {
       name: 'tool-name',
       description: '工具描述',
       version: '1.0.0',
-      category: '分类'
+      category: '分类',
+      manual: '@manual://tool-name' // 关联手册引用
     };
   },
   
@@ -142,15 +146,16 @@ flowchart LR
 **Step 2.1: 工具文件创建**
 ```bash
 # 标准文件路径
-.promptx/resource/tool/{tool-name}/{tool-name}.tool.js    # 给计算机的执行代码
-.promptx/resource/tool/{tool-name}/{tool-name}.tool.md    # 给AI的使用说明书
+.promptx/resource/tool/{tool-name}/
+├── {tool-name}.tool.js      # 给计算机的执行代码
+└── {tool-name}.manual.md    # 给AI的使用说明书
 ```
 
 **Step 2.2: 工具说明书编写**
 基于Phase 1的设计，完整编写五组件说明书：
 
 ```xml
-<tool>
+<manual>
 <identity>
 ## 工具名称
 @tool://actual-tool-name
@@ -244,7 +249,7 @@ flowchart LR
 - [成功时的建议]
 - [失败时的建议]
 </outcome>
-</tool>
+</manual>
 ```
 
 **Step 2.3: 依赖管理实现**
@@ -267,7 +272,8 @@ getMetadata() {
     version: '1.0.0',
     category: 'utility',
     author: '鲁班',
-    tags: ['tool', 'automation', 'utility']
+    tags: ['tool', 'automation', 'utility'],
+    manual: '@manual://my-awesome-tool' // 关联手册
   };
 }
 ```
@@ -362,6 +368,7 @@ flowchart LR
 **在MCP环境中使用init工具**：
 - 使用MCP PromptX的`promptx_init`工具刷新项目级注册表
 - 该工具会重新扫描`.promptx/resource/`目录并更新资源注册表
+- 注意：tool和manual会作为两个独立的资源被发现
 - 调用后工具立即可用，无需重启MCP服务器
 
 **调用方式**：
@@ -374,16 +381,20 @@ flowchart LR
 
 **使用MCP工具验证**：
 - 使用`promptx_welcome`工具查看是否出现新工具
+- 确认`@tool://tool-name`和`@manual://tool-name`都被正确注册
 - 使用`promptx_tool`工具测试新工具是否可用
 - 检查工具列表中是否包含新开发的工具
 
 🚨 **注册表刷新关键时机**
-- ✅ 创建新工具后必须执行
+- ✅ 创建新工具和手册后必须执行
 - ✅ 修改工具metadata后需要执行  
 - ✅ MCP缓存问题时需要执行
 - ✅ 工具无法被发现时需要执行
 
 💡 **PromptX注册表机制解释**
+- **双资源注册**：一个工具会产生两个资源：tool协议和manual协议
+- **独立访问**：工具执行和手册查看是独立的操作
+- **关联引用**：通过metadata中的manual字段关联两者
 - **项目级扫描**：`promptx init`重新扫描`.promptx/resource/`目录
 - **缓存重置**：清理ResourceManager缓存，重新发现资源
 - **MCP同步**：确保MCP服务器获取最新的工具列表
