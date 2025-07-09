@@ -12,6 +12,7 @@ const ThoughtProtocol = require('./protocols/ThoughtProtocol')
 const ExecutionProtocol = require('./protocols/ExecutionProtocol')
 const KnowledgeProtocol = require('./protocols/KnowledgeProtocol')
 const ToolProtocol = require('./protocols/ToolProtocol')
+const ManualProtocol = require('./protocols/ManualProtocol')
 const UserProtocol = require('./protocols/UserProtocol')
 const FileProtocol = require('./protocols/FileProtocol')
 
@@ -48,6 +49,7 @@ class ResourceManager {
     this.protocols.set('execution', new ExecutionProtocol())
     this.protocols.set('knowledge', new KnowledgeProtocol())
     this.protocols.set('tool', new ToolProtocol())
+    this.protocols.set('manual', new ManualProtocol())
   }
 
   /**
@@ -113,6 +115,7 @@ class ResourceManager {
     const thoughtProtocol = this.protocols.get('thought')
     const knowledgeProtocol = this.protocols.get('knowledge')
     const toolProtocol = this.protocols.get('tool')
+    const manualProtocol = this.protocols.get('manual')
     
     if (roleProtocol) {
       roleProtocol.setRegistryManager(this)
@@ -128,6 +131,9 @@ class ResourceManager {
     }
     if (toolProtocol) {
       toolProtocol.setRegistryManager(this)
+    }
+    if (manualProtocol) {
+      manualProtocol.setRegistryManager(this)
     }
     
     // 逻辑协议设置完成，不输出日志避免干扰用户界面
