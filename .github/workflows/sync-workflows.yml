@@ -42,6 +42,15 @@ jobs:
           
           echo "Syncing to branches: $BRANCHES"
           
+          # 获取最新的workflow相关commit信息
+          LATEST_COMMIT_MSG=$(git log -1 --pretty=format:"%s" -- .github/workflows/)
+          LATEST_COMMIT_BODY=$(git log -1 --pretty=format:"%b" -- .github/workflows/)
+          LATEST_COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an" -- .github/workflows/)
+          LATEST_COMMIT_EMAIL=$(git log -1 --pretty=format:"%ae" -- .github/workflows/)
+          
+          echo "Latest workflow commit: $LATEST_COMMIT_MSG"
+          echo "Author: $LATEST_COMMIT_AUTHOR <$LATEST_COMMIT_EMAIL>"
+          
           IFS=',' read -ra BRANCH_ARRAY <<< "$BRANCHES"
           for branch in "${BRANCH_ARRAY[@]}"; do
             branch=$(echo "$branch" | xargs)
@@ -70,9 +79,31 @@ jobs:
             if git diff --cached --quiet; then
               echo "No changes for $branch"
             else
-              git commit -m "chore: sync workflows from develop"
+              # 使用原始commit信息，但添加同步标记
+              if [ -n "$LATEST_COMMIT_BODY" ]; then
+                COMMIT_MSG="$LATEST_COMMIT_MSG
+
+$LATEST_COMMIT_BODY
+
+[workflow-sync] Synced from develop"
+              else
+                COMMIT_MSG="$LATEST_COMMIT_MSG
+
+[workflow-sync] Synced from develop"
+              fi
+              
+              # 设置原始作者信息
+              git config user.name "$LATEST_COMMIT_AUTHOR"
+              git config user.email "$LATEST_COMMIT_EMAIL"
+              
+              git commit -m "$COMMIT_MSG"
+              
+              # 恢复bot身份用于push
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              
               git push origin "$branch"
-              echo "✅ Synced to $branch"
+              echo "✅ Synced to $branch with original commit message"
             fi
             
             # 切回develop
