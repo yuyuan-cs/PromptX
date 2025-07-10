@@ -1,0 +1,51 @@
+name: Cleanup Version Branches
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    # 只处理版本管理相关的分支
+    if: startsWith(github.head_ref, 'chore/release-')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+          
+      - name: Delete branch
+        run: |
+          echo "PR #${{ github.event.pull_request.number }} has been closed"
+          echo "Branch to delete: ${{ github.head_ref }}"
+          
+          # 判断 PR 是合并还是关闭
+          if [ "${{ github.event.pull_request.merged }}" == "true" ]; then
+            echo "✅ PR was merged successfully"
+          else
+            echo "❌ PR was closed without merging"
+          fi
+          
+          # 删除远程分支
+          echo "Deleting branch: ${{ github.head_ref }}"
+          git push origin --delete "${{ github.head_ref }}" || echo "Branch may have already been deleted"
+          
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT || github.token }}
+          script: |
+            const message = github.event.pull_request.merged 
+              ? '✅ 版本发布分支已自动清理（PR已合并）' 
+              : '🧹 版本发布分支已自动清理（PR已关闭）';
+              
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,  
+              issue_number: context.issue.number,
+              body: `${message}\n\n分支 \`${{ github.head_ref }}\` 已被删除。`
+            });
