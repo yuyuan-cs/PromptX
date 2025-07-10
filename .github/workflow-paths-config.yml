@@ -1,0 +1,52 @@
+# Workflow路径过滤配置
+# 用于统一管理不同workflow的paths-ignore规则
+
+# 代码相关的workflow应该忽略的路径
+code_workflow_ignore:
+  # GitHub相关配置
+  - '.github/**'
+  # 文档目录
+  - 'docs/**'
+  # 根目录的README文件（但不包括prompt/和resource/下的.md文件）
+  - '/README*.md'
+  - '/CHANGELOG.md'
+  - '/TEST_ALPHA.md'
+  # 配置文件
+  - 'LICENSE'
+  - '.gitignore'
+  - '.npmignore'
+  - '.cursorrules'
+  - 'commitlint.config.js'
+  # 资源文件
+  - 'assets/**'
+  # 测试覆盖率报告
+  - 'coverage/**'
+
+# 文档相关的workflow应该关注的路径
+doc_workflow_paths:
+  - 'docs/**'
+  - 'README*.md'
+  - 'CHANGELOG.md'
+  
+# 提示词相关的workflow应该关注的路径  
+prompt_workflow_paths:
+  - 'prompt/**/*.md'
+  - 'resource/**/*.md'
+  - '.promptx/**/*.md'
+
+# workflow文件相关的路径
+workflow_paths:
+  - '.github/workflows/**'
+  - '.github/workflow-paths-config.yml'
+
+# 完整的代码路径（用于代码相关的workflow）
+code_paths:
+  - 'src/**'
+  - 'lib/**'
+  - 'scripts/**'
+  - 'tests/**'
+  - 'package.json'
+  - 'pnpm-lock.yaml'
+  - 'jest.config.js'
+  - 'prompt/**/*.md'  # 提示词文件也是代码的一部分
+  - 'resource/**/*.md' # 资源文件也是代码的一部分
