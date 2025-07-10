@@ -1,0 +1,52 @@
+# 版本发布配置文件
+# 定义哪些路径的修改不应该触发版本发布
+
+skip_release_paths:
+  # 文档相关
+  - "README*.md"
+  - "CHANGELOG.md"
+  - "CONTRIBUTING.md"
+  - "LICENSE*"
+  - "docs/**"
+  - "assets/**"
+  - "examples/**"
+  
+  # 开发配置
+  - ".github/**"
+  - ".vscode/**"
+  - ".gitignore"
+  - ".npmignore"
+  - ".editorconfig"
+  - ".eslintrc*"
+  - ".prettierrc*"
+  - ".babelrc*"
+  - "*.config.js"
+  - "*.config.ts"
+  
+  # 测试相关（但不包括测试代码本身）
+  - "coverage/**"
+  - ".nyc_output/**"
+  
+# 需要发版的路径（即使在 skip_release_paths 中）
+require_release_paths:
+  - "package.json"
+  - "src/**"
+  - "lib/**"
+  - "index.js"
+  - "index.ts"
+  - "prompt/**/*.md"  # 提示词文件需要发版
+  
+# PR 标题前缀到标签的映射
+pr_title_labels:
+  "docs:": ["documentation", "skip-release"]
+  "doc:": ["documentation", "skip-release"]
+  "chore:": ["chore"]
+  "ci:": ["ci/cd", "skip-release"]
+  "workflow:": ["ci/cd", "skip-release"]
+  "style:": ["style", "skip-release"]
+  "refactor:": ["refactor"]
+  "test:": ["test"]
+  "feat:": ["feature"]
+  "fix:": ["bugfix"]
+  "perf:": ["performance"]
+  "build:": ["build"]

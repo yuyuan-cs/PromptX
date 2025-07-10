@@ -1,0 +1,125 @@
+name: Auto Label PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Get changed files
+        id: changed-files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const changedPaths = files.map(f => f.filename);
+            console.log('Changed files:', changedPaths);
+            
+            // 检查是否只包含文档和配置文件
+            const docsAndConfigPaths = [
+              /^README.*\.md$/,
+              /^CHANGELOG\.md$/,
+              /^CONTRIBUTING\.md$/,
+              /^LICENSE/,
+              /^docs\//,
+              /^assets\//,
+              /^\.github\//,
+              /^examples\//,
+              /^\.gitignore$/,
+              /^\.npmignore$/,
+              /^\.editorconfig$/,
+              /^\.(eslintrc|prettierrc|babelrc)/
+            ];
+            
+            const isDocsOrConfig = changedPaths.every(path => 
+              docsAndConfigPaths.some(pattern => pattern.test(path))
+            );
+            
+            // 检查是否包含提示词文件（在 prompt 目录下的 .md 文件）
+            const hasPromptFiles = changedPaths.some(path => 
+              path.startsWith('prompt/') && path.endsWith('.md')
+            );
+            
+            // 检查是否包含核心代码变更
+            const hasCoreChanges = changedPaths.some(path => 
+              path.endsWith('.js') || 
+              path.endsWith('.ts') || 
+              path.endsWith('.json') && !path.includes('.github/') ||
+              path.startsWith('src/') ||
+              path.startsWith('lib/') ||
+              path === 'package.json'
+            );
+            
+            return {
+              isDocsOrConfig,
+              hasPromptFiles,
+              hasCoreChanges,
+              fileCount: changedPaths.length
+            };
+            
+      - name: Apply labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT || github.token }}
+          script: |
+            const result = ${{ steps.changed-files.outputs.result }};
+            const labels = [];
+            
+            if (result.isDocsOrConfig && !result.hasPromptFiles) {
+              labels.push('documentation');
+              labels.push('skip-release');
+            }
+            
+            if (result.hasPromptFiles) {
+              labels.push('prompt-update');
+              // 提示词更新可能需要发版，不添加 skip-release
+            }
+            
+            if (result.hasCoreChanges) {
+              labels.push('core-changes');
+            }
+            
+            // 根据 PR 标题添加标签
+            const title = context.payload.pull_request.title.toLowerCase();
+            if (title.includes('chore:') || title.includes('chore(')) {
+              labels.push('chore');
+              if (!result.hasCoreChanges) {
+                labels.push('skip-release');
+              }
+            }
+            
+            if (title.includes('docs:') || title.includes('doc:')) {
+              labels.push('documentation');
+              labels.push('skip-release');
+            }
+            
+            if (title.includes('ci:') || title.includes('workflow:')) {
+              labels.push('ci/cd');
+              labels.push('skip-release');
+            }
+            
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+              console.log(`Applied labels: ${labels.join(', ')}`);
+            }
