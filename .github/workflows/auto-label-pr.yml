@@ -28,12 +28,12 @@ jobs:
               pull_number: context.issue.number
             });
             
-            const changedPaths = files.map(f => f.filename);
-            console.log('Changed files:', changedPaths);
+            const changedFiles = files.map(f => f.filename);
+            console.log('Changed files:', changedFiles);
             
             // 添加详细的文件统计
             const fileStats = {
-              total: changedPaths.length,
+              total: changedFiles.length,
               docs: 0,
               config: 0,
               core: 0,
@@ -58,17 +58,17 @@ jobs:
               /^\.(eslintrc|prettierrc|babelrc)/
             ];
             
-            const isDocsOrConfig = changedPaths.every(path => 
+            const isDocsOrConfig = changedFiles.every(path => 
               docsAndConfigPaths.some(pattern => pattern.test(path))
             );
             
             // 检查是否包含提示词文件（在 prompt 目录下的 .md 文件）
-            const hasPromptFiles = changedPaths.some(path => 
+            const hasPromptFiles = changedFiles.some(path => 
               path.startsWith('prompt/') && path.endsWith('.md')
             );
             
             // 检查是否包含核心代码变更
-            const hasCoreChanges = changedPaths.some(path => 
+            const hasCoreChanges = changedFiles.some(path => 
               path.endsWith('.js') || 
               path.endsWith('.ts') || 
               path.endsWith('.json') && !path.includes('.github/') ||
@@ -81,7 +81,8 @@ jobs:
               isDocsOrConfig,
               hasPromptFiles,
               hasCoreChanges,
-              fileCount: changedPaths.length
+              fileCount: changedFiles.length,
+              files: changedFiles
             };
             
       - name: Apply labels
@@ -91,6 +92,9 @@ jobs:
           script: |
             const result = ${{ steps.changed-files.outputs.result }};
             const labels = [];
+            
+            // 输出调试信息
+            console.log('Analysis result:', JSON.stringify(result, null, 2));
             
             // 处理不同类型的变更组合
             if (result.hasCoreChanges) {
@@ -110,7 +114,7 @@ jobs:
             } else if (!result.hasCoreChanges && !result.hasPromptFiles) {
               // 既不是纯文档，也没有核心代码和提示词变更
               // 可能是测试文件等，根据具体情况决定
-              const hasTestChanges = changedPaths.some(path => 
+              const hasTestChanges = result.files.some(path => 
                 path.includes('test/') || path.includes('__tests__/') || 
                 path.endsWith('.test.js') || path.endsWith('.spec.js')
               );
@@ -120,8 +124,29 @@ jobs:
               }
             }
             
+            // 定义文档和配置文件的模式
+            const docsConfigPatterns = [
+              /^README.*\.md$/,
+              /^CHANGELOG\.md$/,
+              /^CONTRIBUTING\.md$/,
+              /^LICENSE/,
+              /^docs\//,
+              /^assets\//,
+              /^\.github\//,
+              /^examples\//,
+              /^\.gitignore$/,
+              /^\.npmignore$/,
+              /^\.editorconfig$/,
+              /^\.(eslintrc|prettierrc|babelrc)/
+            ];
+            
+            // 检查是否有文档/配置文件变更
+            const hasDocsOrConfigChanges = result.files.some(path => 
+              docsConfigPatterns.some(pattern => pattern.test(path))
+            );
+            
             // 添加混合变更标签
-            if (result.hasCoreChanges && result.isDocsOrConfig) {
+            if (result.hasCoreChanges && hasDocsOrConfigChanges) {
               labels.push('mixed-changes');
               // 混合变更时，以代码变更为准，需要发版
             }
@@ -137,12 +162,16 @@ jobs:
             
             if (title.includes('docs:') || title.includes('doc:')) {
               labels.push('documentation');
-              labels.push('skip-release');
+              if (!result.hasCoreChanges && !result.hasPromptFiles) {
+                labels.push('skip-release');
+              }
             }
             
             if (title.includes('ci:') || title.includes('workflow:')) {
               labels.push('ci/cd');
-              labels.push('skip-release');
+              if (!result.hasCoreChanges && !result.hasPromptFiles) {
+                labels.push('skip-release');
+              }
             }
             
             if (labels.length > 0) {

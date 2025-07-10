@@ -1,0 +1,199 @@
+name: Workflow Sync via PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Target branch to sync workflows'
+        required: true
+        type: choice
+        options:
+          - main
+          - test
+          - staging
+      sync_mode:
+        description: 'Sync mode'
+        required: true
+        type: choice
+        options:
+          - all         # 同步所有工作流
+          - selective   # 只同步特定工作流
+      workflow_files:
+        description: 'Workflow files to sync (only for selective mode, comma-separated)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-sync-pr:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT || github.token }}
+          
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+      - name: Create sync branch
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          SYNC_BRANCH="workflow-sync/${{ github.event.inputs.target_branch }}-$TIMESTAMP"
+          echo "SYNC_BRANCH=$SYNC_BRANCH" >> $GITHUB_ENV
+          
+          # 从目标分支创建新分支
+          git checkout -b "$SYNC_BRANCH" "origin/${{ github.event.inputs.target_branch }}"
+          
+      - name: Sync workflow files
+        run: |
+          if [ "${{ github.event.inputs.sync_mode }}" = "all" ]; then
+            echo "📋 Syncing all workflow files..."
+            # 从 develop 复制所有工作流
+            git checkout develop -- .github/workflows/
+            git checkout develop -- .github/*.yml 2>/dev/null || true
+            git checkout develop -- .github/*.yaml 2>/dev/null || true
+            
+            # 记录同步的文件
+            SYNCED_FILES=$(git diff --name-only | grep -E '^\.github/' || echo "No changes")
+            echo "SYNCED_FILES<<EOF" >> $GITHUB_ENV
+            echo "$SYNCED_FILES" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          else
+            echo "📋 Syncing selective workflow files..."
+            # 解析选择的文件
+            IFS=',' read -ra FILES <<< "${{ github.event.inputs.workflow_files }}"
+            SYNCED_FILES=""
+            
+            for file in "${FILES[@]}"; do
+              file=$(echo "$file" | xargs) # 去除空格
+              if [ -n "$file" ]; then
+                # 确保文件路径正确
+                if [[ ! "$file" =~ ^\.github/ ]]; then
+                  file=".github/workflows/$file"
+                fi
+                
+                # 从 develop 复制特定文件
+                if git checkout develop -- "$file" 2>/dev/null; then
+                  SYNCED_FILES="${SYNCED_FILES}${file}\n"
+                  echo "✅ Synced: $file"
+                else
+                  echo "⚠️ File not found: $file"
+                fi
+              fi
+            done
+            
+            echo "SYNCED_FILES<<EOF" >> $GITHUB_ENV
+            echo -e "$SYNCED_FILES" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+          
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "✅ No changes detected - workflows are already in sync"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Changes detected, preparing to create PR"
+          fi
+          
+      - name: Commit changes
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git add .github/
+          git commit -m "chore: 同步工作流从 develop 到 ${{ github.event.inputs.target_branch }}
+
+同步模式: ${{ github.event.inputs.sync_mode }}
+触发者: @${{ github.actor }}
+
+同步的文件:
+${{ env.SYNCED_FILES }}"
+          
+      - name: Push changes
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git push origin "${{ env.SYNC_BRANCH }}"
+          
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.has_changes == 'true'
+        id: create-pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT || github.token }}
+          script: |
+            const syncedFiles = `${{ env.SYNCED_FILES }}`.trim().split('\n').filter(f => f);
+            const fileList = syncedFiles.map(f => `- \`${f}\``).join('\n');
+            
+            const body = `## 🔄 工作流同步请求
+
+### 📋 同步详情
+- **源分支**: \`develop\`
+- **目标分支**: \`${{ github.event.inputs.target_branch }}\`
+- **同步模式**: ${{ github.event.inputs.sync_mode }}
+- **触发者**: @${{ github.actor }}
+
+### 📝 同步的文件
+${fileList || '无文件变更'}
+
+### ✅ 检查清单
+- [ ] 确认工作流变更符合预期
+- [ ] 确认不会破坏目标分支的特定配置
+- [ ] 确认所有必需的 secrets 在目标环境可用
+
+### 🚀 合并影响
+合并后，\`${{ github.event.inputs.target_branch }}\` 分支将获得最新的工作流更新。
+
+---
+*此 PR 由 GitHub Actions 自动创建*`;
+            
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `chore: 同步工作流到 ${{ github.event.inputs.target_branch }} 分支`,
+              body: body,
+              head: '${{ env.SYNC_BRANCH }}',
+              base: '${{ github.event.inputs.target_branch }}',
+              draft: false
+            });
+            
+            // 添加标签
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: ['workflow-sync', 'automated']
+            });
+            
+            console.log(`✅ Created PR #${pr.number}: ${pr.html_url}`);
+            return pr.number;
+            
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 🔄 工作流同步结果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.check-changes.outputs.has_changes }}" = "true" ]; then
+            echo "✅ **状态**: 成功创建同步 PR" >> $GITHUB_STEP_SUMMARY
+            echo "📎 **PR**: #${{ steps.create-pr.outputs.result }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ **状态**: 无需同步（工作流已是最新）" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 同步配置" >> $GITHUB_STEP_SUMMARY
+          echo "- **目标分支**: ${{ github.event.inputs.target_branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **同步模式**: ${{ github.event.inputs.sync_mode }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.sync_mode }}" = "selective" ]; then
+            echo "- **指定文件**: ${{ github.event.inputs.workflow_files }}" >> $GITHUB_STEP_SUMMARY
+          fi
