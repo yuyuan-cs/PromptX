@@ -1,9 +1,12 @@
 name: NPM Latest Release
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
+  # 注意：main分支(latest通道)的自动发布已禁用，保护线上用户
+  # 需要发布正式版本时请使用手动触发
+  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
