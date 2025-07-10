@@ -81,15 +81,9 @@ jobs:
             else
               # 使用原始commit信息，但添加同步标记
               if [ -n "$LATEST_COMMIT_BODY" ]; then
-                COMMIT_MSG="$LATEST_COMMIT_MSG
-
-$LATEST_COMMIT_BODY
-
-[workflow-sync] Synced from develop"
+                COMMIT_MSG=$(printf "%s\n\n%s\n\n[workflow-sync] Synced from develop" "$LATEST_COMMIT_MSG" "$LATEST_COMMIT_BODY")
               else
-                COMMIT_MSG="$LATEST_COMMIT_MSG
-
-[workflow-sync] Synced from develop"
+                COMMIT_MSG=$(printf "%s\n\n[workflow-sync] Synced from develop" "$LATEST_COMMIT_MSG")
               fi
               
               # 设置原始作者信息
