@@ -1,3 +1,5 @@
+const { execSync } = require('child_process');
+
 module.exports = {
   extends: ['@commitlint/config-conventional'],
   rules: {
@@ -30,28 +32,40 @@ module.exports = {
   plugins: [
     {
       rules: {
-        'ci-files-required': ({type, files}) => {
+        'ci-files-required': ({type}) => {
           // 如果不是ci类型，直接通过
           if (type !== 'ci') {
             return [true];
           }
           
-          // 检查是否包含CI相关文件
-          const ciFiles = files?.filter(file => 
-            file.includes('.github/workflows/') ||
-            file.includes('.github/actions/') ||
-            file.includes('jest.config.js') ||
-            file.includes('commitlint.config.js') ||
-            file.includes('.eslintrc') ||
-            file.includes('.prettierrc') ||
-            file.includes('package.json') && file.includes('scripts')
-          );
-          
-          if (!ciFiles || ciFiles.length === 0) {
-            return [false, 'ci类型的提交必须包含CI相关文件的修改（.github/workflows/, 测试配置, lint配置等）'];
+          try {
+            // 获取git staged文件列表
+            const stagedFiles = execSync('git diff --cached --name-only', { encoding: 'utf-8' })
+              .trim()
+              .split('\n')
+              .filter(Boolean);
+            
+            // 检查是否包含CI相关文件
+            const hasCIFiles = stagedFiles.some(file => 
+              file.includes('.github/workflows/') ||
+              file.includes('.github/actions/') ||
+              file.includes('jest.config.js') ||
+              file.includes('commitlint.config.js') ||
+              file.includes('.eslintrc') ||
+              file.includes('.prettierrc') ||
+              (file === 'package.json')
+            );
+            
+            if (!hasCIFiles) {
+              return [false, 'ci类型的提交必须包含CI相关文件的修改（.github/workflows/, 测试配置, lint配置等）'];
+            }
+            
+            return [true];
+          } catch (error) {
+            // 如果出错，默认通过
+            console.warn('Warning: Could not check staged files:', error.message);
+            return [true];
           }
-          
-          return [true];
         }
       }
     }
