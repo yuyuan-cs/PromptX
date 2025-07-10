@@ -95,18 +95,24 @@ jobs:
                 
                 # 生成提交信息
                 if [ "${{ github.event_name }}" = "push" ]; then
-                  COMMIT_MSG="chore: 同步工作流更新从 develop 分支
+                  COMMIT_MSG=$(cat <<EOF
+chore: 同步工作流更新从 develop 分支
 
 自动同步以下工作流变更：
 - ${{ steps.changed-files.outputs.files }}
 
-Source: ${{ github.sha }}"
+Source: ${{ github.sha }}
+EOF
+)
                 else
-                  COMMIT_MSG="chore: 手动同步所有工作流从 develop 分支
+                  COMMIT_MSG=$(cat <<EOF
+chore: 手动同步所有工作流从 develop 分支
 
 同步所有 .github/workflows/ 下的工作流文件
 
-Triggered by: @${{ github.actor }}"
+Triggered by: @${{ github.actor }}
+EOF
+)
                 fi
                 
                 git commit -m "$COMMIT_MSG"
