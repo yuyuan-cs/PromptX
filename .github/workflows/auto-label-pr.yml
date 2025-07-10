@@ -31,6 +31,17 @@ jobs:
             const changedPaths = files.map(f => f.filename);
             console.log('Changed files:', changedPaths);
             
+            // 添加详细的文件统计
+            const fileStats = {
+              total: changedPaths.length,
+              docs: 0,
+              config: 0,
+              core: 0,
+              prompt: 0,
+              test: 0,
+              other: 0
+            };
+            
             // 检查是否只包含文档和配置文件
             const docsAndConfigPaths = [
               /^README.*\.md$/,
@@ -81,18 +92,38 @@ jobs:
             const result = ${{ steps.changed-files.outputs.result }};
             const labels = [];
             
-            if (result.isDocsOrConfig && !result.hasPromptFiles) {
-              labels.push('documentation');
-              labels.push('skip-release');
+            // 处理不同类型的变更组合
+            if (result.hasCoreChanges) {
+              labels.push('core-changes');
+              // 有核心代码变更时，需要发版
             }
             
             if (result.hasPromptFiles) {
               labels.push('prompt-update');
-              // 提示词更新可能需要发版，不添加 skip-release
+              // 提示词更新需要发版
             }
             
-            if (result.hasCoreChanges) {
-              labels.push('core-changes');
+            if (result.isDocsOrConfig && !result.hasPromptFiles) {
+              // 纯文档/配置修改
+              labels.push('documentation');
+              labels.push('skip-release');
+            } else if (!result.hasCoreChanges && !result.hasPromptFiles) {
+              // 既不是纯文档，也没有核心代码和提示词变更
+              // 可能是测试文件等，根据具体情况决定
+              const hasTestChanges = changedPaths.some(path => 
+                path.includes('test/') || path.includes('__tests__/') || 
+                path.endsWith('.test.js') || path.endsWith('.spec.js')
+              );
+              if (hasTestChanges) {
+                labels.push('test');
+                // 测试文件修改通常不需要发版，除非同时有代码修改
+              }
+            }
+            
+            // 添加混合变更标签
+            if (result.hasCoreChanges && result.isDocsOrConfig) {
+              labels.push('mixed-changes');
+              // 混合变更时，以代码变更为准，需要发版
             }
             
             // 根据 PR 标题添加标签
@@ -122,4 +153,29 @@ jobs:
                 labels: labels
               });
               console.log(`Applied labels: ${labels.join(', ')}`);
+            }
+            
+            // 对混合变更的 PR 添加说明评论
+            if (result.hasCoreChanges && (result.isDocsOrConfig || labels.includes('documentation'))) {
+              const skipRelease = labels.includes('skip-release');
+              const comment = `## 📊 变更分析报告
+              
+本 PR 包含了**混合类型**的变更：
+- ✅ 核心代码变更
+- 📚 文档/配置变更
+
+**版本发布决策**: ${skipRelease ? '⏭️ 跳过版本发布' : '🚀 将触发版本发布'}
+
+> 💡 提示：如果您只想更新文档而不发版，请将代码和文档变更分开到不同的 PR 中。`;
+              
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: comment
+                });
+              } catch (error) {
+                console.log('Failed to create comment:', error);
+              }
             }
