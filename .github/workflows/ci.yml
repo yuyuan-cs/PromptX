@@ -1,4 +1,6 @@
 name: CI
+# Test: Workflow sync functionality - 2025-01-10
+# Test: Auto sync trigger
 
 on:
   push:

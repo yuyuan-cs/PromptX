@@ -1,0 +1,86 @@
+name: Sync Workflows V2
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      target_branches:
+        description: 'Target branches (comma-separated)'
+        default: 'test,main'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT || github.token }}
+          
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+      - name: Sync workflows
+        run: |
+          # 确定目标分支
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCHES="${{ github.event.inputs.target_branches }}"
+          else
+            BRANCHES="test,main"
+          fi
+          
+          echo "Syncing to branches: $BRANCHES"
+          
+          IFS=',' read -ra BRANCH_ARRAY <<< "$BRANCHES"
+          for branch in "${BRANCH_ARRAY[@]}"; do
+            branch=$(echo "$branch" | xargs)
+            echo "Processing branch: $branch"
+            
+            # 跳过staging分支的自动同步
+            if [ "$branch" = "staging" ] && [ "${{ github.event_name }}" = "push" ]; then
+              echo "Skipping staging for auto sync"
+              continue
+            fi
+            
+            # 检查分支存在
+            if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
+              echo "Branch $branch does not exist"
+              continue
+            fi
+            
+            # 切换到目标分支
+            git fetch origin "$branch"
+            git checkout "$branch"
+            
+            # 从develop复制workflow文件
+            git checkout develop -- .github/workflows/
+            
+            # 检查是否有变更
+            if git diff --cached --quiet; then
+              echo "No changes for $branch"
+            else
+              git commit -m "chore: sync workflows from develop"
+              git push origin "$branch"
+              echo "✅ Synced to $branch"
+            fi
+            
+            # 切回develop
+            git checkout develop
+          done
+          
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Workflow sync completed" >> $GITHUB_STEP_SUMMARY
