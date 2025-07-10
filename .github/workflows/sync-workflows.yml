@@ -14,7 +14,7 @@ on:
       target_branches:
         description: 'Target branches to sync (comma-separated, e.g., main,test,staging)'
         required: false
-        default: 'main,test'
+        default: 'test,staging,main'
         type: string
 
 permissions:
@@ -45,7 +45,7 @@ jobs:
             BRANCHES="${{ github.event.inputs.target_branches }}"
           else
             # 自动触发时使用默认分支列表
-            BRANCHES="main,test"
+            BRANCHES="test,staging,main"
           fi
           echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
           
