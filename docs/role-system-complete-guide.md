@@ -74,7 +74,7 @@ flowchart TB
     "role": {
       "registry": {
         "角色ID": {
-          "file": "@package://prompt/domain/角色名/角色名.role.md",
+          "file": "@package://resource/domain/角色名/角色名.role.md",
           "name": "🎭 角色显示名称",
           "description": "角色功能描述"
         }
@@ -87,7 +87,7 @@ flowchart TB
 **示例**:
 ```json
 "assistant": {
-  "file": "@package://prompt/domain/assistant/assistant.role.md",
+  "file": "@package://resource/domain/assistant/assistant.role.md",
   "name": "🙋 智能助手",
   "description": "通用助理角色，提供基础的助理服务和记忆支持"
 }
@@ -733,6 +733,6 @@ PromptX角色系统通过以下核心机制实现了强大而灵活的AI角色�
 ---
 
 **参考文档**:
-- [DPML基础协议](../prompt/protocol/dpml.protocol.md)
+- [DPML基础协议](../resource/protocol/dpml.protocol.md)
 - [DPML语义渲染升级方案](./dpml-semantic-rendering-upgrade.md)
 - [角色发现优化文档](./role-discovery-optimization.md)

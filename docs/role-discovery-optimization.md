@@ -434,7 +434,7 @@ class SimplePackageProtocol {
 {
   "role": {
     "assistant": {
-      "file": "@package://prompt/domain/assistant/assistant.role.md",
+      "file": "@package://resource/domain/assistant/assistant.role.md",
       "name": "🙋 智能助手"
     }
   }
@@ -486,7 +486,7 @@ describe('角色发现性能', () => {
 ## 📚 相关文档
 
 - [用户角色创建系统](./user-role-creation-system.md)
-- [DPML协议规范](../prompt/protocol/dpml.protocol.md)
+- [DPML协议规范](../resource/protocol/dpml.protocol.md)
 - [ResourceManager架构](../src/lib/core/resource/)
 - [跨平台测试指南](../src/tests/commands/CrossPlatformDiscovery.unit.test.js)
 

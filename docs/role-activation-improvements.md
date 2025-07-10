@@ -161,7 +161,7 @@ async loadRoleRegistry() {
     if (Object.keys(this.roleRegistry).length === 0) {
       this.roleRegistry = {
         assistant: {
-          file: '@package://prompt/domain/assistant/assistant.role.md',
+          file: '@package://resource/domain/assistant/assistant.role.md',
           name: '🙋 智能助手',
           description: '通用助理角色，提供基础的助理服务和记忆支持'
         }
@@ -185,11 +185,11 @@ async loadRoleRegistry() {
 
 ```bash
 # 创建角色目录结构
-mkdir -p prompt/domain/my-custom-role/thought
-mkdir -p prompt/domain/my-custom-role/execution
+mkdir -p resource/domain/my-custom-role/thought
+mkdir -p resource/domain/my-custom-role/execution
 
 # 创建主角色文件
-cat > prompt/domain/my-custom-role/my-custom-role.role.md << 'EOF'
+cat > resource/domain/my-custom-role/my-custom-role.role.md << 'EOF'
 <!--
 name: 🎯 项目专属角色
 description: 为当前项目量身定制的专业角色
@@ -209,7 +209,7 @@ description: 为当前项目量身定制的专业角色
 EOF
 
 # 创建思维组件
-cat > prompt/domain/my-custom-role/thought/my-custom-role.thought.md << 'EOF'
+cat > resource/domain/my-custom-role/thought/my-custom-role.thought.md << 'EOF'
 <thought>
   <exploration>
     # 项目专属思维探索
@@ -248,7 +248,7 @@ cat > prompt/domain/my-custom-role/thought/my-custom-role.thought.md << 'EOF'
 EOF
 
 # 创建执行组件
-cat > prompt/domain/my-custom-role/execution/my-custom-role.execution.md << 'EOF'
+cat > resource/domain/my-custom-role/execution/my-custom-role.execution.md << 'EOF'
 <execution>
   <constraint>
     # 约束条件
@@ -327,7 +327,7 @@ tags: [标签1, 标签2, 标签3]
 
 ### 1. 文件扫描机制
 
-- **扫描路径**：`{项目根}/prompt/domain/*/*.role.md`
+- **扫描路径**：`{项目根}/resource/domain/*/*.role.md`
 - **扫描工具**：使用`glob`模块进行高效文件匹配
 - **元数据提取**：正则表达式解析注释中的元信息
 - **容错处理**：跳过格式错误的文件，记录警告信息
@@ -460,7 +460,7 @@ npm run test:e2e -- --grep "multi-environment"
 
 ```
 project-root/
-├── prompt/
+├── resource/
 │   └── domain/
 │       ├── project-assistant/       # 项目助手角色
 │       ├── api-designer/           # API设计师角色

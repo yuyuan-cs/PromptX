@@ -1,6 +1,6 @@
 {
   "name": "dpml-prompt",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "DPML-powered AI prompt framework - Revolutionary AI-First CLI system based on Deepractice Prompt Markup Language. Build sophisticated AI agents with structured prompts, memory systems, and execution frameworks.",
   "main": "src/lib/index.js",
   "bin": {
@@ -8,9 +8,6 @@
   },
   "scripts": {
     "start": "PROMPTX_ENV=development node src/bin/promptx.js",
-    "dacp:start": "node src/dacp/dacp-promptx-service/server.js",
-    "dacp:dev": "node src/dacp/dacp-promptx-service/server.js",
-    "dacp:test": "jest src/dacp/",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",
@@ -40,11 +37,17 @@
     "release:beta": "pnpm changeset version --snapshot beta && pnpm changeset publish --tag beta",
     "version:patch": "pnpm changeset add --type patch",
     "version:minor": "pnpm changeset add --type minor",
-    "version:major": "pnpm changeset add --type major"
+    "version:major": "pnpm changeset add --type major",
+    "release:version": "standard-version",
+    "release:version:dry": "standard-version --dry-run",
+    "release:version:minor": "standard-version --release-as minor",
+    "release:version:major": "standard-version --release-as major",
+    "release:version:patch": "standard-version --release-as patch",
+    "prepare": "husky install"
   },
   "files": [
     "src/",
-    "prompt/",
+    "resource/",
     "package.json",
     "README.md",
     "LICENSE",
@@ -70,16 +73,19 @@
     "nodemailer": "^7.0.3",
     "ora": "^5.4.1",
     "pkg-dir": "^8.0.0",
+    "pnpm": "^10.12.4",
     "resolve": "^1.22.10",
     "resolve-package": "^1.0.1",
     "semver": "^7.5.0",
+    "tree-kill": "^1.2.2",
     "yaml": "^2.3.0",
-    "zod": "^3.25.62",
-    "tree-kill": "^1.2.2"
+    "zod": "^3.25.62"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.4",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@types/jest": "^29.5.0",
     "eslint": "^8.42.0",
     "eslint-config-standard": "^17.1.0",
@@ -89,6 +95,7 @@
     "jest-environment-node": "^29.5.0",
     "lint-staged": "^13.2.0",
     "prettier": "^2.8.0",
+    "standard-version": "^9.5.0",
     "supertest": "^6.3.0",
     "tmp": "^0.2.1"
   },

@@ -30,8 +30,8 @@ ResourceRegistry.js (248行) + resource.registry.json (167行) + 内存协议注
 **当前协议处理问题**：
 ```javascript
 // 问题1：协议前缀不统一
-"@package://prompt/core/role.md"      // 正确
-"@packages://promptx/prompt/core/"    // 错误变换
+"@package://resource/core/role.md"      // 正确
+"@packages://promptx/resource/core/"    // 错误变换
 
 // 问题2：循环依赖
 ResourceManager → PackageProtocol → ResourceManager
@@ -302,7 +302,7 @@ class ResourceManager {
 
     // 2. 发现动态资源
     const discovered = await this.discovery.discoverResources([
-      'prompt/', // 包内资源
+      'resource/', // 包内资源
       '.promptx/', // 项目资源
       process.env.PROMPTX_USER_DIR // 用户资源
     ].filter(Boolean))
@@ -341,7 +341,7 @@ class ResourceManager {
 registry['role:java'] = '/path/to/file'
 
 // 现在：保持协议一致性
-registry['role:java'] = '@package://prompt/domain/java/java.role.md'
+registry['role:java'] = '@package://resource/domain/java/java.role.md'
 resolver.resolve('@package://...') // 统一解析
 ```
 
@@ -370,7 +370,7 @@ const filePath = await resolver.resolve(reference) // 所有协议
 ### 4. 完全兼容现有格式
 ```javascript
 // resource.registry.json 继续工作
-"java-backend-developer": "@package://prompt/domain/java/java.role.md"
+"java-backend-developer": "@package://resource/domain/java/java.role.md"
 
 // 代码继续工作
 await resourceManager.loadResource('java-backend-developer')

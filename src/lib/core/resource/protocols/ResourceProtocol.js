@@ -16,7 +16,8 @@ class ResourceProtocol {
     this.name = name
     this.options = options
     this.cache = new Map()
-    this.enableCache = options.enableCache !== false
+    // 默认禁用缓存，避免开发时的问题，需要时显式启用
+    this.enableCache = options.enableCache === true
   }
 
   /**

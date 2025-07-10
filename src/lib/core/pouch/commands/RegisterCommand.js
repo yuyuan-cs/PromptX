@@ -15,7 +15,6 @@ class RegisterCommand extends BasePouchCommand {
     this.packageProtocol = new PackageProtocol()
     // 复用ActionCommand的ResourceManager方式
     this.resourceManager = getGlobalResourceManager()
-    this.directoryService = getDirectoryService()
   }
 
   getPurpose () {
@@ -39,14 +38,9 @@ class RegisterCommand extends BasePouchCommand {
       // 1. 检查角色文件是否存在
       const roleExists = await this.checkRoleExists(roleId)
       if (!roleExists) {
-        return `❌ 角色文件不存在！
+        return `❌ 角色 ${roleId} 不存在！
 
-请确保以下文件存在：
-- prompt/domain/${roleId}/${roleId}.role.md
-- prompt/domain/${roleId}/thought/${roleId}.thought.md
-- prompt/domain/${roleId}/execution/${roleId}.execution.md
-
-💡 您可以使用女娲来创建完整的角色套件：
+💡 您可以使用女娲来创建角色：
 使用 MCP PromptX action 工具激活 'nuwa' 角色`
       }
 
@@ -85,35 +79,35 @@ class RegisterCommand extends BasePouchCommand {
   }
 
   /**
-   * 检查角色文件是否存在（使用ResourceManager路径获取）
+   * 检查角色是否存在（通过ResourceManager注册表）
    */
   async checkRoleExists (roleId) {
     try {
-      // 确保ResourceManager已初始化（就像ActionCommand那样）
+      // 确保ResourceManager已初始化
       if (!this.resourceManager.initialized) {
         await this.resourceManager.initializeWithNewArchitecture()
       }
       
-      // 通过ResourceManager获取项目路径（与ActionCommand一致）
-      const projectPath = await this.getProjectPath()
-      const roleFile = path.join(projectPath, 'prompt', 'domain', roleId, `${roleId}.role.md`)
-      
-      return await fs.pathExists(roleFile)
+      // 直接通过ResourceManager查找角色（不依赖硬编码路径）
+      const roleResource = await this.resourceManager.loadResource(`@role://${roleId}`)
+      return roleResource.success
     } catch (error) {
       return false
     }
   }
 
   /**
-   * 提取角色元数据（使用ResourceManager路径获取）
+   * 提取角色元数据（通过ResourceManager）
    */
   async extractRoleMetadata (roleId) {
-    // 通过ResourceManager获取项目路径（与ActionCommand一致）
-    const projectPath = await this.getProjectPath()
-    const roleFile = path.join(projectPath, 'prompt', 'domain', roleId, `${roleId}.role.md`)
+    // 通过ResourceManager加载角色内容（不依赖硬编码路径）
+    const roleResource = await this.resourceManager.loadResource(`@role://${roleId}`)
+    if (!roleResource.success) {
+      throw new Error(`角色 ${roleId} 不存在`)
+    }
     
-    const content = await fs.readFile(roleFile, 'utf-8')
-    const relativePath = path.relative(projectPath, roleFile)
+    const content = roleResource.content
+    const relativePath = roleResource.metadata?.filePath || `role/${roleId}/${roleId}.role.md`
     
     // 提取元数据
     let name = `🎭 ${roleId}`
@@ -154,8 +148,10 @@ class RegisterCommand extends BasePouchCommand {
    */
   async registerRole (roleId, metadata) {
     try {
-      // 通过DirectoryService获取注册表路径（与其他命令一致）
-      const registryPath = await this.directoryService.getRegistryPath()
+      // 🚀 新架构：通过ProjectPathResolver获取注册表路径
+      const { getGlobalProjectPathResolver } = require('../../../utils/ProjectPathResolver')
+      const pathResolver = getGlobalProjectPathResolver()
+      const registryPath = pathResolver.getRegistryPath()
       
       // 读取当前注册表
       const registry = await fs.readJson(registryPath)
@@ -185,12 +181,9 @@ class RegisterCommand extends BasePouchCommand {
    */
   async getProjectPath() {
     // 使用DirectoryService统一获取项目路径（与InitCommand保持一致）
-    const context = {
-      startDir: process.cwd(),
-      platform: process.platform,
-      avoidUserHome: true
-    }
-    return await this.directoryService.getProjectRoot(context)
+    // 🚀 新架构：直接使用ProjectManager获取当前项目路径
+    const ProjectManager = require('../../../utils/ProjectManager')
+    return ProjectManager.getCurrentProjectPath()
   }
 
   getPATEOAS (args) {

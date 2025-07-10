@@ -107,12 +107,27 @@ class PouchStateMachine {
    * 保存状态到文件
    */
   async saveState () {
-    const { getDirectoryService } = require('../../../utils/DirectoryService')
-    const directoryService = getDirectoryService()
-    const promptxDir = await directoryService.getPromptXDirectory()
-    const configPath = path.join(promptxDir, 'pouch.json')
-
     try {
+      // ✅ 修复：检查项目是否已初始化，未初始化时跳过文件保存
+      const ProjectManager = require('../../../utils/ProjectManager')
+      if (!ProjectManager.isInitialized()) {
+        // 项目未初始化，只保存在内存中，不持久化到文件
+        return
+      }
+
+      // 🎯 使用@project协议获取.promptx目录（支持HTTP模式）
+      const { getGlobalResourceManager } = require('../../resource')
+      const resourceManager = getGlobalResourceManager()
+      
+      // 确保ResourceManager已初始化
+      if (!resourceManager.initialized) {
+        await resourceManager.initializeWithNewArchitecture()
+      }
+      
+      const projectProtocol = resourceManager.protocols.get('project')
+      const promptxDir = await projectProtocol.resolvePath('.promptx')
+      const configPath = path.join(promptxDir, 'pouch.json')
+
       // 确保 .promptx 目录存在
       await fs.ensureDir(promptxDir)
 
@@ -135,12 +150,27 @@ class PouchStateMachine {
    * 从文件加载状态
    */
   async loadState () {
-    const { getDirectoryService } = require('../../../utils/DirectoryService')
-    const directoryService = getDirectoryService()
-    const promptxDir = await directoryService.getPromptXDirectory()
-    const configPath = path.join(promptxDir, 'pouch.json')
-
     try {
+      // ✅ 修复：检查项目是否已初始化，未初始化时跳过文件加载
+      const ProjectManager = require('../../../utils/ProjectManager')
+      if (!ProjectManager.isInitialized()) {
+        // 项目未初始化，使用默认内存状态
+        return
+      }
+
+      // 🎯 使用@project协议获取.promptx目录（支持HTTP模式）
+      const { getGlobalResourceManager } = require('../../resource')
+      const resourceManager = getGlobalResourceManager()
+      
+      // 确保ResourceManager已初始化
+      if (!resourceManager.initialized) {
+        await resourceManager.initializeWithNewArchitecture()
+      }
+      
+      const projectProtocol = resourceManager.protocols.get('project')
+      const promptxDir = await projectProtocol.resolvePath('.promptx')
+      const configPath = path.join(promptxDir, 'pouch.json')
+
       if (await fs.pathExists(configPath)) {
         const config = await fs.readJson(configPath)
 

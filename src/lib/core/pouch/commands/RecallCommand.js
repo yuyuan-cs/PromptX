@@ -16,7 +16,6 @@ class RecallCommand extends BasePouchCommand {
     super()
     this.lastSearchCount = 0
     this.resourceManager = getGlobalResourceManager()
-    this.directoryService = getDirectoryService()
     this.FORCE_XML_MODE = true  // 🎯 强制XML模式标志
   }
 
@@ -25,13 +24,29 @@ class RecallCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    const [query] = args
+    // 解析参数：--role, query
+    const { role, query } = this.parseArgs(args)
+
+    if (!role) {
+      return `❌ 错误：缺少必填参数 role
+
+🎯 **使用方法**：
+recall 角色ID [查询关键词]
+
+📋 **示例**：
+recall java-developer "React Hooks"
+recall product-manager  # 查看所有产品经理记忆
+recall copywriter "A/B测试"
+
+💡 **可用角色ID**：通过 welcome 工具查看所有可用角色`
+    }
 
     logger.step('🧠 [RecallCommand] 开始记忆检索流程 (纯XML模式)')
-    logger.info(`🔍 [RecallCommand] 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
+    logger.info(`🔍 [RecallCommand] 角色: ${role}, 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
 
     try {
-      const memories = await this.getXMLMemoriesOnly(query)
+      // 🎯 传递role参数到检索方法
+      const memories = await this.getXMLMemoriesOnly(query, role)
 
       logger.success(`✅ [RecallCommand] XML记忆检索完成 - 找到 ${memories.length} 条匹配记忆`)
 
@@ -80,6 +95,33 @@ ${formattedMemories}
     }
   }
 
+  /**
+   * 🎯 解析命令行参数 - role作为第一个位置参数
+   */
+  parseArgs(args) {
+    let query = ''
+    let role = ''
+    let argIndex = 0
+    
+    // 第一个参数是role
+    if (args.length > 0) {
+      role = args[0]
+      argIndex = 1
+    }
+    
+    // 从第二个参数开始解析查询内容
+    for (let i = argIndex; i < args.length; i++) {
+      // 查询参数
+      if (query) {
+        query += ' ' + args[i]
+      } else {
+        query = args[i]
+      }
+    }
+    
+    return { role, query }
+  }
+
   getPATEOAS (args) {
     const [query] = args
     const currentState = query ? `recalled-${query}` : 'recall-waiting'
@@ -121,7 +163,7 @@ ${formattedMemories}
   /**
    * 获取XML记忆（纯XML模式，移除Markdown兼容）
    */
-  async getXMLMemoriesOnly (query) {
+  async getXMLMemoriesOnly (query, role) {
     logger.step('🔧 [RecallCommand] 执行纯XML检索模式')
     
     this.lastSearchCount = 0
@@ -136,13 +178,17 @@ ${formattedMemories}
       logger.success('⚙️ [RecallCommand] ResourceManager初始化完成')
     }
     
-    const projectPath = await this.getProjectPath()
-    logger.info(`📍 [RecallCommand] 项目根路径: ${projectPath}`)
+    // 🎯 使用@project协议获取记忆目录（支持HTTP模式）
+    const currentRole = role
+    logger.info(`📁 [RecallCommand] 通过@project协议解析角色记忆目录...`)
     
-    const memoryDir = path.join(projectPath, '.promptx', 'memory')
-    const xmlFile = path.join(memoryDir, 'declarative.dpml')
+    const projectProtocol = this.resourceManager.protocols.get('project')
+    const roleMemoryDir = await projectProtocol.resolvePath(`.promptx/memory/${currentRole}`)
+    const xmlFile = path.join(roleMemoryDir, 'declarative.dpml')
     
-    logger.info(`📁 [RecallCommand] XML记忆文件路径: ${xmlFile}`)
+    logger.info(`📁 [RecallCommand] @project协议解析结果: ${roleMemoryDir}`)
+    
+    logger.info(`📁 [RecallCommand] 检索角色记忆: ${xmlFile}`)
 
     try {
       // 🎯 只读取XML格式，不再兼容Markdown
@@ -163,37 +209,6 @@ ${formattedMemories}
     logger.info(`📊 [RecallCommand] XML记忆检索统计 - 总计: ${memories.length} 条`)
     
     return memories
-  }
-
-  /**
-   * 获取项目路径（复用ActionCommand逻辑）
-   */
-  async getProjectPath() {
-    logger.debug('📍 [RecallCommand] 获取项目路径...')
-    
-    // 🔍 增加详细的路径诊断日志
-    logger.warn('🔍 [RecallCommand-DIAGNOSIS] ===== 路径诊断开始 =====')
-    logger.warn(`🔍 [RecallCommand-DIAGNOSIS] process.cwd(): ${process.cwd()}`)
-    logger.warn(`🔍 [RecallCommand-DIAGNOSIS] process.argv: ${JSON.stringify(process.argv)}`)
-    logger.warn(`🔍 [RecallCommand-DIAGNOSIS] PROMPTX_WORKSPACE: ${process.env.PROMPTX_WORKSPACE || 'undefined'}`)
-    logger.warn(`🔍 [RecallCommand-DIAGNOSIS] WORKSPACE_FOLDER_PATHS: ${process.env.WORKSPACE_FOLDER_PATHS || 'undefined'}`)
-    logger.warn(`🔍 [RecallCommand-DIAGNOSIS] PWD: ${process.env.PWD || 'undefined'}`)
-    
-    // 使用DirectoryService统一获取项目路径（与InitCommand保持一致）
-    const context = {
-      startDir: process.cwd(),
-      platform: process.platform,
-      avoidUserHome: true
-    }
-    logger.warn(`🔍 [RecallCommand-DIAGNOSIS] DirectoryService context: ${JSON.stringify(context)}`)
-    
-    const projectPath = await this.directoryService.getProjectRoot(context)
-    logger.warn(`🔍 [RecallCommand-DIAGNOSIS] DirectoryService结果: ${projectPath}`)
-    logger.warn('🔍 [RecallCommand-DIAGNOSIS] ===== 路径诊断结束 =====')
-    
-    logger.debug(`📍 [RecallCommand] 项目路径解析结果: ${projectPath}`)
-    
-    return projectPath
   }
 
 
