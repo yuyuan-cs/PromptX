@@ -39,13 +39,13 @@ jobs:
         with:
           github-token: ${{ secrets.GH_PAT || github.token }}
           script: |
-            const message = github.event.pull_request.merged 
+            const message = ${{ github.event.pull_request.merged }} 
               ? '✅ 版本发布分支已自动清理（PR已合并）' 
               : '🧹 版本发布分支已自动清理（PR已关闭）';
               
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,  
-              issue_number: context.issue.number,
+              issue_number: ${{ github.event.pull_request.number }},
               body: `${message}\n\n分支 \`${{ github.head_ref }}\` 已被删除。`
             });
