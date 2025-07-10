@@ -5,8 +5,22 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.npmignore'
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.npmignore'
 
 jobs:
   test:
