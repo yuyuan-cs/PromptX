@@ -11,10 +11,31 @@ on:
   
   workflow_dispatch:
     inputs:
+      sync_method:
+        description: '同步方式'
+        required: true
+        type: choice
+        default: 'auto'
+        options:
+          - auto      # 根据分支保护规则自动选择
+          - direct    # 直接push（适用于无保护分支）
+          - pr        # 创建PR（适用于有保护分支）
       target_branches:
-        description: 'Target branches to sync (comma-separated, e.g., main,test,staging)'
+        description: '目标分支 (逗号分隔，如: test,staging,main)'
         required: false
         default: 'test,staging,main'
+        type: string
+      sync_mode:
+        description: '同步内容'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - all         # 同步所有工作流
+          - selective   # 只同步特定工作流
+      workflow_files:
+        description: '指定要同步的文件 (selective模式使用，逗号分隔)'
+        required: false
         type: string
 
 permissions:
@@ -37,104 +58,188 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-      - name: Determine target branches
-        id: branches
+      - name: Determine parameters
+        id: params
         run: |
+          # 确定目标分支
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # 手动触发时使用输入的分支
             BRANCHES="${{ github.event.inputs.target_branches }}"
+            SYNC_METHOD="${{ github.event.inputs.sync_method }}"
+            SYNC_MODE="${{ github.event.inputs.sync_mode }}"
           else
-            # 自动触发时使用默认分支列表
+            # 自动触发时的默认值
             BRANCHES="test,staging,main"
+            SYNC_METHOD="auto"
+            SYNC_MODE="all"
           fi
-          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
           
-      - name: Get changed workflow files
+          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+          echo "sync_method=$SYNC_METHOD" >> $GITHUB_OUTPUT
+          echo "sync_mode=$SYNC_MODE" >> $GITHUB_OUTPUT
+          
+      - name: Get changed files (for push event)
         id: changed-files
         if: github.event_name == 'push'
         run: |
-          # 获取最近一次提交中修改的工作流文件
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E '^\.github/(workflows/.*\.yml|.*\.yml|.*\.yaml)$' || true)
           
           if [ -z "$CHANGED_FILES" ]; then
-            echo "No workflow files changed"
             echo "files=" >> $GITHUB_OUTPUT
           else
-            # 将换行符替换为空格
             FILES_LIST=$(echo "$CHANGED_FILES" | tr '\n' ' ')
-            echo "Changed workflow files: $FILES_LIST"
             echo "files=$FILES_LIST" >> $GITHUB_OUTPUT
           fi
           
-      - name: Sync to target branches
+      - name: Process each branch
         run: |
-          BRANCHES="${{ steps.branches.outputs.branches }}"
+          BRANCHES="${{ steps.params.outputs.branches }}"
           IFS=',' read -ra BRANCH_ARRAY <<< "$BRANCHES"
           
+          # 创建同步报告
+          echo "## 📋 工作流同步报告" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **源分支**: develop" >> $GITHUB_STEP_SUMMARY
+          echo "- **同步方式**: ${{ steps.params.outputs.sync_method }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **同步内容**: ${{ steps.params.outputs.sync_mode }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 同步结果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
           for branch in "${BRANCH_ARRAY[@]}"; do
-            branch=$(echo "$branch" | xargs) # 去除空格
-            echo "🔄 Syncing workflows to branch: $branch"
+            branch=$(echo "$branch" | xargs)
+            echo "🔄 Processing branch: $branch"
             
             # 检查分支是否存在
-            if git ls-remote --heads origin "$branch" | grep -q "$branch"; then
-              # 切换到目标分支
+            if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
+              echo "⚠️ Branch $branch does not exist, skipping"
+              echo "- ⚠️ **$branch**: 分支不存在" >> $GITHUB_STEP_SUMMARY
+              continue
+            fi
+            
+            # 决定同步方式
+            SYNC_METHOD="${{ steps.params.outputs.sync_method }}"
+            
+            if [ "$SYNC_METHOD" = "auto" ]; then
+              # 检查分支保护（简单判断：main和staging通常有保护）
+              if [[ "$branch" =~ ^(main|staging)$ ]]; then
+                SYNC_METHOD="pr"
+              else
+                SYNC_METHOD="direct"
+              fi
+            fi
+            
+            echo "Using sync method: $SYNC_METHOD for branch: $branch"
+            
+            if [ "$SYNC_METHOD" = "direct" ]; then
+              # 直接push方式
+              echo "📤 Direct push to $branch"
+              
               git checkout "$branch"
               git pull origin "$branch"
               
-              # 从 develop 分支复制工作流文件
-              git checkout develop -- .github/workflows/
-              git checkout develop -- .github/*.yml 2>/dev/null || true
-              git checkout develop -- .github/*.yaml 2>/dev/null || true
-              
-              # 检查是否有变更
-              if git diff --quiet; then
-                echo "✅ No changes needed for branch: $branch"
+              # 同步文件
+              if [ "${{ steps.params.outputs.sync_mode }}" = "all" ]; then
+                git checkout develop -- .github/workflows/
+                git checkout develop -- .github/*.yml 2>/dev/null || true
+                git checkout develop -- .github/*.yaml 2>/dev/null || true
               else
-                # 提交并推送
+                # Selective模式
+                IFS=',' read -ra FILES <<< "${{ github.event.inputs.workflow_files }}"
+                for file in "${FILES[@]}"; do
+                  file=$(echo "$file" | xargs)
+                  if [ -n "$file" ]; then
+                    [[ ! "$file" =~ ^\.github/ ]] && file=".github/workflows/$file"
+                    git checkout develop -- "$file" 2>/dev/null || echo "File not found: $file"
+                  fi
+                done
+              fi
+              
+              # 提交并推送
+              if ! git diff --quiet; then
                 git add .github/
                 
-                # 生成提交信息
                 if [ "${{ github.event_name }}" = "push" ]; then
-                  COMMIT_MSG=$(cat <<EOF
-chore: 同步工作流更新从 develop 分支
+                  COMMIT_MSG="chore: 同步工作流更新从 develop 分支
 
 自动同步以下工作流变更：
 - ${{ steps.changed-files.outputs.files }}
 
-Source: ${{ github.sha }}
-EOF
-)
+Source: ${{ github.sha }}"
                 else
-                  COMMIT_MSG=$(cat <<EOF
-chore: 手动同步所有工作流从 develop 分支
+                  COMMIT_MSG="chore: 手动同步工作流从 develop 分支
 
-同步所有 .github/workflows/ 下的工作流文件
-
-Triggered by: @${{ github.actor }}
-EOF
-)
+同步模式: ${{ steps.params.outputs.sync_mode }}
+触发者: @${{ github.actor }}"
                 fi
                 
                 git commit -m "$COMMIT_MSG"
                 git push origin "$branch"
-                echo "✅ Successfully synced to branch: $branch"
+                echo "- ✅ **$branch**: 直接同步成功" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "- ℹ️ **$branch**: 无需同步（已是最新）" >> $GITHUB_STEP_SUMMARY
               fi
+              
             else
-              echo "⚠️ Branch $branch does not exist, skipping"
+              # PR方式
+              echo "📝 Creating PR for $branch"
+              
+              TIMESTAMP=$(date +%Y%m%d%H%M%S)
+              SYNC_BRANCH="workflow-sync/$branch-$TIMESTAMP"
+              
+              git checkout -b "$SYNC_BRANCH" "origin/$branch"
+              
+              # 同步文件（同上）
+              if [ "${{ steps.params.outputs.sync_mode }}" = "all" ]; then
+                git checkout develop -- .github/workflows/
+                git checkout develop -- .github/*.yml 2>/dev/null || true
+                git checkout develop -- .github/*.yaml 2>/dev/null || true
+              else
+                IFS=',' read -ra FILES <<< "${{ github.event.inputs.workflow_files }}"
+                for file in "${FILES[@]}"; do
+                  file=$(echo "$file" | xargs)
+                  if [ -n "$file" ]; then
+                    [[ ! "$file" =~ ^\.github/ ]] && file=".github/workflows/$file"
+                    git checkout develop -- "$file" 2>/dev/null || echo "File not found: $file"
+                  fi
+                done
+              fi
+              
+              # 检查是否有变更
+              if ! git diff --quiet; then
+                git add .github/
+                git commit -m "chore: 同步工作流从 develop 到 $branch"
+                git push origin "$SYNC_BRANCH"
+                
+                # 创建PR
+                PR_BODY="## 🔄 工作流同步请求
+
+### 📋 同步详情
+- **源分支**: develop
+- **目标分支**: $branch
+- **同步方式**: ${{ steps.params.outputs.sync_mode }}
+- **触发方式**: ${{ github.event_name }}
+
+### ✅ 检查清单
+- [ ] 确认工作流变更符合预期
+- [ ] 确认不会破坏目标分支的特定配置
+- [ ] 确认所有必需的 secrets 在目标环境可用
+
+---
+*此 PR 由 GitHub Actions 自动创建*"
+
+                gh pr create \
+                  --title "chore: 同步工作流到 $branch 分支" \
+                  --body "$PR_BODY" \
+                  --base "$branch" \
+                  --head "$SYNC_BRANCH" \
+                  --label "workflow-sync,automated"
+                  
+                echo "- 📝 **$branch**: 已创建同步PR" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "- ℹ️ **$branch**: 无需同步（已是最新）" >> $GITHUB_STEP_SUMMARY
+              fi
             fi
+            
+            # 切回develop准备下一个分支
+            git checkout develop
           done
-          
-      - name: Create sync summary
-        if: always()
-        run: |
-          echo "## 📋 工作流同步总结" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **触发方式**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **源分支**: develop" >> $GITHUB_STEP_SUMMARY
-          echo "- **目标分支**: ${{ steps.branches.outputs.branches }}" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "- **变更文件**: ${{ steps.changed-files.outputs.files }}" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **同步内容**: 所有工作流文件" >> $GITHUB_STEP_SUMMARY
-          fi
