@@ -5,11 +5,8 @@ on:
     types: [opened, synchronize]
     branches:
       - test
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.github/**'
-      - '!.github/workflows/release-preview.yml'
+      - staging
+      - main
 
 jobs:
   preview:
