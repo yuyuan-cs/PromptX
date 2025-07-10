@@ -4,6 +4,25 @@ on:
   push:
     branches:
       - develop
+    paths-ignore:
+      # GitHub相关配置
+      - '.github/**'
+      # 文档目录
+      - 'docs/**'
+      # 根目录的README文件（但不包括prompt/和resource/下的.md文件）
+      - 'README*.md'
+      - 'CHANGELOG.md'
+      - 'TEST_ALPHA.md'
+      # 配置文件
+      - 'LICENSE'
+      - '.gitignore'
+      - '.npmignore'
+      - '.cursorrules'
+      - 'commitlint.config.js'
+      # 资源文件
+      - 'assets/**'
+      # 测试覆盖率报告
+      - 'coverage/**'
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
