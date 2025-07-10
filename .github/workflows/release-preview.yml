@@ -171,7 +171,7 @@ jobs:
               issue_number: context.issue.number,
             });
             
-            const botComment = comments.data.find(comment => 
+            const botComment = comments.find(comment => 
               comment.user.type === 'Bot' && 
               comment.body.includes('🚀 发版预览')
             );
