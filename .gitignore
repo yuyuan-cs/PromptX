@@ -19,6 +19,7 @@ build/
 coverage/
 .nyc_output
 *.lcov
+test-output/
 
 # Logs
 logs/
@@ -65,6 +66,9 @@ Thumbs.db
 # Temporary folders
 tmp/
 temp/
+
+# Act local testing
+.github/.env.act
 
 # Application specific
 /.memory/
