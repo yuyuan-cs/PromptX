@@ -421,9 +421,6 @@ ${result.content}
     
     content += `💡 **现在可以立即开始以 \`${roleId}\` (${roleInfo.name}) 身份提供专业服务！**\n`
 
-    // 自动执行 prime 激活语义网络
-    content += await this.executePrime(roleId)
-
     return content
   }
 
