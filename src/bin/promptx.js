@@ -11,8 +11,58 @@ const { cli } = require('../lib/core/pouch')
 const { MCPServerStdioCommand } = require('../lib/mcp/MCPServerStdioCommand')
 const { MCPServerHttpCommand } = require('../lib/mcp/MCPServerHttpCommand')
 
+// CLI模式默认初始化 ServerEnvironment
+const { getGlobalServerEnvironment } = require('../lib/utils/ServerEnvironment')
+const { ProjectManager, getGlobalProjectManager } = require('../lib/utils/ProjectManager')
+const serverEnv = getGlobalServerEnvironment()
+if (!serverEnv.isInitialized()) {
+  // CLI模式使用特殊的transport标识
+  serverEnv.initialize({ transport: 'cli' })
+  logger.debug('CLI模式：ServerEnvironment已初始化')
+}
+
+// CLI模式自动恢复最近的项目配置
+async function restoreProjectForCLI() {
+  try {
+    const projectManager = getGlobalProjectManager()
+    const cwd = process.cwd()
+    
+    // 尝试获取当前目录的项目实例
+    const instances = await projectManager.getProjectInstances(cwd)
+    if (instances.length > 0) {
+      // 找到最近的CLI模式实例，如果没有就用第一个
+      const cliInstance = instances.find(i => i.transport === 'cli') || instances[0]
+      
+      // 恢复项目状态
+      ProjectManager.setCurrentProject(
+        cliInstance.projectPath,
+        cliInstance.mcpId,
+        cliInstance.ideType,
+        cliInstance.transport
+      )
+      logger.debug(`CLI模式：已恢复项目配置 - ${cliInstance.projectPath}`)
+    }
+  } catch (error) {
+    // 静默处理错误，不影响CLI使用
+    logger.debug(`CLI模式：无法恢复项目配置 - ${error.message}`)
+  }
+}
+
 // 创建主程序
 const program = new Command()
+
+// 需要在命令执行前完成项目恢复
+async function ensureProjectRestored() {
+  try {
+    // 使用正确的静态方法检查
+    if (!ProjectManager.isInitialized || !ProjectManager.isInitialized()) {
+      await restoreProjectForCLI()
+    }
+  } catch (error) {
+    // 如果检查失败，也尝试恢复
+    await restoreProjectForCLI()
+  }
+}
 
 // 设置程序信息
 program
@@ -41,6 +91,7 @@ program
   .command('action <role>')
   .description('⚡ action锦囊 - 激活特定AI角色，获取专业提示词')
   .action(async (role, options) => {
+    await ensureProjectRestored()
     await cli.execute('action', [role])
   })
 
