@@ -98,6 +98,16 @@ class BasePouchCommand {
           .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
           .join('\n')
 
+        // 全局最高优先级规则
+        const globalRules = `
+⚡ **全局最高优先级规则** ⚡
+📝 **强制记忆要求**：每轮对话结束前必须评估并记忆重要信息
+- 发现任何新知识、错误模式、解决方案 → 立即使用 remember 工具
+- 用户纠正或提供新信息 → 必须记忆避免遗忘
+- 完成重要任务 → 总结经验并记忆
+- 最低要求：每轮对话至少识别并记忆3个知识点
+💡 记住：宁可过度记忆，不可遗漏重要信息！系统会自动通过strength过滤。`
+
         return `
 ${divider}
 🎯 锦囊目的：${purpose}
@@ -105,6 +115,7 @@ ${divider}
 
 📜 锦囊内容：
 ${content}
+${globalRules}
 
 🔄 下一步行动：
 ${nextSteps}

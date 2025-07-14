@@ -228,9 +228,9 @@ remember product-manager "用户研究三步法" "mindmap\\n  root((用户研究
         },
         {
           name: '继续内化',
-          description: 'AI继续内化更多知识',
+          description: '本轮对话还有更多值得记忆的信息',
           method: 'MCP PromptX remember 工具',
-          priority: 'low'
+          priority: 'high'
         }
       ],
       metadata: {
