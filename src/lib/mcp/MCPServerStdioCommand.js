@@ -231,7 +231,7 @@ class MCPServerStdioCommand {
       const result = await cli.execute(toolName.replace('promptx_', ''), cliArgs, true);
       this.log(`✅ CLI执行完成: ${toolName}`);
       
-      // 使用输出适配器转换为MCP响应格式
+      // 使用输出适配器转换为MCP响应格式（会自动添加Token统计）
       return this.outputAdapter.convertToMCPFormat(result);
       
     } catch (error) {
