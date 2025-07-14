@@ -13,7 +13,7 @@ class Cognition {
       // 语义网络存储路径
       semanticPath: config.semanticPath || './.cognition/semantic',
       // 程序性记忆存储路径
-      proceduralPath: config.proceduralPath || './.cognition/procedural'
+      proceduralPath: config.proceduralPath || './.cognition/procedural.json'
     };
     
     // 创建记忆服务（传入配置）

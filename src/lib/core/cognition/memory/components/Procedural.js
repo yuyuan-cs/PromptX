@@ -9,7 +9,8 @@ const fs = require('fs-extra');
 class Procedural extends ImplicitMemory {
   constructor(proceduralPath) {
     super();
-    this.storagePath = proceduralPath || './.cognition/procedural/procedural.json';
+    // 路径由上层传入，不设置默认值
+    this.storagePath = proceduralPath;
     this.patterns = [];
     this.loadPatterns();
   }
