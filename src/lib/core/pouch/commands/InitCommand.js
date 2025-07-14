@@ -123,12 +123,6 @@ class InitCommand extends BasePouchCommand {
 ## 📋 项目资源注册表
 ${registryStats.message}
 
-## 🚀 下一步建议
-- 使用 \`welcome\` 发现可用的专业角色
-- 使用 \`action\` 激活特定角色获得专业能力  
-- 使用 \`learn\` 深入学习专业知识
-- 使用 \`remember/recall\` 管理专业记忆
-
 💡 **多项目支持**: 现在支持同时在多个项目中使用PromptX，项目间完全隔离！
 💡 **提示**: ${registryStats.totalResources > 0 ? '项目资源已优化为注册表模式，性能大幅提升！' : '现在可以开始创建项目级资源了！'}`
   }

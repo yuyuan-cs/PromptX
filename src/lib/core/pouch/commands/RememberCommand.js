@@ -97,14 +97,7 @@ class RememberCommand extends BasePouchCommand {
 - ✅ **知识已内化到角色认知体系**
 - ✅ **支持基于语义的智能检索**
 - ✅ **可通过recall命令主动检索**
-- ✅ **自动形成知识网络连接**
-
-## 🔄 下一步行动：
-- 记忆检索: 使用 MCP PromptX recall 工具验证知识内化效果
-- 语义激活: 使用 MCP PromptX prime 工具激活相关语义网络
-- 应用实践: 使用 MCP PromptX action 工具在实际场景中运用记忆
-
-📍 当前状态：memory_saved`
+- ✅ **自动形成知识网络连接**`
   }
 
   /**
@@ -134,14 +127,7 @@ class RememberCommand extends BasePouchCommand {
 - ✅ **原子性保持**: 每个概念独立存储，避免混淆
 - ✅ **关联性建立**: 相关概念自动建立语义连接  
 - ✅ **检索精确**: 原子Cue确保精确匹配
-- ✅ **类型分离**: ATOMIC实体、LINK关系、PATTERN模式分别存储
-
-## 🔄 下一步行动：
-- 记忆检索: 使用 MCP PromptX recall 工具验证知识内化效果
-- 语义激活: 使用 MCP PromptX prime 工具激活相关语义网络
-- 应用实践: 使用 MCP PromptX action 工具在实际场景中运用记忆
-
-📍 当前状态：batch_memory_saved`
+- ✅ **类型分离**: ATOMIC实体、LINK关系、PATTERN模式分别存储`
   }
 
   /**
@@ -174,7 +160,7 @@ remember product-manager "用户研究三步法" "mindmap\\n  root((用户研究
 ## 🔍 配套工具
 - **查看角色**: welcome 工具查看所有可用角色ID
 - **检索记忆**: recall 工具检索角色专属记忆
-- **激活语义**: prime 工具激活角色语义网络`
+- **激活角色**: action 工具激活角色（自动激活语义网络）`
   }
 
   /**
@@ -213,12 +199,6 @@ remember product-manager "用户研究三步法" "mindmap\\n  root((用户研究
           description: '测试记忆是否可检索',
           method: 'MCP PromptX recall 工具',
           priority: 'high'
-        },
-        {
-          name: '激活语义',
-          description: '激活相关语义网络',
-          method: 'MCP PromptX prime 工具',
-          priority: 'medium'
         },
         {
           name: '应用记忆',
