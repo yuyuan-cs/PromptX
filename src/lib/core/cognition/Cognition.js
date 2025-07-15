@@ -2,6 +2,7 @@
 // 认知体系的配置和执行入口
 
 const { MemoryService } = require('./memory');
+const { ThoughtEntity } = require('./thinking/entities/ThoughtEntity');
 const path = require('path');
 
 class Cognition {
@@ -73,45 +74,119 @@ class Cognition {
   }
   
   /**
-   * 思考 - 基于当前Thought和思维模板生成下一个Thought的指导prompt
+   * 思考 - 基于当前Thought生成下一个Thought的指导prompt
    * 
-   * @param {Thought} thought - 当前的思想对象（包含五大要素）
-   * @param {BaseThinkingTemplate} template - 思维模板（如ReasoningTemplate）
+   * === 核心改变：单一 Thought 参数 ===
+   * 
+   * 新设计中，AI 在创建 Thought 时就已经做出了三个关键决策：
+   * 1. goalEngram - 要思考什么
+   * 2. thinkingPattern - 怎么思考（如 'reasoning', 'creative', 'critical'）
+   * 3. spreadActivationCues - 从哪开始
+   * 
+   * 系统基于 thinkingPattern 自动选择对应的 ThinkingPattern 实现
+   * 
+   * @param {Thought} thought - 当前的思想对象
+   *                           必须包含：goalEngram, thinkingPattern, spreadActivationCues
+   *                           系统自动填充：recalledEngrams, previousThought, iteration等
    * @returns {string} 用于生成下一个Thought的完整prompt
    */
-  async think(thought, template) {
+  async think(thought) {
     // 验证参数
     if (!thought) {
       throw new Error('think方法需要一个Thought对象');
     }
     
-    if (!template || typeof template.getNextThoughtGenerationPrompt !== 'function') {
-      throw new Error('think方法需要一个有效的ThinkingTemplate');
+    // 如果是普通对象，转换为ThoughtEntity
+    if (!(thought instanceof ThoughtEntity)) {
+      thought = ThoughtEntity.fromObject(thought);
     }
     
-    // 如果thought有goalEngram但没有recalledEngrams，先执行记忆检索
-    if (thought.goalEngram && !thought.recalledEngrams) {
-      const recalledEngrams = await template.recallEngramsByGoalEngramCues(
-        thought.goalEngram, 
-        this.memoryService
+    // 验证必需字段（首次思考）
+    if (!thought.getGoalEngram()) {
+      throw new Error('Thought必须包含goalEngram');
+    }
+    
+    if (!thought.getThinkingPattern()) {
+      throw new Error('Thought必须包含thinkingPattern（AI需要选择思维模式）');
+    }
+    
+    if (!thought.getSpreadActivationCues() || thought.getSpreadActivationCues().length === 0) {
+      throw new Error('Thought必须包含spreadActivationCues（AI需要选择激活线索）');
+    }
+    
+    // 基于 thinkingPattern 选择对应的模式实现
+    const pattern = await this._getPatternImplementation(thought.getThinkingPattern());
+    
+    // 如果thought有cues但没有recalledEngrams，先执行记忆检索
+    if (!thought.getRecalledEngrams() || thought.getRecalledEngrams().length === 0) {
+      console.log('[Cognition] 开始记忆检索，线索:', thought.getSpreadActivationCues());
+      const recalledEngrams = await this._recallByCues(
+        thought.getSpreadActivationCues()
       );
-      thought.recalledEngrams = recalledEngrams;
+      console.log('[Cognition] 检索到记忆数量:', recalledEngrams.length);
+      // 使用ThoughtEntity的setSystemFields方法设置系统字段
+      thought.setSystemFields({ recalledEngrams });
     }
     
-    // 准备传递给template的组件
+    // 准备传递给pattern的组件
     const components = {
-      goalEngram: thought.goalEngram,
-      recalledEngrams: thought.recalledEngrams,
-      insightEngrams: thought.insightEngrams,
-      conclusionEngram: thought.conclusionEngram,
-      confidence: thought.confidence,
-      previousThought: thought.previousThought,
-      iteration: thought.iteration || 0,
-      input: thought.input // 初始输入（当还没有goalEngram时）
+      goalEngram: thought.getGoalEngram(),
+      recalledEngrams: thought.getRecalledEngrams(),
+      insightEngrams: thought.getInsightEngrams(),
+      conclusionEngram: thought.getConclusionEngram(),
+      confidence: thought.getConfidence(),
+      previousThought: thought.getPreviousThought(),
+      iteration: thought.getIteration() || 0,
+      thinkingPattern: thought.getThinkingPattern(),
+      spreadActivationCues: thought.getSpreadActivationCues(),
+      thinkingState: thought.getThinkingState()
     };
     
-    // 调用template生成下一个Thought的指导prompt
-    return template.getNextThoughtGenerationPrompt(components);
+    // 调用pattern生成下一个Thought的指导prompt
+    return pattern.getThinkingGuidancePattern(thought);
+  }
+  
+  /**
+   * 根据思维模式获取对应的模式实现
+   * @private
+   * @param {string} patternName - 思维模式标识符
+   * @returns {BaseThinkingPattern} 对应的思维模式实例
+   */
+  async _getPatternImplementation(patternName) {
+    const { createThinkingPattern } = require('./thinking/patterns');
+    
+    try {
+      // 使用工厂函数创建思维模式实例
+      return createThinkingPattern(patternName);
+    } catch (error) {
+      // 增强错误信息
+      throw new Error(
+        `无法加载思维模式 "${patternName}": ${error.message}`
+      );
+    }
+  }
+  
+  /**
+   * 基于激活线索检索记忆
+   * @private
+   * @param {Array<string>} cues - 激活线索数组
+   * @returns {Array<Engram>} 检索到的记忆
+   */
+  async _recallByCues(cues) {
+    const allEngrams = [];
+    
+    // 对每个线索进行检索
+    for (const cue of cues) {
+      const engrams = await this.memoryService.recall(cue);
+      allEngrams.push(...engrams);
+    }
+    
+    // 去重和排序（按强度降序）
+    const uniqueEngrams = Array.from(
+      new Map(allEngrams.map(e => [e.content, e])).values()
+    );
+    
+    return uniqueEngrams.sort((a, b) => b.strength - a.strength);
   }
   
   /**
@@ -131,6 +206,15 @@ class Cognition {
     this.config = { ...this.config, ...newConfig };
     // 重新创建服务
     this.memoryService = new MemoryService(this.config);
+  }
+  
+  /**
+   * 获取所有可用的思维模式
+   * @returns {string[]} 可用的思维模式名称数组
+   */
+  getAvailableThinkingPatterns() {
+    const { getAvailablePatterns } = require('./thinking/patterns');
+    return getAvailablePatterns();
   }
 }
 

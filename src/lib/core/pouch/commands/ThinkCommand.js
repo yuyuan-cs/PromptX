@@ -19,8 +19,8 @@ class ThinkCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
-    // 解析参数：role、thought对象、templateName
-    const { role, thought, templateName } = this.parseArgs(args)
+    // 解析参数：role、thought对象
+    const { role, thought } = this.parseArgs(args)
 
     if (!role || !thought) {
       return this.getUsageHelp()
@@ -28,35 +28,51 @@ class ThinkCommand extends BasePouchCommand {
 
     try {
       logger.step('🤔 [ThinkCommand] 开始思考流程')
-      logger.info(`🧠 [ThinkCommand] 角色: ${role}, 模板: ${templateName || 'reasoning'}`)
+      logger.info(`🧠 [ThinkCommand] 角色: ${role}, 模式: ${thought.thinkingPattern || '未指定'}`)
       
-      // 验证 thought 必须包含 goalEngram
+      // 处理 spreadActivationCues：如果是字符串，转换为数组
+      if (thought.spreadActivationCues && typeof thought.spreadActivationCues === 'string') {
+        thought.spreadActivationCues = thought.spreadActivationCues.split(' ').filter(cue => cue.trim() !== '');
+      }
+      
+      // 验证必需字段
       if (!thought.goalEngram) {
         throw new Error('Thought 必须包含 goalEngram')
       }
+      if (!thought.thinkingPattern) {
+        throw new Error('Thought 必须包含 thinkingPattern')
+      }
+      if (!thought.spreadActivationCues || thought.spreadActivationCues.length === 0) {
+        throw new Error('Thought 必须包含 spreadActivationCues')
+      }
       
       // 使用 CognitionManager 进行思考
-      const prompt = await this.cognitionManager.think(role, thought, templateName)
+      const prompt = await this.cognitionManager.think(role, thought)
 
       logger.success('✅ [ThinkCommand] 思考指导生成完成')
       return this.formatThinkResponse(thought, prompt, role)
       
     } catch (error) {
       logger.error(`❌ [ThinkCommand] 思考失败: ${error.message}`)
-      logger.debug(`🐛 [ThinkCommand] 错误堆栈: ${error.stack}`)
+      logger.error(`🐛 [ThinkCommand] 错误堆栈:\n${error.stack}`)
       
       return `❌ 思考失败：${error.message}
+
+📋 **错误堆栈**：
+\`\`\`
+${error.stack}
+\`\`\`
 
 💡 **可能的原因**：
 - 角色ID不正确
 - Thought 对象格式错误
-- 缺少必需的 goalEngram
-- 思维模板不存在
+- 缺少必需的字段（goalEngram、thinkingPattern、spreadActivationCues）
+- 思维模式不存在
 
 🔧 **建议操作**：
-1. 确保 Thought 包含 goalEngram
+1. 确保 Thought 包含所有必需字段
 2. 检查角色是否已激活
-3. 验证思维模板名称`
+3. 验证思维模式名称是否正确`
     }
   }
 
@@ -66,7 +82,6 @@ class ThinkCommand extends BasePouchCommand {
   parseArgs(args) {
     let role = ''
     let thought = null
-    let templateName = 'reasoning'
     
     // 第一个参数是role
     if (args.length > 0) {
@@ -86,12 +101,7 @@ class ThinkCommand extends BasePouchCommand {
       }
     }
     
-    // 第三个参数是可选的templateName
-    if (args.length > 2) {
-      templateName = args[2]
-    }
-    
-    return { role, thought, templateName }
+    return { role, thought }
   }
 
   /**
@@ -117,6 +127,8 @@ class ThinkCommand extends BasePouchCommand {
 - **角色**: ${role}
 - **状态**: ${status}
 - **目标**: ${thought.goalEngram.content}
+- **思维模式**: ${thought.thinkingPattern}
+- **激活线索**: ${thought.spreadActivationCues.join(', ')}
 
 ## 💭 生成的思考指导
 ${prompt}
@@ -156,11 +168,14 @@ ${this.getDeepingAdvice(thought)}`
     return `🤔 **Think锦囊 - AI深度思考系统**
 
 ## 📖 基本用法
-think 角色ID '{"goalEngram": {...}, ...}' [思维模板]
+think 角色ID '{"goalEngram": {...}, "thinkingPattern": "...", "spreadActivationCues": [...]}'
 
 ## 🎯 必填参数
 - **角色ID**: 进行思考的角色ID
-- **thought对象**: JSON格式的Thought对象，必须包含goalEngram
+- **thought对象**: JSON格式的Thought对象，必须包含：
+  - **goalEngram**: 思考目标
+  - **thinkingPattern**: 思维模式
+  - **spreadActivationCues**: 激活线索
 
 ## 💭 Thought 结构
 \`\`\`json
@@ -169,6 +184,8 @@ think 角色ID '{"goalEngram": {...}, ...}' [思维模板]
     "content": "推理天空呈现蓝色的光学原理",
     "schema": "自然现象\\n  光学现象\\n    大气散射"
   },
+  "thinkingPattern": "reasoning",
+  "spreadActivationCues": ["光学", "大气", "散射", "颜色"],
   "insightEngrams": [...],     // 可选
   "conclusionEngram": {...},    // 可选
   "confidence": 0.95           // 可选
@@ -178,22 +195,24 @@ think 角色ID '{"goalEngram": {...}, ...}' [思维模板]
 ## 📋 使用示例
 \`\`\`bash
 # 第一次思考
-think scientist '{"goalEngram": {"content": "推理天空蓝色原理", "schema": "物理学\\n  光学"}}'
+think scientist '{"goalEngram": {"content": "推理天空蓝色原理", "schema": "物理学\\n  光学"}, "thinkingPattern": "reasoning", "spreadActivationCues": ["光学", "大气"]}'
 
 # 深入思考
-think scientist '{"goalEngram": {...}, "insightEngrams": [...]}'
+think scientist '{"goalEngram": {...}, "thinkingPattern": "reasoning", "spreadActivationCues": [...], "insightEngrams": [...]}'
 
-# 使用不同模板
-think writer '{"goalEngram": {...}}' creative
+# 使用创造性思维
+think writer '{"goalEngram": {...}, "thinkingPattern": "creative", "spreadActivationCues": [...]}'
 \`\`\`
 
-## 🧠 思维模板
-- **reasoning**: 推理思维（默认）
-- **divergent**: 发散思维 [未实现]
-- **convergent**: 收敛思维 [未实现]
+## 🧠 思维模式
+- **reasoning**: 推理思维（逻辑分析）
 - **creative**: 创造性思维 [未实现]
 - **critical**: 批判性思维 [未实现]
-- **systemic**: 系统性思维 [未实现]
+- **systematic**: 系统性思维 [未实现]
+- **narrative**: 叙事思维 [未实现]
+- **intuitive**: 直觉思维 [未实现]
+- **analytical**: 分析思维 [未实现]
+- **experiential**: 经验思维 [未实现]
 
 ## 🔍 配套工具
 - **激活角色**: action 工具激活角色并启动语义网络

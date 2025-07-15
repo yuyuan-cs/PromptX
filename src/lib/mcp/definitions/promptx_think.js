@@ -6,21 +6,24 @@ module.exports = {
 思考是一个递归深化的过程，每次调用都传入当前的 Thought 状态，
 系统返回指导生成下一个更深入 Thought 的 prompt。
 
-## 💭 Thought 五大要素
+## 💭 Thought 核心要素
 AI 负责构造的创造性部分：
-1. **goalEngram** - 本轮思考的目标
-2. **insightEngrams** - 从记忆中产生的洞察
-3. **conclusionEngram** - 综合形成的结论
-4. **confidence** - 对结论的置信度评估
+1. **goalEngram** - 本轮思考的目标（必需）
+2. **thinkingPattern** - 选择的思维模式（必需）
+3. **spreadActivationCues** - 激活的检索线索（必需）
+4. **insightEngrams** - 从记忆中产生的洞察
+5. **conclusionEngram** - 综合形成的结论
+6. **confidence** - 对结论的置信度评估
 
 系统自动处理的部分：
-- **recalledEngrams** - 基于 goalEngram 自动检索相关记忆
+- **recalledEngrams** - 基于 cues 自动检索相关记忆
 - **iteration** - 自动递增迭代次数
 - **previousThought** - 自动保存前序思想
 - **timestamp** - 自动记录时间戳
+- **thinkingState** - 自动推断思考状态
 
 ## 🔄 认知循环
-1. AI 构造初始 Thought（通常只有 goalEngram）
+1. AI 构造初始 Thought（必须包含 goalEngram、thinkingPattern、spreadActivationCues）
 2. 系统处理并返回指导 prompt
 3. AI 基于 prompt 生成更完整的 Thought
 4. 循环继续，思考越来越深入
@@ -33,7 +36,9 @@ AI 负责构造的创造性部分：
     goalEngram: {
       content: "推理天空呈现蓝色的光学原理",
       schema: "自然现象\\n  光学现象\\n    大气散射"
-    }
+    },
+    thinkingPattern: "reasoning",
+    spreadActivationCues: ["光学", "大气", "散射", "颜色"]
   }
 }
 
@@ -45,6 +50,8 @@ AI 负责构造的创造性部分：
       content: "深入分析瑞利散射机制",
       schema: "物理学\\n  光学\\n    散射理论"
     },
+    thinkingPattern: "reasoning",
+    spreadActivationCues: ["瑞利散射", "波长", "分子", "蓝光"],
     insightEngrams: [
       {
         content: "蓝光波长短，被大气分子散射更多",
@@ -56,13 +63,12 @@ AI 负责构造的创造性部分：
       schema: "科学结论\\n  大气光学\\n    颜色成因"
     },
     confidence: 0.95
-  },
-  templateName: "reasoning"
+  }
 }
 
 ## ⚠️ 关键约束
 - 每次都传入完整的 Thought 对象
-- goalEngram 是必需的（代表思考目标）
+- 首次思考必需三个字段：goalEngram、thinkingPattern、spreadActivationCues
 - 其他要素根据思考深度逐步添加
 - 系统会自动管理状态和检索记忆`,
   inputSchema: {
@@ -90,6 +96,19 @@ AI 负责构造的创造性部分：
               }
             },
             required: ['content', 'schema']
+          },
+          thinkingPattern: {
+            type: 'string',
+            description: '选择的思维模式（必需）',
+            enum: ['reasoning', 'creative', 'critical', 'systematic', 'narrative', 'intuitive', 'analytical', 'experiential']
+          },
+          spreadActivationCues: {
+            type: 'array',
+            description: '激活的检索线索（必需）',
+            items: {
+              type: 'string'
+            },
+            minItems: 1
           },
           insightEngrams: {
             type: 'array',
@@ -131,13 +150,7 @@ AI 负责构造的创造性部分：
             maximum: 1
           }
         },
-        required: ['goalEngram']
-      },
-      templateName: {
-        type: 'string',
-        description: '思维模板名称',
-        enum: ['reasoning', 'divergent', 'convergent', 'creative', 'critical', 'systemic'],
-        default: 'reasoning'
+        required: ['goalEngram', 'thinkingPattern', 'spreadActivationCues']
       }
     },
     required: ['role', 'thought']

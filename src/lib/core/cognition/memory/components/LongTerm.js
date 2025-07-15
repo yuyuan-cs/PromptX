@@ -224,11 +224,8 @@ class LongTerm extends LongTermMemory {
       type: engram.getType(),
       strength: engram.getStrength(),
       timestamp: engram.timestamp,
-      // Schema可能需要特殊处理
-      schema: engram.schema ? {
-        name: engram.schema.name || null,
-        // 其他需要序列化的schema属性
-      } : null
+      // Schema 是 Mermaid 格式字符串，直接保存
+      schema: engram.schema || null
     };
   }
 
@@ -237,21 +234,16 @@ class LongTerm extends LongTermMemory {
    * @private
    */
   deserializeEngram(data) {
-    // 为了测试，返回一个包含必要属性的对象
-    // 实际使用时需要重建真正的Engram对象
-    return {
-      id: data.id,
-      content: data.content,
-      type: data.type,
-      strength: data.strength,
-      timestamp: data.timestamp,
-      schema: data.schema,
-      // getter方法
-      getId: () => data.id,
-      getContent: () => data.content,
-      getType: () => data.type,
-      getStrength: () => data.strength
-    };
+    // 重建真正的 Engram 实例
+    const { Engram } = require('../../engram/Engram');
+    const engram = new Engram(data.content, data.schema, data.type);
+    
+    // 恢复其他属性
+    engram.id = data.id;
+    engram.strength = data.strength;
+    engram.timestamp = new Date(data.timestamp);
+    
+    return engram;
   }
 
   /**

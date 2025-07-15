@@ -21,13 +21,16 @@ const { Thinking } = require('./Thinking');
 // 思考结果数据结构
 const { Thought } = require('./Thought');
 
+// 思维模式接口
+const { ThinkingPattern } = require('./ThinkingPattern');
+
 // 统一导出
 module.exports = {
   // 核心接口
   Thinking,
-  Thought
+  Thought,
+  ThinkingPattern
   
   // 未来将添加：
-  // ThinkingPattern - 定义不同的思维模式
-  // ThinkingTemplate - 定义思考的执行模板
+  // 具体的 ThinkingPattern 实现类
 };

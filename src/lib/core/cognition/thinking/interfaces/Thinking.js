@@ -26,8 +26,9 @@
 //
 // 1. 单一入口：所有思考活动都通过think方法
 // 2. 状态完备：Thought包含思考所需的全部状态
-// 3. 策略灵活：ThinkingTemplate决定具体的思考策略
-// 4. 思维连续：支持基于前序思想的连续思考
+// 3. 模式选择：AI主动选择thinkingPattern，决定思维方式
+// 4. 模式执行：ThinkingPattern实现类执行具体的思维策略
+// 5. 思维连续：支持基于前序思想的连续思考
 
 class Thinking {
   /**
@@ -51,27 +52,35 @@ class Thinking {
    * 
    * 使用示例：
    * ```javascript
-   * // 初始思考
+   * // 初始思考 - AI需要提供三个核心决策
    * const thought1 = thinking.think({
    *   goalEngram: new Engram("了解咖啡对健康的影响"),
+   *   thinkingPattern: "reasoning",  // AI选择推理模式
+   *   spreadActivationCues: ["咖啡", "健康", "影响"],
    *   previousThought: null
    * });
    * 
    * // 基于结论继续思考（思维链）
    * const thought2 = thinking.think({
    *   goalEngram: thought1.getConclusionEngram(),
+   *   thinkingPattern: "analytical",  // 可以切换到分析模式
+   *   spreadActivationCues: ["咖啡因", "睡眠", "心血管"],
    *   previousThought: thought1
    * });
    * 
    * // 探索性思考
    * const thought3 = thinking.think({
    *   goalEngram: new Engram("探索咖啡文化"),
+   *   thinkingPattern: "creative",  // 选择创造模式
+   *   spreadActivationCues: ["文化", "仪式", "社交"],
    *   previousThought: null
    * });
    * ```
    * 
-   * @param {Thought} thought - 输入的思想状态，必须包含goalEngram
-   * @returns {Thought} 新的思想状态，包含conclusionEngram和其他认知结果
+   * @param {Thought} thought - 输入的思想状态
+   *                            首次思考必须包含：goalEngram, thinkingPattern, spreadActivationCues
+   *                            后续思考会从 previousThought 继承并演化
+   * @returns {Thought} 新的思想状态，包含系统处理结果和AI生成的认知内容
    */
   think(thought) {
     throw new Error('Thinking.think() must be implemented');
