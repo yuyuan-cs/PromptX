@@ -78,6 +78,33 @@ const CONVERTERS = {
     }
     
     return result;
+  },
+  
+  promptx_think: (args) => {
+    if (!args || !args.role) {
+      throw new Error('role 参数是必需的');
+    }
+    if (!args || !args.thought || typeof args.thought !== 'object') {
+      throw new Error('thought 参数是必需的且必须是对象');
+    }
+    if (!args.thought.goalEngram) {
+      throw new Error('thought 必须包含 goalEngram');
+    }
+    
+    const result = [];
+    
+    // role作为第一个参数
+    result.push(args.role);
+    
+    // 将thought对象序列化为JSON字符串作为第二个参数
+    result.push(JSON.stringify(args.thought));
+    
+    // templateName作为第三个参数（可选）
+    if (args.templateName) {
+      result.push(args.templateName);
+    }
+    
+    return result;
   }
 };
 

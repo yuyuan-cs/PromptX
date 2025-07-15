@@ -72,6 +72,47 @@ class Cognition {
     return this.memoryService.primeProcedural();
   }
   
+  /**
+   * 思考 - 基于当前Thought和思维模板生成下一个Thought的指导prompt
+   * 
+   * @param {Thought} thought - 当前的思想对象（包含五大要素）
+   * @param {BaseThinkingTemplate} template - 思维模板（如ReasoningTemplate）
+   * @returns {string} 用于生成下一个Thought的完整prompt
+   */
+  async think(thought, template) {
+    // 验证参数
+    if (!thought) {
+      throw new Error('think方法需要一个Thought对象');
+    }
+    
+    if (!template || typeof template.getNextThoughtGenerationPrompt !== 'function') {
+      throw new Error('think方法需要一个有效的ThinkingTemplate');
+    }
+    
+    // 如果thought有goalEngram但没有recalledEngrams，先执行记忆检索
+    if (thought.goalEngram && !thought.recalledEngrams) {
+      const recalledEngrams = await template.recallEngramsByGoalEngramCues(
+        thought.goalEngram, 
+        this.memoryService
+      );
+      thought.recalledEngrams = recalledEngrams;
+    }
+    
+    // 准备传递给template的组件
+    const components = {
+      goalEngram: thought.goalEngram,
+      recalledEngrams: thought.recalledEngrams,
+      insightEngrams: thought.insightEngrams,
+      conclusionEngram: thought.conclusionEngram,
+      confidence: thought.confidence,
+      previousThought: thought.previousThought,
+      iteration: thought.iteration || 0,
+      input: thought.input // 初始输入（当还没有goalEngram时）
+    };
+    
+    // 调用template生成下一个Thought的指导prompt
+    return template.getNextThoughtGenerationPrompt(components);
+  }
   
   /**
    * 获取配置
