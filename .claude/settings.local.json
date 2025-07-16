@@ -10,7 +10,18 @@
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(npx:*)",
-      "Bash(git cherry-pick:*)"
+      "Bash(git cherry-pick:*)",
+      "mcp__promptx-local__promptx_init",
+      "mcp__promptx-local__promptx_action",
+      "mcp__promptx-local__promptx_welcome",
+      "mcp__promptx-local__promptx_recall",
+      "mcp__promptx-local__promptx_remember",
+      "Bash(gh issue view:*)",
+      "Bash(git checkout:*)",
+      "Bash(cat:*)",
+      "Bash(mv:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

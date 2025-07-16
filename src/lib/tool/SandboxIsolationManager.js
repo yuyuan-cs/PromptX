@@ -1,5 +1,6 @@
 const path = require('path');
 const Module = require('module');
+const logger = require('../utils/logger');
 
 /**
  * SandboxIsolationManager - 统一管理所有沙箱隔离逻辑
@@ -98,7 +99,7 @@ class SandboxIsolationManager {
 
     // 2. 如果是分析阶段且模块不存在，返回mock对象
     if (this.options.analysisMode && error.code === 'MODULE_NOT_FOUND') {
-      console.log(`[SandboxIsolation] 分析模式：mock模块 ${moduleName}`);
+      logger.debug(`[SandboxIsolation] Analysis mode: mocking module ${moduleName}`);
       return this.createMockModule(moduleName);
     }
 
@@ -199,7 +200,7 @@ class SandboxIsolationManager {
       clearImmediate: clearImmediate,
       
       // 输出
-      console: console,
+      console: console,  // Keep console for sandboxed code
       
       // Promise相关
       Promise: Promise

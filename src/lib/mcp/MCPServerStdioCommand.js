@@ -6,6 +6,8 @@ const { getDirectoryService } = require('../utils/DirectoryService');
 const { getToolDefinitions, getToolCliConverter } = require('../mcp/toolDefinitions');
 const { getGlobalServerEnvironment } = require('../utils/ServerEnvironment');
 const treeKill = require('tree-kill');
+const logger = require('../utils/logger');
+const { displayCompactBanner } = require('../utils/banner');
 
 /**
  * MCP Server Stdio 适配器 - 函数调用架构
@@ -77,7 +79,7 @@ class MCPServerStdioCommand {
    */
   log(message) {
     if (this.debug) {
-      console.error(`[MCP DEBUG] ${message}`);
+      logger.debug(`[MCP] ${message}`);
     }
   }
   
@@ -86,14 +88,21 @@ class MCPServerStdioCommand {
    */
   async execute(options = {}) {
     try {
+      // 显示启动 Banner
+      displayCompactBanner({
+        mode: 'stdio',
+        workingDir: process.cwd(),
+        mcpId: getGlobalServerEnvironment().getMcpId()
+      });
+      
       // 设置进程清理处理器
       this.setupProcessCleanup();
       
       
-      this.log('🚀 启动MCP Server...');
+      this.log('Starting MCP Server...');
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
-      this.log('✅ MCP Server 已启动，等待连接...');
+      this.log('MCP Server started successfully, waiting for connections...');
       
       // 保持进程运行
       return new Promise((resolve) => {
