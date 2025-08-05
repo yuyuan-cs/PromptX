@@ -11,6 +11,7 @@ const ProjectManager = require('../utils/ProjectManager');
 const { getGlobalProjectManager } = require('../utils/ProjectManager');
 const { getGlobalServerEnvironment } = require('../utils/ServerEnvironment');
 const logger = require('../utils/logger');
+const { displayCompactBanner } = require('../utils/banner');
 
 /**
  * MCP HTTP Server Command
@@ -98,7 +99,16 @@ class MCPServerHttpCommand {
 
     return new Promise((resolve, reject) => {
       const server = app.listen(port, host, () => {
-        this.log(`✅ Streamable HTTP MCP Server 运行在 http://${host}:${port}`);
+        // 显示启动 Banner
+        displayCompactBanner({
+          mode: transport === 'sse' ? 'sse' : 'http',
+          workingDir: process.cwd(),
+          host: host,
+          port: port,
+          mcpId: getGlobalServerEnvironment().getMcpId()
+        });
+        
+        this.log(`Streamable HTTP MCP Server running at http://${host}:${port}`);
         this.server = server;
         resolve(server);
       });
@@ -292,7 +302,7 @@ class MCPServerHttpCommand {
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
       this.log(`🔧 调用工具: ${name} 参数: ${JSON.stringify(args)}`);
-      console.log(`🔧 [强制调试] 工具: ${name} 正确参数: ${JSON.stringify(args)}`);
+      logger.debug(`[MCP HTTP] Tool: ${name} args: ${JSON.stringify(args)}`);
       return await this.callTool(name, args || {});
     });
   }
@@ -345,7 +355,7 @@ class MCPServerHttpCommand {
         return;
       } else if (!sessionId && this.isStatelessRequest(req.body)) {
         // 无状态请求（如 tools/list, prompts/list 等）- 使用官方推荐方式
-        console.log(`🎯 [官方模式] 无状态请求: ${req.body.method}`);
+        logger.debug(`[MCP HTTP] Stateless request: ${req.body.method}`);
         
         try {
           const server = this.setupMCPServer();
@@ -356,7 +366,7 @@ class MCPServerHttpCommand {
           
           // 请求结束时清理资源
           res.on('close', () => {
-            console.log('🧹 清理无状态请求资源');
+            logger.debug('[MCP HTTP] Cleaning up stateless request resources');
             transport.close && transport.close();
             server.close && server.close();
           });
@@ -365,12 +375,12 @@ class MCPServerHttpCommand {
           await transport.handleRequest(req, res, req.body);
           return;
         } catch (error) {
-          console.error('🔥 无状态请求处理错误:', error);
+          logger.error('[MCP HTTP] Stateless request processing error:', error);
           throw error;
         }
       } else if (sessionId && !this.transports[sessionId] && this.isStatelessRequest(req.body)) {
         // 🔧 修复：sessionId已失效但是无状态请求，可以处理
-        console.log(`🔄 [修复模式] Session已失效，转为无状态处理: ${req.body.method}`);
+        logger.debug(`[MCP HTTP] Session expired, switching to stateless handling: ${req.body.method}`);
         
         try {
           const server = this.setupMCPServer();
@@ -383,7 +393,7 @@ class MCPServerHttpCommand {
           await transport.handleRequest(req, res, req.body);
           return;
         } catch (error) {
-          console.error('🔥 Session修复模式处理错误:', error);
+          logger.error('[MCP HTTP] Session recovery mode processing error:', error);
           throw error;
         }
       } else {
@@ -462,9 +472,9 @@ class MCPServerHttpCommand {
   async callTool(toolName, args) {
     try {
       // 将 MCP 参数转换为 CLI 函数调用参数
-      console.log(`🎯 [强制调试] 收到MCP参数: ${JSON.stringify(args)}`);
+      logger.debug(`[MCP HTTP] Received MCP args: ${JSON.stringify(args)}`);
       const cliArgs = this.convertMCPToCliParams(toolName, args);
-      console.log(`🎯 [强制调试] 转换后CLI参数: ${JSON.stringify(cliArgs)}`);
+      logger.debug(`[MCP HTTP] Converted CLI args: ${JSON.stringify(cliArgs)}`);
       this.log(`🎯 CLI调用: ${toolName} -> ${JSON.stringify(cliArgs)}`);
       
       // 直接调用 PromptX CLI 函数

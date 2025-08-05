@@ -4,6 +4,7 @@ const { spawn } = require('child_process');
 const vm = require('vm');
 const SandboxIsolationManager = require('./SandboxIsolationManager');
 const SandboxErrorManager = require('./SandboxErrorManager');
+const logger = require('../utils/logger');
 
 /**
  * ToolSandbox - 工具沙箱环境管理器
@@ -53,7 +54,7 @@ class ToolSandbox {
    * @param {boolean} deleteDirectory - 是否删除沙箱目录
    */
   async clearSandbox(deleteDirectory = false) {
-    console.log(`[ToolSandbox] 清理沙箱状态${deleteDirectory ? '并删除目录' : ''}`);
+    logger.debug(`[ToolSandbox] Clearing sandbox state${deleteDirectory ? ' and deleting directory' : ''}`);
     
     // 清空所有缓存和状态
     this.isAnalyzed = false;
@@ -68,9 +69,9 @@ class ToolSandbox {
       try {
         const { rmdir } = require('fs').promises;
         await rmdir(this.sandboxPath, { recursive: true });
-        console.log(`[ToolSandbox] 已删除沙箱目录 ${this.sandboxPath}`);
+        logger.debug(`[ToolSandbox] Deleted sandbox directory: ${this.sandboxPath}`);
       } catch (error) {
-        console.log(`[ToolSandbox] 删除沙箱目录时出错（可忽略）: ${error.message}`);
+        logger.debug(`[ToolSandbox] Error deleting sandbox directory (can be ignored): ${error.message}`);
       }
     }
   }
@@ -81,7 +82,7 @@ class ToolSandbox {
    */
   async analyze() {
     if (this.isAnalyzed && !this.options.rebuild) {
-      console.log(`[ToolSandbox] 使用缓存的分析结果，依赖: ${JSON.stringify(this.dependencies)}`);
+      logger.debug(`[ToolSandbox] Using cached analysis result, dependencies: ${JSON.stringify(this.dependencies)}`);
       return this.getAnalysisResult();
     }
 
@@ -95,14 +96,14 @@ class ToolSandbox {
       
       // 2. 通过协议系统加载工具（forceReinstall时强制重新加载）
       const loadOptions = this.options.forceReinstall ? { noCache: true } : {};
-      console.log(`[ToolSandbox] 加载工具 ${this.toolReference}，选项:`, loadOptions);
+      logger.debug(`[ToolSandbox] Loading tool ${this.toolReference}, options:`, loadOptions);
       
       const toolResult = await this.resourceManager.loadResource(this.toolReference, loadOptions);
       if (!toolResult.success) {
         // 调试：尝试不同的查找方式
-        console.log(`🔍 调试：尝试查找工具 ${this.toolReference}`);
+        logger.debug(`[ToolSandbox] Debug: Trying to find tool ${this.toolReference}`);
         const directLookup = this.resourceManager.registryData.findResourceById(`tool:${this.toolId}`, 'tool');
-        console.log(`   - 直接查找 tool:${this.toolId}: ${directLookup ? '找到' : '未找到'}`);
+        logger.debug(`[ToolSandbox]    - Direct lookup tool:${this.toolId}: ${directLookup ? 'found' : 'not found'}`);
         
         throw new Error(`Failed to load tool: ${toolResult.error.message}`);
       }
@@ -110,7 +111,7 @@ class ToolSandbox {
       this.toolContent = toolResult.content;
       
       // 调试：检查加载的工具内容
-      console.log(`[ToolSandbox] 加载的工具内容前200字符:`, this.toolContent.substring(0, 200));
+      logger.debug(`[ToolSandbox] Loaded tool content first 200 chars:`, this.toolContent.substring(0, 200));
       
       // 3. 设置沙箱路径（工具专用沙箱）
       this.sandboxPath = await this.resolveSandboxPath();
@@ -133,7 +134,7 @@ class ToolSandbox {
   async prepareDependencies() {
     // 处理rebuild选项
     if (this.options.rebuild) {
-      console.log(`[ToolSandbox] 手动触发重建沙箱`);
+      logger.debug(`[ToolSandbox] Manually triggering sandbox rebuild`);
       await this.clearSandbox(true);
     }
     
@@ -144,7 +145,7 @@ class ToolSandbox {
     
     // 自动检测依赖是否需要更新
     if (!this.options.rebuild && await this.checkDependenciesNeedUpdate()) {
-      console.log(`[ToolSandbox] 检测到依赖变化，自动重建沙箱`);
+      logger.debug(`[ToolSandbox] Dependency changes detected, auto-rebuilding sandbox`);
       await this.clearSandbox(true);
       // 重新分析以获取最新依赖
       await this.analyze();
@@ -271,8 +272,8 @@ class ToolSandbox {
     const sandbox = this.isolationManager.createIsolatedContext();
     
     // 调试：检查即将执行的代码
-    console.log(`[ToolSandbox] 即将执行的工具代码中的getDependencies部分:`, 
-      this.toolContent.match(/getDependencies[\s\S]*?return[\s\S]*?\]/)?.[0] || '未找到getDependencies');
+    logger.debug(`[ToolSandbox] Tool code getDependencies section:`, 
+      this.toolContent.match(/getDependencies[\s\S]*?return[\s\S]*?\]/)?.[0] || 'getDependencies not found');
     
     const script = new vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
     const context = vm.createContext(sandbox);
@@ -308,13 +309,13 @@ class ToolSandbox {
     if (typeof toolInstance.getDependencies === 'function') {
       try {
         this.dependencies = toolInstance.getDependencies() || [];
-        console.log(`[ToolSandbox] 提取到的依赖列表: ${JSON.stringify(this.dependencies)}`);
+        logger.debug(`[ToolSandbox] Extracted dependencies: ${JSON.stringify(this.dependencies)}`);
       } catch (error) {
-        console.warn(`[ToolSandbox] Failed to get dependencies for ${this.toolId}: ${error.message}`);
+        logger.warn(`[ToolSandbox] Failed to get dependencies for ${this.toolId}: ${error.message}`);
         this.dependencies = [];
       }
     } else {
-      console.log(`[ToolSandbox] 工具没有 getDependencies 方法`);
+      logger.debug(`[ToolSandbox] Tool does not have getDependencies method`);
       this.dependencies = [];
     }
     
@@ -338,7 +339,7 @@ class ToolSandbox {
         
         // 检查缺失的模块是否在依赖声明中
         if (this._isDeclaredInDependencies(missingModule, declaredDependencies)) {
-          console.log(`[ToolSandbox] 依赖 ${missingModule} 未安装，将在prepareDependencies阶段安装`);
+          logger.debug(`[ToolSandbox] Dependency ${missingModule} not installed, will install in prepareDependencies phase`);
           return null; // 预期的错误，忽略
         } else {
           return new Error(`未声明的依赖: ${missingModule}，请在getDependencies()中添加此依赖`);
@@ -381,7 +382,7 @@ class ToolSandbox {
         }
       }
     } catch (error) {
-      console.warn(`[ToolSandbox] 无法解析依赖声明: ${error.message}`);
+      logger.warn(`[ToolSandbox] Unable to parse dependency declaration: ${error.message}`);
     }
     
     return [];
@@ -476,14 +477,14 @@ class ToolSandbox {
       // 检查键是否相同
       if (existingKeys.length !== newKeys.length || 
           !existingKeys.every((key, index) => key === newKeys[index])) {
-        console.log(`[ToolSandbox] 依赖列表变化 - 旧: ${existingKeys.join(', ')} | 新: ${newKeys.join(', ')}`);
+        logger.debug(`[ToolSandbox] Dependency list changed - old: ${existingKeys.join(', ')} | new: ${newKeys.join(', ')}`);
         return true;
       }
       
       // 检查版本是否相同
       for (const key of existingKeys) {
         if (existingDeps[key] !== newDeps[key]) {
-          console.log(`[ToolSandbox] 依赖版本变化 - ${key}: ${existingDeps[key]} -> ${newDeps[key]}`);
+          logger.debug(`[ToolSandbox] Dependency version changed - ${key}: ${existingDeps[key]} -> ${newDeps[key]}`);
           return true;
         }
       }
@@ -491,7 +492,7 @@ class ToolSandbox {
       return false;
     } catch (error) {
       // 文件不存在或解析失败，需要创建
-      console.log(`[ToolSandbox] package.json不存在或无效，需要创建`);
+      logger.debug(`[ToolSandbox] package.json does not exist or is invalid, needs to be created`);
       return true;
     }
   }
@@ -511,11 +512,11 @@ class ToolSandbox {
     };
     
     // 解析依赖格式 ["validator@^13.11.0", "lodash"]
-    console.log(`[ToolSandbox] 正在处理依赖列表: ${JSON.stringify(this.dependencies)}`);
+    logger.debug(`[ToolSandbox] Processing dependency list: ${JSON.stringify(this.dependencies)}`);
     for (const dep of this.dependencies) {
       if (dep.includes('@')) {
         const [name, version] = dep.split('@');
-        console.log(`[ToolSandbox] 解析依赖 "${dep}" => name="${name}", version="${version}"`);
+        logger.debug(`[ToolSandbox] Parsing dependency "${dep}" => name="${name}", version="${version}"`);
         packageJson.dependencies[name] = version;
       } else {
         packageJson.dependencies[dep] = 'latest';
@@ -619,7 +620,7 @@ class ToolSandbox {
         } catch (error) {
           if (error.code === 'ENOENT') {
             await fs.mkdir(resolvedPath, { recursive: true });
-            console.log(`[ToolSandbox] 创建统一工作目录: ${resolvedPath}`);
+            logger.debug(`[ToolSandbox] Created unified working directory: ${resolvedPath}`);
           }
         }
         

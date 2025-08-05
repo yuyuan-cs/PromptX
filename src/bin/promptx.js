@@ -1,9 +1,19 @@
 #!/usr/bin/env node
 
+// 早期错误捕获 - 在任何模块加载之前
+process.on('uncaughtException', (err) => {
+  console.error('❌ Fatal error during startup:', err.message)
+  if (err.stack) {
+    console.error('Stack trace:', err.stack)
+  }
+  process.exit(1)
+})
+
 const { Command } = require('commander')
 const chalk = require('chalk')
 const packageJson = require('../../package.json')
 const logger = require('../lib/utils/logger')
+const { displayBanner, displayCompactBanner } = require('../lib/utils/banner')
 
 // 导入锦囊框架
 const { cli } = require('../lib/core/pouch')
@@ -277,8 +287,9 @@ program.on('command:*', () => {
   program.help()
 })
 
-// 如果没有参数，显示帮助
+// 如果没有参数，显示banner和帮助
 if (process.argv.length === 2) {
+  displayBanner()
   program.help()
 }
 

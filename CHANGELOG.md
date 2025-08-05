@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/Deepractice/PromptX/compare/v0.1.0-alpha...v0.2.0) (2025-07-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* 工作流文件路径变更，需要更新相关文档
+* manual协议内容不再进行语义渲染
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+
+### 📝 Documentation
+
+* 完善社区案例分享内容 ([#93](https://github.com/Deepractice/PromptX/issues/93)) ([6207850](https://github.com/Deepractice/PromptX/commit/62078502a0a956944727a562fc419e3226753b72))
+
+
+### ✨ Features
+
+* 优化MCP工具提示词和角色职责分工 ([a3f1081](https://github.com/Deepractice/PromptX/commit/a3f10810cf3c4d885be9ebcceef5a6e27b177d61))
+* 优化ToolSandbox缓存机制和参数处理 ([398c924](https://github.com/Deepractice/PromptX/commit/398c92480f41f6e51877a13582e7504848355f15))
+* 在welcome中展示工具列表 ([62f114b](https://github.com/Deepractice/PromptX/commit/62f114b119f4a7d8e3b0a370512abbc5d7aadcab))
+* 实现manual协议和通用资源扫描 ([75f2123](https://github.com/Deepractice/PromptX/commit/75f2123b0b8f94fa5865f49ff781efab3fbf94a9)), closes [#144](https://github.com/Deepractice/PromptX/issues/144) [#145](https://github.com/Deepractice/PromptX/issues/145)
+* 添加Repository Views徽章优化README展示效果 ([#92](https://github.com/Deepractice/PromptX/issues/92)) ([21118df](https://github.com/Deepractice/PromptX/commit/21118df55fbfe4ed5012fdad235c1ccfbed9c440)), closes [#66](https://github.com/Deepractice/PromptX/issues/66) [#69](https://github.com/Deepractice/PromptX/issues/69) [#69](https://github.com/Deepractice/PromptX/issues/69) [#70](https://github.com/Deepractice/PromptX/issues/70) [#69](https://github.com/Deepractice/PromptX/issues/69) [#69](https://github.com/Deepractice/PromptX/issues/69)
+* 添加vorale2的Kaggle智能体案例到社区分享 ([f45af3e](https://github.com/Deepractice/PromptX/commit/f45af3e5ae530778556d1f72d4530ebbeade06e7))
+* 添加版本分支自动清理工作流 ([4c07c2b](https://github.com/Deepractice/PromptX/commit/4c07c2bd0e1fd6b882aaacbef9d0a9751d464c9b))
+* 添加茵蒂克丝的压箱底提示词库到社区分享 ([143f1d0](https://github.com/Deepractice/PromptX/commit/143f1d04d663225e950a87fcfe079018cc95e44f))
+* 重构版本发布流程，实现半自动化发版系统 ([89967aa](https://github.com/Deepractice/PromptX/commit/89967aa350cab34d7de7b70f76a17fdbbe330d89))
+* 重构版本发布流程，实现半自动化发版系统 ([#152](https://github.com/Deepractice/PromptX/issues/152)) ([7836572](https://github.com/Deepractice/PromptX/commit/783657264ccfeca4510231e01e53288dcdfe11d1)), closes [#66](https://github.com/Deepractice/PromptX/issues/66) [#69](https://github.com/Deepractice/PromptX/issues/69) [#69](https://github.com/Deepractice/PromptX/issues/69) [#70](https://github.com/Deepractice/PromptX/issues/70) [#69](https://github.com/Deepractice/PromptX/issues/69) [#69](https://github.com/Deepractice/PromptX/issues/69)
+
+
+### 🐛 Bug Fixes
+
+* add proper permissions for version-management workflow ([78fbfe8](https://github.com/Deepractice/PromptX/commit/78fbfe871fc9a5251ccb1eded7138195c844b52b))
+* 修复alpha版本检测的正则表达式 ([e89c07f](https://github.com/Deepractice/PromptX/commit/e89c07f7b0c42d84ec50d1ee1f3c059156c84052))
+* 修复cleanup-version-branches工作流中的上下文引用问题 ([a9bd032](https://github.com/Deepractice/PromptX/commit/a9bd032e05e87c7869858409ab86acf9f877def0))
+* 修复GitHub Actions工作流识别问题 ([8ee669d](https://github.com/Deepractice/PromptX/commit/8ee669d142f282056152810aa894f95a43d9488f))
+* 修复release-preview工作流中的评论查找bug ([8510de5](https://github.com/Deepractice/PromptX/commit/8510de5ea427eb7f605702cba00aee9ac2da5e09))
+* 修复release-preview工作流触发条件 ([15751a3](https://github.com/Deepractice/PromptX/commit/15751a3d902ce4b44a2e950967a387c253d42d46))
+
 ## [0.1.0](https://github.com/Deepractice/PromptX/compare/v0.0.4-e4...v0.1.0) (2025-07-09)
 
 
