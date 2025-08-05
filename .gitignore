@@ -81,3 +81,9 @@ temp/
 .husky/_
 
 .kilocode/
+
+# act本地测试文件
+.env.act
+.secrets
+*.local
+
