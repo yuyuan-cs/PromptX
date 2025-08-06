@@ -436,11 +436,14 @@ ${result.content}
       }
       
       let output = `---
-## 🧠 语义网络激活
+## 🧠 语义网络激活（记忆检索索引）
 \`\`\`mermaid
 ${semanticMermaid}
 \`\`\`
-💡 **语义网络已激活**：相关概念和知识已预热，AI现在处于最佳认知状态
+📌 **重要说明**：上述 mindmap 是你的记忆检索索引！
+- 🔍 **用途**：使用 recall 工具时，必须从这个 mindmap 中选择精确概念作为检索线索
+- 💡 **示例**：如果 mindmap 中有"用户体验"，recall 时直接使用"用户体验"，不要拆分成"用户"+"体验"
+- ⚡ **技巧**：概念越精确，检索效果越好。优先使用 mindmap 中的叶子节点概念
 `
       
       // 尝试激活程序性记忆
@@ -565,43 +568,26 @@ ${semanticMermaid}
    * 格式化带有项目检查的输出
    */
   formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt) {
-    const output = {
-      purpose,
-      content,
-      pateoas,
-      context: this.context,
-      format: this.outputFormat,
-      projectPrompt
-    }
-
+    // 先调用父类的 formatOutput 获取标准格式
+    const baseOutput = super.formatOutput(purpose, content, pateoas)
+    
+    // 如果是 JSON 格式，添加 projectPrompt
     if (this.outputFormat === 'json') {
-      return output
+      return {
+        ...baseOutput,
+        projectPrompt
+      }
     }
-
-    // 人类可读格式
+    
+    // 人类可读格式：在基础输出前加上项目提示
     return {
-      ...output,
-      toString () {
-        const divider = '='.repeat(60)
-        const nextSteps = (pateoas.nextActions || [])
-          .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
-          .join('\n')
-
+      ...baseOutput,
+      toString() {
+        const baseString = baseOutput.toString()
+        // 在基础输出前插入项目提示
         return `${projectPrompt}
 
-${divider}
-🎯 锦囊目的：${purpose}
-${divider}
-
-📜 锦囊内容：
-${content}
-
-🔄 下一步行动：
-${nextSteps}
-
-📍 当前状态：${pateoas.currentState}
-${divider}
-`
+${baseString}`
       }
     }
   }
