@@ -171,7 +171,7 @@ ${formattedMemories}
    * 格式化Engram对象（突出核心要素：content, schema, strength, timestamp）
    */
   formatEngrams (engrams, query) {
-    return engrams.map((engram, index) => {
+    let formattedEngrams = engrams.map((engram, index) => {
       const content = engram.getContent ? engram.getContent() : engram.content
       const schema = engram.schema
       const strength = engram.getStrength ? engram.getStrength() : engram.strength || 0
@@ -192,6 +192,18 @@ ${formattedMemories}
       
       return result + '\n---'
     }).join('\n')
+    
+    // 添加认知循环温馨提醒
+    if (engrams.length > 0) {
+      formattedEngrams += `\n\n---\n`
+      formattedEngrams += `✨ 认知循环进行中...\n`
+      formattedEngrams += `你已完成 Recall（吸气），激活了相关记忆。\n`
+      formattedEngrams += `现在可以基于这些经验执行任务了。\n\n`
+      formattedEngrams += `💡 温馨提醒：任务结束后，记得 Remember 新学到的知识。\n`
+      formattedEngrams += `就像呼吸需要呼气，认知循环需要 Remember 来完成。`
+    }
+    
+    return formattedEngrams
   }
 
 }
