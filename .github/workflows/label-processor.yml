@@ -1,0 +1,226 @@
+name: Label Processor
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  process-label:
+    name: Process Label Action
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Parse label action
+        id: parse
+        run: |
+          LABEL="${{ github.event.label.name }}"
+          echo "📌 Processing label: $LABEL"
+          
+          # Parse action and parameter
+          if [[ "$LABEL" == *"/"* ]]; then
+            ACTION=$(echo "$LABEL" | cut -d'/' -f1)
+            PARAM=$(echo "$LABEL" | cut -d'/' -f2-)
+          else
+            ACTION="$LABEL"
+            PARAM=""
+          fi
+          
+          echo "action=$ACTION" >> $GITHUB_OUTPUT
+          echo "parameter=$PARAM" >> $GITHUB_OUTPUT
+          echo "  Action: $ACTION"
+          echo "  Parameter: $PARAM"
+
+      - name: Setup Node.js
+        if: steps.parse.outputs.action == 'changeset'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies for changeset
+        if: steps.parse.outputs.action == 'changeset'
+        run: |
+          # Only install changeset CLI
+          npm install -D @changesets/cli
+
+      - name: Process changeset action
+        if: steps.parse.outputs.action == 'changeset'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PARAM="${{ steps.parse.outputs.parameter }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_USER="${{ github.event.pull_request.user.login }}"
+          
+          # Skip if parameter is 'none'
+          if [[ "$PARAM" == "none" ]]; then
+            echo "ℹ️ Changeset not required for this PR"
+            exit 0
+          fi
+          
+          # Validate parameter
+          if [[ ! "$PARAM" =~ ^(patch|minor|major)$ ]]; then
+            echo "❌ Invalid changeset type: $PARAM"
+            echo "Valid types: patch, minor, major, none"
+            exit 1
+          fi
+          
+          # Check if changeset already exists
+          if ls .changeset/*.md 2>/dev/null | grep -v README.md; then
+            echo "ℹ️ Changeset already exists"
+            exit 0
+          fi
+          
+          # Extract description from PR body
+          PR_BODY=$(gh pr view $PR_NUMBER --json body -q .body)
+          
+          # Try to extract user impact section
+          DESCRIPTION=""
+          if echo "$PR_BODY" | grep -q "### User Impact"; then
+            DESCRIPTION=$(echo "$PR_BODY" | sed -n '/### User Impact/,/^###\|^##\|^---/p' | sed '1d;$d' | sed 's/^[[:space:]]*//')
+          fi
+          
+          # Fallback to PR title if no description found
+          if [[ -z "$DESCRIPTION" ]]; then
+            DESCRIPTION="$PR_TITLE"
+          fi
+          
+          # Generate changeset filename
+          CHANGESET_ID=$(echo "$PR_NUMBER-$PR_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | cut -c1-20)
+          CHANGESET_FILE=".changeset/${CHANGESET_ID}.md"
+          
+          # Create changeset file
+          cat > "$CHANGESET_FILE" << EOF
+---
+"dpml-prompt": $PARAM
+---
+
+$DESCRIPTION
+
+Contributed by @$PR_USER in #$PR_NUMBER
+EOF
+          
+          echo "✅ Created changeset: $CHANGESET_FILE"
+          cat "$CHANGESET_FILE"
+          
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Commit and push
+          git add "$CHANGESET_FILE"
+          git commit -m "chore: add changeset for PR #$PR_NUMBER [skip ci]"
+          
+          # Push to PR branch
+          git push origin HEAD:"${{ github.head_ref }}"
+
+      - name: Process test action
+        if: steps.parse.outputs.action == 'test'
+        run: |
+          PARAM="${{ steps.parse.outputs.parameter }}"
+          
+          case "$PARAM" in
+            "skip-e2e")
+              echo "SKIP_E2E=true" >> $GITHUB_ENV
+              echo "⏭️ E2E tests will be skipped"
+              ;;
+            "extended")
+              echo "RUN_EXTENDED=true" >> $GITHUB_ENV
+              echo "🔬 Extended tests will be run"
+              ;;
+            "performance")
+              echo "RUN_PERF=true" >> $GITHUB_ENV
+              echo "📊 Performance tests will be run"
+              ;;
+            *)
+              echo "❌ Unknown test parameter: $PARAM"
+              exit 1
+              ;;
+          esac
+
+      - name: Process merge action
+        if: steps.parse.outputs.action == 'merge'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const param = '${{ steps.parse.outputs.parameter }}';
+            const prNumber = context.issue.number;
+            
+            // Add merge method label
+            const mergeLabel = `merge-method: ${param}`;
+            
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: [mergeLabel]
+              });
+              
+              console.log(`✅ Merge method set to: ${param}`);
+              
+              // Add comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `🔀 Merge method set to: **${param}**\n\nThis PR will be merged using ${param} when approved.`
+              });
+              
+              // Enable auto-merge if requested
+              if (param === 'auto') {
+                console.log('🤖 Auto-merge will be enabled when all checks pass');
+              }
+            } catch (error) {
+              console.error(`Failed to process merge action: ${error.message}`);
+            }
+
+      - name: Process publish action  
+        if: steps.parse.outputs.action == 'publish'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const param = '${{ steps.parse.outputs.parameter }}';
+            const prNumber = context.issue.number;
+            
+            // Validate publish target
+            const validTargets = ['dev', 'alpha', 'beta', 'latest', 'hold'];
+            if (!validTargets.includes(param)) {
+              core.setFailed(`Invalid publish target: ${param}`);
+              return;
+            }
+            
+            // Add publish label
+            const publishLabel = `publish: ${param}`;
+            
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: [publishLabel]
+              });
+              
+              console.log(`✅ Publish target set to: ${param}`);
+              
+              // Add comment
+              const message = param === 'hold' 
+                ? '⏸️ This PR will NOT trigger automatic publishing after merge.'
+                : `📦 This PR will be published to **${param}** tag after merge.`;
+                
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: message
+              });
+            } catch (error) {
+              console.error(`Failed to process publish action: ${error.message}`);
+            }

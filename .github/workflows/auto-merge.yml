@@ -1,0 +1,186 @@
+name: Auto Merge
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, opened, synchronize]
+  check_suite:
+    types: [completed]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  auto-merge:
+    name: Auto Merge PR
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'merge/auto')
+    
+    steps:
+      - name: Check PR status
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            if (!pr) {
+              console.log('Not a PR event');
+              return;
+            }
+            
+            // Check if PR is ready
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            console.log(`PR #${pr.number}: ${pullRequest.title}`);
+            console.log(`State: ${pullRequest.state}`);
+            console.log(`Mergeable: ${pullRequest.mergeable}`);
+            console.log(`Draft: ${pullRequest.draft}`);
+            
+            // Check conditions
+            if (pullRequest.draft) {
+              console.log('❌ PR is still a draft');
+              return;
+            }
+            
+            if (pullRequest.state !== 'open') {
+              console.log('❌ PR is not open');
+              return;
+            }
+            
+            if (pullRequest.mergeable === false) {
+              console.log('❌ PR has conflicts');
+              return;
+            }
+            
+            // Check reviews
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const approved = reviews.some(r => r.state === 'APPROVED');
+            
+            if (!approved && !pr.labels.some(l => l.name === 'override/no-review')) {
+              console.log('⏳ Waiting for approval');
+              return;
+            }
+            
+            // Check CI status
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pullRequest.head.sha
+            });
+            
+            const ciChecks = checks.check_runs.filter(c => 
+              c.name === 'CI Status' || 
+              c.name.includes('Test')
+            );
+            
+            const allPassed = ciChecks.every(c => 
+              c.status === 'completed' && 
+              c.conclusion === 'success'
+            );
+            
+            if (!allPassed) {
+              console.log('⏳ Waiting for CI checks to pass');
+              const pending = ciChecks.filter(c => c.status !== 'completed');
+              const failed = ciChecks.filter(c => c.conclusion === 'failure');
+              
+              if (pending.length > 0) {
+                console.log('Pending checks:', pending.map(c => c.name));
+              }
+              if (failed.length > 0) {
+                console.log('Failed checks:', failed.map(c => c.name));
+              }
+              return;
+            }
+            
+            console.log('✅ All conditions met, ready to merge');
+            core.setOutput('ready', 'true');
+            core.setOutput('pr_number', pr.number);
+
+      - name: Determine merge method
+        if: steps.check.outputs.ready == 'true'
+        id: merge_method
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = pr.labels.map(l => l.name);
+            
+            // Check for merge method labels
+            let method = 'merge'; // default
+            
+            if (labels.includes('merge/squash')) {
+              method = 'squash';
+            } else if (labels.includes('merge/rebase')) {
+              method = 'rebase';
+            }
+            
+            console.log(`🔀 Merge method: ${method}`);
+            core.setOutput('method', method);
+
+      - name: Auto merge PR
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.check.outputs.pr_number }};
+            const method = '${{ steps.merge_method.outputs.method }}';
+            
+            try {
+              // Get PR details for commit message
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              
+              let commitTitle = pr.title;
+              let commitMessage = pr.body || '';
+              
+              // Append PR number if not already there
+              if (!commitTitle.includes(`#${prNumber}`)) {
+                commitTitle += ` (#${prNumber})`;
+              }
+              
+              // Perform merge
+              const { data: result } = await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                commit_title: commitTitle,
+                commit_message: commitMessage,
+                merge_method: method
+              });
+              
+              console.log(`✅ Successfully merged PR #${prNumber}`);
+              console.log(`Merge SHA: ${result.sha}`);
+              
+              // Add comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `🤖 **Auto-merged** via ${method} merge\n\nAll checks passed and conditions were met.`
+              });
+              
+            } catch (error) {
+              console.error(`Failed to merge: ${error.message}`);
+              
+              // Add failure comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `❌ **Auto-merge failed**\n\nError: ${error.message}\n\nPlease merge manually or investigate the issue.`
+              });
+              
+              core.setFailed(error.message);
+            }
