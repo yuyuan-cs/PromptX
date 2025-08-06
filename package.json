@@ -1,10 +1,11 @@
 {
-  "name": "dpml-prompt",
+  "name": "@promptx/cli",
   "version": "0.2.0",
   "description": "DPML-powered AI prompt framework - Revolutionary AI-First CLI system based on Deepractice Prompt Markup Language. Build sophisticated AI agents with structured prompts, memory systems, and execution frameworks.",
   "main": "src/lib/index.js",
   "bin": {
-    "dpml-prompt": "src/bin/promptx.js"
+    "promptx": "src/bin/promptx.js",
+    "promptx-cli": "src/bin/promptx.js"
   },
   "scripts": {
     "start": "PROMPTX_ENV=development node src/bin/promptx.js",
@@ -28,21 +29,10 @@
     "validate": "npm run test:ci",
     "precommit": "echo 'Pre-commit hooks disabled'",
     "changeset": "changeset",
-    "changeset:version": "changeset version",
-    "changeset:publish": "changeset publish",
+    "changeset:add": "changeset add",
     "changeset:status": "changeset status",
-    "release": "pnpm changeset publish",
-    "release:snapshot": "pnpm changeset version --snapshot snapshot && pnpm changeset publish --tag snapshot",
-    "release:alpha": "pnpm changeset version --snapshot alpha && pnpm changeset publish --tag alpha",
-    "release:beta": "pnpm changeset version --snapshot beta && pnpm changeset publish --tag beta",
-    "version:patch": "pnpm changeset add --type patch",
-    "version:minor": "pnpm changeset add --type minor",
-    "version:major": "pnpm changeset add --type major",
-    "release:version": "standard-version",
-    "release:version:dry": "standard-version --dry-run",
-    "release:version:minor": "standard-version --release-as minor",
-    "release:version:major": "standard-version --release-as major",
-    "release:version:patch": "standard-version --release-as patch",
+    "changeset:version": "echo '⚠️  Version updates are managed by GitHub Actions. Use workflow_dispatch to trigger version update.'",
+    "changeset:publish": "echo '⚠️  Publishing is managed by GitHub Actions. Push to appropriate branch to trigger publish.'",
     "prepare": "husky install"
   },
   "files": [

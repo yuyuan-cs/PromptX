@@ -216,7 +216,7 @@ jobs:
           npm publish --tag "$TAG"
           
           echo "✅ Successfully published to NPM"
-          echo "📎 View package: https://www.npmjs.com/package/dpml-prompt"
+          echo "📎 View package: https://www.npmjs.com/package/@promptx/cli"
 
       - name: Create GitHub Release
         if: inputs.dry_run != true && github.ref_name == 'main'
@@ -270,13 +270,13 @@ jobs:
             message += `\`\`\`bash\n`;
             
             if (tag === 'latest') {
-              message += `npm install dpml-prompt\n`;
+              message += `npm install -g @promptx/cli\n`;
             } else {
-              message += `npm install dpml-prompt@${tag}\n`;
+              message += `npm install -g @promptx/cli@${tag}\n`;
             }
             
             message += `\`\`\`\n\n`;
-            message += `[View on NPM](https://www.npmjs.com/package/dpml-prompt/v/${version})`;
+            message += `[View on NPM](https://www.npmjs.com/package/@promptx/cli/v/${version})`;
             
             // Create an issue comment or discussion
             console.log(message);
