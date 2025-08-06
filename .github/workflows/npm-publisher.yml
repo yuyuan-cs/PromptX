@@ -204,10 +204,25 @@ jobs:
           
           echo "📦 Publishing version $VERSION to NPM with tag: $TAG"
           
-          # For snapshot, append timestamp
-          if [[ "$TAG" == "snapshot" ]]; then
-            TIMESTAMP=$(date +%Y%m%d%H%M%S)
-            npm version "$VERSION-snapshot.$TIMESTAMP" --no-git-tag-version
+          # For non-latest tags, add prerelease suffix
+          if [[ "$TAG" != "latest" ]]; then
+            # Get the current published versions for this tag
+            EXISTING_VERSIONS=$(npm view @promptx/cli versions --json 2>/dev/null | grep "\"$VERSION-$TAG" || echo "[]")
+            
+            # Find the next increment number
+            NEXT_NUM=0
+            if [[ "$EXISTING_VERSIONS" != "[]" ]]; then
+              # Extract numbers and find the highest
+              HIGHEST=$(echo "$EXISTING_VERSIONS" | grep -oE "$VERSION-$TAG\.([0-9]+)" | grep -oE "[0-9]+$" | sort -n | tail -1)
+              if [[ -n "$HIGHEST" ]]; then
+                NEXT_NUM=$((HIGHEST + 1))
+              fi
+            fi
+            
+            # Set the version with prerelease suffix
+            PRERELEASE_VERSION="$VERSION-$TAG.$NEXT_NUM"
+            echo "📌 Setting version to $PRERELEASE_VERSION"
+            npm version "$PRERELEASE_VERSION" --no-git-tag-version
           fi
           
           # Publish
