@@ -96,15 +96,21 @@ jobs:
           CHANGESET_FILE=".changeset/${CHANGESET_ID}.md"
           
           # Create changeset file
-          cat > "$CHANGESET_FILE" << EOF
+          cat > "$CHANGESET_FILE" << 'EOF'
 ---
-"dpml-prompt": $PARAM
+"dpml-prompt": CHANGESET_TYPE
 ---
 
-$DESCRIPTION
+CHANGESET_DESCRIPTION
 
-Contributed by @$PR_USER in #$PR_NUMBER
+Contributed by @CHANGESET_USER in #CHANGESET_PR
 EOF
+          
+          # Replace placeholders
+          sed -i "s/CHANGESET_TYPE/$PARAM/" "$CHANGESET_FILE"
+          sed -i "s/CHANGESET_DESCRIPTION/$DESCRIPTION/" "$CHANGESET_FILE"
+          sed -i "s/CHANGESET_USER/$PR_USER/" "$CHANGESET_FILE"  
+          sed -i "s/CHANGESET_PR/$PR_NUMBER/" "$CHANGESET_FILE"
           
           echo "✅ Created changeset: $CHANGESET_FILE"
           cat "$CHANGESET_FILE"
