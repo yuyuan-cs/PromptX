@@ -123,8 +123,7 @@ jobs:
             git add .
             git commit -m "chore: version packages from PR #${{ github.event.pull_request.number }}
 
-            Auto-generated from PR merge
-            [skip ci]"
+            Auto-generated from PR merge"
             
             git push origin ${{ github.ref_name }}
             echo "✅ Pushed version changes"
