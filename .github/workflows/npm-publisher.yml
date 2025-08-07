@@ -61,7 +61,7 @@ jobs:
           # For PR events, check if it has a publish label
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             # Get PR labels
-            LABELS="${{ toJson(github.event.pull_request.labels.*.name) }}"
+            LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
             echo "📋 PR Labels: $LABELS"
             
             # Check for publish/* labels
