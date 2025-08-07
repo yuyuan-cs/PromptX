@@ -58,56 +58,43 @@ jobs:
             // Priority: PR title > branch name
             const typeRules = {
               'feat': {
-                labels: [isBreakingChange ? 'changeset/major' : 'changeset/minor', 'merge/squash'],
-                publish: true
+                labels: [isBreakingChange ? 'changeset/major' : 'changeset/minor', 'merge/squash']
               },
               'feature': {  // Support branch naming
-                labels: ['changeset/minor', 'merge/squash'],
-                publish: true
+                labels: ['changeset/minor', 'merge/squash']
               },
               'fix': {
-                labels: ['changeset/patch', 'merge/squash'],
-                publish: true
+                labels: ['changeset/patch', 'merge/squash']
               },
               'docs': {
-                labels: ['changeset/none', 'merge/squash'],
-                publish: false
+                labels: ['changeset/none', 'merge/squash']
               },
               'doc': {  // Support branch naming
-                labels: ['changeset/none', 'merge/squash'],
-                publish: false
+                labels: ['changeset/none', 'merge/squash']
               },
               'style': {
-                labels: ['changeset/none', 'merge/squash'],
-                publish: false
+                labels: ['changeset/none', 'merge/squash']
               },
               'refactor': {
-                labels: ['changeset/patch', 'merge/squash'],
-                publish: true
+                labels: ['changeset/patch', 'merge/squash']
               },
               'perf': {
-                labels: ['changeset/patch', 'merge/squash'],
-                publish: true
+                labels: ['changeset/patch', 'merge/squash']
               },
               'test': {
-                labels: ['changeset/none', 'merge/squash'],
-                publish: false
+                labels: ['changeset/none', 'merge/squash']
               },
               'build': {
-                labels: ['changeset/patch', 'merge/squash'],
-                publish: true
+                labels: ['changeset/patch', 'merge/squash']
               },
               'ci': {
-                labels: ['changeset/none', 'merge/squash'],
-                publish: false
+                labels: ['changeset/none', 'merge/squash']
               },
               'chore': {
-                labels: ['changeset/none', 'merge/squash'],
-                publish: false
+                labels: ['changeset/none', 'merge/squash']
               },
               'revert': {
-                labels: ['changeset/patch', 'merge/squash'],
-                publish: true
+                labels: ['changeset/patch', 'merge/squash']
               }
             };
             
@@ -118,8 +105,7 @@ jobs:
               console.log(`⚠️ No rule defined for type: ${detectedType}`);
               // Default to no version change for unknown types
               const defaultRule = {
-                labels: ['changeset/none', 'merge/squash'],
-                publish: false
+                labels: ['changeset/none', 'merge/squash']
               };
               matchedRule = defaultRule;
             }
@@ -143,20 +129,6 @@ jobs:
             
             // Prepare labels to add
             let labelsToAdd = [...matchedRule.labels];
-            
-            // Add publish label based on target branch and changeset type
-            if (matchedRule.publish) {
-              const publishLabel = {
-                'develop': 'publish/dev',
-                'test': 'publish/alpha',
-                'staging': 'publish/beta',
-                'main': 'publish/latest'
-              }[targetBranch];
-              
-              if (publishLabel) {
-                labelsToAdd.push(publishLabel);
-              }
-            }
             
             // Filter out labels that would conflict
             if (hasChangesetLabel) {
@@ -197,10 +169,11 @@ jobs:
             commentBody += `- Source branch: \`${sourceBranch}\`\n`;
             commentBody += `- Target branch: \`${targetBranch}\`\n\n`;
             
-            if (matchedRule.publish) {
-              commentBody += '📦 This PR will be automatically published after merge.\n\n';
+            const hasChangesetNone = labelsToAdd.includes('changeset/none');
+            if (!hasChangesetNone) {
+              commentBody += '📦 Version will be updated and automatically published after merge.\n\n';
             } else {
-              commentBody += '⏸️ This PR will not trigger automatic publishing (changeset/none).\n\n';
+              commentBody += '⏸️ No version change needed (changeset/none).\n\n';
             }
             
             commentBody += 'You can manually adjust these labels if needed.';
