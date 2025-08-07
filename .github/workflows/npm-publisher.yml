@@ -1,7 +1,8 @@
 name: NPM Publisher
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
       - staging
@@ -29,6 +30,10 @@ jobs:
   prepare-release:
     name: Prepare Release
     runs-on: ubuntu-latest
+    # Only run on merged PRs or manual dispatch
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     outputs:
       should_publish: ${{ steps.check.outputs.should_publish }}
       publish_tag: ${{ steps.check.outputs.publish_tag }}
@@ -53,32 +58,62 @@ jobs:
             exit 0
           fi
           
-          # Automatic branch-based publishing
-          BRANCH="${{ github.ref_name }}"
-          
-          case "$BRANCH" in
-            "main")
-              TAG="latest"
-              ;;
-            "staging")
-              TAG="beta"
-              ;;
-            "test")
-              TAG="alpha"
-              ;;
-            "develop")
-              TAG="dev"
-              ;;
-            *)
+          # For PR events, check if it has a publish label
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Get PR labels
+            LABELS="${{ toJson(github.event.pull_request.labels.*.name) }}"
+            echo "📋 PR Labels: $LABELS"
+            
+            # Check for publish/* labels
+            PUBLISH_LABEL=""
+            if echo "$LABELS" | grep -q "publish/dev"; then
+              PUBLISH_LABEL="dev"
+            elif echo "$LABELS" | grep -q "publish/alpha"; then
+              PUBLISH_LABEL="alpha"
+            elif echo "$LABELS" | grep -q "publish/beta"; then
+              PUBLISH_LABEL="beta"
+            elif echo "$LABELS" | grep -q "publish/latest"; then
+              PUBLISH_LABEL="latest"
+            fi
+            
+            if [[ -z "$PUBLISH_LABEL" ]]; then
               echo "should_publish=false" >> $GITHUB_OUTPUT
-              echo "ℹ️ Branch $BRANCH does not trigger automatic publishing"
+              echo "ℹ️ No publish label found on PR #${{ github.event.pull_request.number }}"
               exit 0
-              ;;
-          esac
-          
-          echo "should_publish=true" >> $GITHUB_OUTPUT
-          echo "publish_tag=$TAG" >> $GITHUB_OUTPUT
-          echo "📦 Will publish to: $TAG"
+            fi
+            
+            # Verify the label matches the target branch
+            TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+            EXPECTED_TAG=""
+            
+            case "$TARGET_BRANCH" in
+              "main")
+                EXPECTED_TAG="latest"
+                ;;
+              "staging")
+                EXPECTED_TAG="beta"
+                ;;
+              "test")
+                EXPECTED_TAG="alpha"
+                ;;
+              "develop")
+                EXPECTED_TAG="dev"
+                ;;
+            esac
+            
+            if [[ "$PUBLISH_LABEL" != "$EXPECTED_TAG" ]]; then
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+              echo "⚠️ Publish label 'publish/$PUBLISH_LABEL' doesn't match target branch '$TARGET_BRANCH' (expected 'publish/$EXPECTED_TAG')"
+              exit 0
+            fi
+            
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "publish_tag=$PUBLISH_LABEL" >> $GITHUB_OUTPUT
+            echo "📦 Will publish to: $PUBLISH_LABEL (from PR #${{ github.event.pull_request.number }})"
+          else
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Unexpected event type: ${{ github.event_name }}"
+          fi
 
       - name: Setup Node.js
         if: steps.check.outputs.should_publish == 'true'
