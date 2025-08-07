@@ -32,6 +32,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create changeset from PR
+        id: create-changeset
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -65,16 +66,17 @@ jobs:
             console.log(`📈 Version type: ${versionType}`);
             
             // Create changeset content
-            const changesetContent = `---
-"@promptx/cli": ${versionType}
----
-
-${prTitle}
-
-${prBody}
-
-PR: #${prNumber}
-`;
+            const changesetContent = [
+              '---',
+              `"@promptx/cli": ${versionType}`,
+              '---',
+              '',
+              prTitle,
+              '',
+              prBody,
+              '',
+              `PR: #${prNumber}`
+            ].join('\n');
             
             // Generate unique changeset filename
             const timestamp = Date.now();
