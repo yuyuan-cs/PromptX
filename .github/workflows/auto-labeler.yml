@@ -140,23 +140,25 @@ jobs:
             });
             
             // Add a comment explaining the auto-labeling
-            const comment = `🤖 **Auto-labeler applied the following labels:**
-
-${labelsToAdd.map(l => `- \`${l}\``).join('\n')}
-
-**Based on:**
-- Source branch: \`${sourceBranch}\`
-- Target branch: \`${targetBranch}\`
-
-${matchedRule.publish ? '📦 This PR will be automatically published after merge.' : '⏸️ This PR will not trigger automatic publishing (changeset/none).'}
-
-You can manually adjust these labels if needed.`;
+            let commentBody = '🤖 **Auto-labeler applied the following labels:**\n\n';
+            commentBody += labelsToAdd.map(l => '- `' + l + '`').join('\n');
+            commentBody += '\n\n**Based on:**\n';
+            commentBody += `- Source branch: \`${sourceBranch}\`\n`;
+            commentBody += `- Target branch: \`${targetBranch}\`\n\n`;
+            
+            if (matchedRule.publish) {
+              commentBody += '📦 This PR will be automatically published after merge.\n\n';
+            } else {
+              commentBody += '⏸️ This PR will not trigger automatic publishing (changeset/none).\n\n';
+            }
+            
+            commentBody += 'You can manually adjust these labels if needed.';
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              body: comment
+              body: commentBody
             });
             
             console.log('✅ Auto-labeling complete!');
