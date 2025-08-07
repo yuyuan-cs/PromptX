@@ -25,25 +25,43 @@ jobs:
             const pr = context.payload.pull_request;
             const sourceBranch = pr.head.ref;
             const targetBranch = pr.base.ref;
+            const prTitle = pr.title;
             
             console.log(`🔍 Analyzing PR: ${sourceBranch} → ${targetBranch}`);
+            console.log(`📝 PR Title: ${prTitle}`);
             
-            // Parse branch name following pattern: {type}/#{issue}-{description}
+            // First try to parse PR title for conventional commit format
+            const titlePattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?(!)?:\s*(.+)/;
+            const titleMatch = prTitle.match(titlePattern);
+            
+            // Parse branch name as fallback
             const branchPattern = /^(\w+)\/#?\d+-[\w-]+$/;
             const branchMatch = sourceBranch.match(branchPattern);
             
-            if (!branchMatch) {
-              console.log('⚠️ Branch name does not match expected pattern:', sourceBranch);
+            // Determine the type from PR title or branch name
+            let detectedType;
+            let isBreakingChange = false;
+            
+            if (titleMatch) {
+              detectedType = titleMatch[1];
+              isBreakingChange = titleMatch[3] === '!';
+              console.log(`✅ Detected type from PR title: ${detectedType}${isBreakingChange ? ' (BREAKING)' : ''}`);
+            } else if (branchMatch) {
+              detectedType = branchMatch[1];
+              console.log(`🔍 Detected type from branch: ${detectedType}`);
+            } else {
+              console.log('⚠️ Could not determine type from PR title or branch name');
               return;
             }
             
-            const branchType = branchMatch[1];
-            console.log(`🔍 Detected branch type: ${branchType}`);
-            
-            // Label rules based on branch type
-            // Note: type: labels are already added by branch-validator.yml
-            const branchRules = {
-              'feature': {
+            // Label rules based on detected type
+            // Priority: PR title > branch name
+            const typeRules = {
+              'feat': {
+                labels: [isBreakingChange ? 'changeset/major' : 'changeset/minor', 'merge/squash'],
+                publish: true
+              },
+              'feature': {  // Support branch naming
                 labels: ['changeset/minor', 'merge/squash'],
                 publish: true
               },
@@ -51,7 +69,15 @@ jobs:
                 labels: ['changeset/patch', 'merge/squash'],
                 publish: true
               },
-              'doc': {
+              'docs': {
+                labels: ['changeset/none', 'merge/squash'],
+                publish: false
+              },
+              'doc': {  // Support branch naming
+                labels: ['changeset/none', 'merge/squash'],
+                publish: false
+              },
+              'style': {
                 labels: ['changeset/none', 'merge/squash'],
                 publish: false
               },
@@ -59,21 +85,46 @@ jobs:
                 labels: ['changeset/patch', 'merge/squash'],
                 publish: true
               },
+              'perf': {
+                labels: ['changeset/patch', 'merge/squash'],
+                publish: true
+              },
+              'test': {
+                labels: ['changeset/none', 'merge/squash'],
+                publish: false
+              },
+              'build': {
+                labels: ['changeset/patch', 'merge/squash'],
+                publish: true
+              },
+              'ci': {
+                labels: ['changeset/none', 'merge/squash'],
+                publish: false
+              },
               'chore': {
                 labels: ['changeset/none', 'merge/squash'],
                 publish: false
+              },
+              'revert': {
+                labels: ['changeset/patch', 'merge/squash'],
+                publish: true
               }
             };
             
             // Find matching rule
-            const matchedRule = branchRules[branchType];
+            const matchedRule = typeRules[detectedType];
             
             if (!matchedRule) {
-              console.log(`⚠️ No rule defined for branch type: ${branchType}`);
-              return;
+              console.log(`⚠️ No rule defined for type: ${detectedType}`);
+              // Default to no version change for unknown types
+              const defaultRule = {
+                labels: ['changeset/none', 'merge/squash'],
+                publish: false
+              };
+              matchedRule = defaultRule;
             }
             
-            console.log(`✅ Matched rule for type: ${branchType}`);
+            console.log(`✅ Matched rule for type: ${detectedType}`);
             
             // Get existing labels
             const { data: existingLabels } = await github.rest.issues.listLabelsOnIssue({

@@ -1,0 +1,152 @@
+name: Auto Changeset
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
+
+jobs:
+  create-changeset:
+    name: Create Changeset from PR
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create changeset from PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Get PR details
+            const pr = context.payload.pull_request;
+            const prNumber = pr.number;
+            const prTitle = pr.title;
+            const prBody = pr.body || '';
+            const labels = pr.labels.map(l => l.name);
+            
+            console.log(`📋 Processing PR #${prNumber}: ${prTitle}`);
+            console.log(`🏷️ Labels: ${labels.join(', ')}`);
+            
+            // Determine version type from labels
+            let versionType = 'patch';
+            if (labels.includes('changeset/major')) {
+              versionType = 'major';
+            } else if (labels.includes('changeset/minor')) {
+              versionType = 'minor';
+            } else if (labels.includes('changeset/patch')) {
+              versionType = 'patch';
+            } else if (labels.includes('changeset/none')) {
+              console.log('ℹ️ No version change needed (changeset/none)');
+              return;
+            }
+            
+            console.log(`📈 Version type: ${versionType}`);
+            
+            // Create changeset content
+            const changesetContent = `---
+"@promptx/cli": ${versionType}
+---
+
+${prTitle}
+
+${prBody}
+
+PR: #${prNumber}
+`;
+            
+            // Generate unique changeset filename
+            const timestamp = Date.now();
+            const changesetDir = '.changeset';
+            const changesetFile = path.join(changesetDir, `pr-${prNumber}-${timestamp}.md`);
+            
+            // Ensure changeset directory exists
+            if (!fs.existsSync(changesetDir)) {
+              fs.mkdirSync(changesetDir, { recursive: true });
+            }
+            
+            // Write changeset file
+            fs.writeFileSync(changesetFile, changesetContent);
+            console.log(`✅ Created changeset: ${changesetFile}`);
+            
+            // Output for next steps
+            core.setOutput('changeset_created', 'true');
+            core.setOutput('changeset_file', changesetFile);
+
+      - name: Run changeset version
+        if: steps.create-changeset.outputs.changeset_created == 'true'
+        run: |
+          echo "📦 Running changeset version..."
+          npx changeset version
+          
+          # Check if there are changes
+          if git diff --quiet; then
+            echo "ℹ️ No version changes"
+            exit 0
+          fi
+          
+          echo "✅ Version updated"
+
+      - name: Commit version changes
+        if: steps.create-changeset.outputs.changeset_created == 'true'
+        run: |
+          if ! git diff --quiet; then
+            git add .
+            git commit -m "chore: version packages from PR #${{ github.event.pull_request.number }}
+
+            Auto-generated from PR merge
+            [skip ci]"
+            
+            git push origin ${{ github.ref_name }}
+            echo "✅ Pushed version changes"
+          else
+            echo "ℹ️ No changes to commit"
+          fi
+
+      - name: Summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const prTitle = context.payload.pull_request.title;
+            
+            let summary = `## 🔄 Changeset Processing Summary\n\n`;
+            summary += `**PR**: #${prNumber} - ${prTitle}\n\n`;
+            
+            if (process.env.changeset_created === 'true') {
+              summary += `✅ Changeset created and version updated\n`;
+              summary += `📦 Check the develop branch for the version changes\n`;
+            } else {
+              summary += `ℹ️ No changeset needed (labeled as changeset/none)\n`;
+            }
+            
+            // Add comment to PR
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: summary
+            });
