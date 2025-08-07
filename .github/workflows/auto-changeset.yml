@@ -10,13 +10,17 @@ jobs:
     name: Create Changeset from PR
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,7 +39,7 @@ jobs:
         id: create-changeset
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_PAT }}
           script: |
             const fs = require('fs');
             const path = require('path');
@@ -98,6 +102,8 @@ jobs:
 
       - name: Run changeset version
         if: steps.create-changeset.outputs.changeset_created == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           echo "📦 Running changeset version..."
           npx changeset version
@@ -130,7 +136,7 @@ jobs:
         if: always()
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_PAT }}
           script: |
             const prNumber = context.payload.pull_request.number;
             const prTitle = context.payload.pull_request.title;
