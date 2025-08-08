@@ -4,6 +4,7 @@ const logger = require('../../../utils/logger')
 const path = require('path')
 const fs = require('fs-extra')
 const { getDirectoryService } = require('../../../utils/DirectoryService')
+const { PACKAGE_NAMES } = require('../../../../constants')
 
 /**
  * PackageDiscovery - 包级资源发现器
@@ -459,8 +460,8 @@ class PackageDiscovery extends FilePatternDiscovery {
 
     try {
       const packageJson = await fs.readJSON(path.join(dir, 'package.json'))
-      // 支持两个包名：旧版 dpml-prompt 和新版 @promptx/cli
-      return packageJson.name === 'dpml-prompt' || packageJson.name === '@promptx/cli'
+      // 支持配置的包名列表
+      return PACKAGE_NAMES.ALL.includes(packageJson.name)
     } catch (error) {
       return false
     }
@@ -482,7 +483,8 @@ class PackageDiscovery extends FilePatternDiscovery {
         if (await fs.pathExists(packageJsonPath)) {
           const packageJson = await fs.readJSON(packageJsonPath)
           
-          if (packageJson.name === 'dpml-prompt') {
+          // 支持配置的包名列表
+          if (PACKAGE_NAMES.ALL.includes(packageJson.name)) {
             return searchDir
           }
         }
@@ -509,16 +511,16 @@ class PackageDiscovery extends FilePatternDiscovery {
       const packageJsonPath = path.join(packageRoot, 'package.json')
       if (await fs.pathExists(packageJsonPath)) {
         const packageJson = await fs.readJSON(packageJsonPath)
-        // 支持两个包名：旧版 dpml-prompt 和新版 @promptx/cli
-        if (packageJson.name === 'dpml-prompt' || packageJson.name === '@promptx/cli') {
+        // 支持配置的包名列表
+        if (PACKAGE_NAMES.ALL.includes(packageJson.name)) {
           logger.info(`[PackageDiscovery] Found package root via __dirname: ${packageRoot}`)
           return packageRoot
         }
       }
       
-      // 后备方案：使用模块解析（尝试两个包名）
+      // 后备方案：使用模块解析（尝试配置的包名）
       const resolve = require('resolve')
-      const packageNames = ['@promptx/cli', 'dpml-prompt']
+      const packageNames = PACKAGE_NAMES.ALL
       
       for (const packageName of packageNames) {
         try {

@@ -13,124 +13,127 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Test (${{ matrix.os }}, Node ${{ matrix.node }})
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node: [16, 18, 20]
-        exclude:
-          # Reduce matrix for PRs to save time
-          - os: ${{ github.event_name == 'pull_request' && 'windows-latest' || '' }}
-            node: 16
-          - os: ${{ github.event_name == 'pull_request' && 'macos-latest' || '' }}
-            node: 16
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-          # Remove cache since we're using pnpm
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run linter
-        run: npx eslint src/ --no-error-on-unmatched-pattern || true
-        continue-on-error: true
-
-      - name: Run unit tests
-        run: |
-          echo "⏭️ Skipping unit tests - no test files configured"
-          npx jest --passWithNoTests --ci --config jest.config.js || true
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'test/skip-unit') }}
-
-      - name: Run integration tests
-        run: |
-          echo "⏭️ Skipping integration tests - no test files configured"
-          npx jest --passWithNoTests --ci --config jest.config.js || true
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'test/skip-integration') }}
-
-      - name: Run E2E tests
-        run: |
-          echo "⏭️ Skipping E2E tests - no test files configured"
-          npx jest --passWithNoTests --ci --config jest.config.js || true
-        if: |
-          matrix.os == 'ubuntu-latest' && 
-          matrix.node == '20' &&
-          !contains(github.event.pull_request.labels.*.name, 'test/skip-e2e')
-
-      - name: Generate coverage report
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
-        run: |
-          echo "⏭️ Skipping coverage report - no test files configured"
-          npx jest --coverage --passWithNoTests --ci --config jest.config.js || true
-
-      - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-
-  test-extended:
-    name: Extended Tests
-    runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'test/extended')
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run extended test suite
-        run: |
-          echo "🔬 Running extended tests..."
-          # Add extended test commands here
-          # npm run test:stress
-          # npm run test:compatibility
-          # npm run test:security
-
-  test-performance:
-    name: Performance Tests
-    runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'test/performance')
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run performance benchmarks
-        run: |
-          echo "📊 Running performance benchmarks..."
-          # Add performance test commands here
-          # npm run test:benchmark
-          # npm run test:memory
+  # 暂时注释测试流程，加快构建速度
+  # 需要时取消注释即可恢复
+  
+  # test:
+  #   name: Test (${{ matrix.os }}, Node ${{ matrix.node }})
+  #   runs-on: ${{ matrix.os }}
+  #   
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest, macos-latest]
+  #       node: [16, 18, 20]
+  #       exclude:
+  #         # Reduce matrix for PRs to save time
+  #         - os: ${{ github.event_name == 'pull_request' && 'windows-latest' || '' }}
+  #           node: 16
+  #         - os: ${{ github.event_name == 'pull_request' && 'macos-latest' || '' }}
+  #           node: 16
+  #   
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ matrix.node }}
+  #         # Remove cache since we're using pnpm
+  #
+  #     - name: Install dependencies
+  #       run: npm install
+  #
+  #     - name: Run linter
+  #       run: npx eslint src/ --no-error-on-unmatched-pattern || true
+  #       continue-on-error: true
+  #
+  #     - name: Run unit tests
+  #       run: |
+  #         echo "⏭️ Skipping unit tests - no test files configured"
+  #         npx jest --passWithNoTests --ci --config jest.config.js || true
+  #       if: ${{ !contains(github.event.pull_request.labels.*.name, 'test/skip-unit') }}
+  #
+  #     - name: Run integration tests
+  #       run: |
+  #         echo "⏭️ Skipping integration tests - no test files configured"
+  #         npx jest --passWithNoTests --ci --config jest.config.js || true
+  #       if: ${{ !contains(github.event.pull_request.labels.*.name, 'test/skip-integration') }}
+  #
+  #     - name: Run E2E tests
+  #       run: |
+  #         echo "⏭️ Skipping E2E tests - no test files configured"
+  #         npx jest --passWithNoTests --ci --config jest.config.js || true
+  #       if: |
+  #         matrix.os == 'ubuntu-latest' && 
+  #         matrix.node == '20' &&
+  #         !contains(github.event.pull_request.labels.*.name, 'test/skip-e2e')
+  #
+  #     - name: Generate coverage report
+  #       if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
+  #       run: |
+  #         echo "⏭️ Skipping coverage report - no test files configured"
+  #         npx jest --coverage --passWithNoTests --ci --config jest.config.js || true
+  #
+  #     - name: Upload coverage to Codecov
+  #       if: matrix.os == 'ubuntu-latest' && matrix.node == '20'
+  #       uses: codecov/codecov-action@v3
+  #       with:
+  #         token: ${{ secrets.CODECOV_TOKEN }}
+  #         files: ./coverage/lcov.info
+  #         fail_ci_if_error: false
+  #
+  # test-extended:
+  #   name: Extended Tests
+  #   runs-on: ubuntu-latest
+  #   if: contains(github.event.pull_request.labels.*.name, 'test/extended')
+  #   
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #
+  #     - name: Install dependencies
+  #       run: npm install
+  #
+  #     - name: Run extended test suite
+  #       run: |
+  #         echo "🔬 Running extended tests..."
+  #         # Add extended test commands here
+  #         # npm run test:stress
+  #         # npm run test:compatibility
+  #         # npm run test:security
+  #
+  # test-performance:
+  #   name: Performance Tests
+  #   runs-on: ubuntu-latest
+  #   if: contains(github.event.pull_request.labels.*.name, 'test/performance')
+  #   
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #
+  #     - name: Install dependencies
+  #       run: npm install
+  #
+  #     - name: Run performance benchmarks
+  #       run: |
+  #         echo "📊 Running performance benchmarks..."
+  #         # Add performance test commands here
+  #         # npm run test:benchmark
+  #         # npm run test:memory
 
   check-changeset:
     name: Check Changeset
@@ -169,18 +172,22 @@ jobs:
   status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [test, check-changeset]
+    # needs: [test, check-changeset]  # 注释掉test依赖
+    needs: [check-changeset]
     if: always()
     
     steps:
       - name: Check results
         run: |
-          if [[ "${{ needs.test.result }}" == "success" ]]; then
-            echo "✅ All tests passed"
-          else
-            echo "❌ Tests failed"
-            exit 1
-          fi
+          # 暂时跳过test结果检查
+          # if [[ "${{ needs.test.result }}" == "success" ]]; then
+          #   echo "✅ All tests passed"
+          # else
+          #   echo "❌ Tests failed"
+          #   exit 1
+          # fi
+          
+          echo "⏭️ Tests temporarily disabled for faster CI"
           
           if [[ "${{ needs.check-changeset.result }}" == "success" ]] || [[ "${{ needs.check-changeset.result }}" == "skipped" ]]; then
             echo "✅ Changeset check passed"

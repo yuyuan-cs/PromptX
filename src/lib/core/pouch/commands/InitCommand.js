@@ -1,6 +1,6 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
-const { COMMANDS } = require('../../../../constants')
+const { COMMANDS, PACKAGE_NAMES } = require('../../../../constants')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
 const ProjectManager = require('../../../utils/ProjectManager')
@@ -217,7 +217,7 @@ ${registryStats.message}
         const packageJson = await fs.readJSON(packageJsonPath)
         const baseVersion = packageJson.version || '未知版本'
         const nodeVersion = process.version
-        const packageName = packageJson.name || 'dpml-prompt'
+        const packageName = packageJson.name || PACKAGE_NAMES.LEGACY
         
         return `${baseVersion} (${packageName}@${baseVersion}, Node.js ${nodeVersion})`
       }
