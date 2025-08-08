@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.2.2
+
+### Patch Changes
+
+- [#226](https://github.com/Deepractice/PromptX/pull/226) [`fc67a12`](https://github.com/Deepractice/PromptX/commit/fc67a121123b6b91e9540e0856d9dd3039c41d52) Thanks [@deepracticex7](https://github.com/deepracticex7)! - fix: 修复系统角色无法激活的问题 (#225)
+
+  ## Summary
+
+  修复了系统核心角色（nuwa、assistant、luban、noface、sean）无法激活的问题。
+
+  ## 问题根因
+
+  `PackageDiscovery.js` 中的 `_isDevelopmentMode()` 方法调用了不存在的 `directoryService.getProjectRoot()` 方法，导致：
+
+  - 环境检测失败，返回 "unknown"
+  - 无法找到包根目录
+  - 系统角色无法被加载
+
+  ## 修复内容
+
+  - ✅ 简化 `_isDevelopmentMode()` 方法，只通过环境变量判断，移除有问题的代码
+  - ✅ 优化 `_findDevelopmentRoot()` 方法，调整策略优先级并增加错误处理
+  - ✅ 修复 `_findFallbackRoot()` 支持新包名 `@promptx/cli`（同时保留对 `dpml-prompt` 的支持）
+  - ✅ 更新 `_isLocalInstallation()` 支持两个包名的检测
+
+  ## Test plan
+
+  - [x] 本地开发模式（有环境变量）：✅ 正常加载 5 个系统角色
+  - [x] 本地开发模式（无环境变量）：✅ 正常加载 5 个系统角色
+  - [x] 回归测试：✅ 确认修复没有影响现有功能
+
+  Fixes #225
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
 ## 0.2.1
 
 ### Patch Changes
