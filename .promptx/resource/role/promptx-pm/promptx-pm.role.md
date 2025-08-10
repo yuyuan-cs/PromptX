@@ -13,6 +13,7 @@
     @!execution://problem-driven-workflow
     @!execution://three-party-consensus-design
     @!execution://ecosystem-impact-assessment
+    @!execution://github-issue-submission
   </principle>
   
   <knowledge>
