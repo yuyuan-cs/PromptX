@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.2.3
+
+### Patch Changes
+
+- [#235](https://github.com/Deepractice/PromptX/pull/235) [`17a1116`](https://github.com/Deepractice/PromptX/commit/17a111661728f160eb82a796f87942ade7bc137b) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 提升 ToolSandbox 工作目录到~/.promptx 层级 (#232)
+
+  ## 概述
+
+  解决 #232 - ToolSandbox 工作目录被硬编码限制的问题
+
+  ## User Impact
+
+  工具现在可以访问整个`.promptx`目录下的资源文件，不再被限制在狭小的 toolbox 子目录中。这让工具能够读取项目配置、访问资源文件、执行更复杂的文件操作。
+
+  ## 问题描述
+
+  之前 ToolSandbox 将所有工具的工作目录硬编码为`~/.promptx/toolbox/[tool-id]`，导致工具无法访问项目级资源文件。
+
+  ## 解决方案
+
+  1. **新增 ToolDirectoryManager 类**：基于协议系统统一管理工具相关目录
+  2. **工作目录提升**：将 process.cwd()从 toolbox 子目录提升到`~/.promptx`
+  3. **保持依赖隔离**：node_modules 仍然安装在独立的 toolbox 目录
+
+  ## 主要改动
+
+  - ✅ 创建`src/lib/tool/ToolDirectoryManager.js` - 目录管理器
+  - ✅ 修改`src/lib/tool/ToolSandbox.js` - 使用新的目录管理器
+  - ✅ 更新`src/lib/tool/SandboxIsolationManager.js` - 适配新的工作目录
+
+  ## 测试验证
+
+  开发了三个测试工具验证改动效果：
+
+  ### 1. filesystem 工具
+
+  - 验证 process.cwd()返回`~/.promptx`
+  - 测试文件系统访问能力
+
+  ### 2. project-scanner 工具
+
+  - 验证能扫描 resource 目录
+  - 测试跨目录访问能力
+
+  ### 3. resource-manager 工具
+
+  - 测试 CRUD 操作
+  - 验证文件创建、读取、更新、删除功能
+
+  所有测试均通过 ✅
+
+  ## 影响范围
+
+  - 工具可以访问整个`.promptx`目录下的资源
+  - 保持向后兼容，现有工具无需修改
+  - 依赖隔离机制不变，安全性得到保证
+
+  ## 相关 Issue
+
+  Closes #232
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
 ## 0.2.2
 
 ### Patch Changes
