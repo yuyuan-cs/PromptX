@@ -1,5 +1,88 @@
 # Changelog
 
+## 1.0.0
+
+### Major Changes
+
+- [#237](https://github.com/Deepractice/PromptX/pull/237) [`3b7ec16`](https://github.com/Deepractice/PromptX/commit/3b7ec16acbf06d689d781d3ade7ee84d2191fcd2) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 修复 ToolSandbox 对 scoped npm 包的解析问题 (#236)
+
+  ## 📋 Summary
+
+  修复了 ToolSandbox 在解析 scoped npm 包（如 `@modelcontextprotocol/server-filesystem@^2025.7.29`）时因使用 `split('@')` 导致的包名错误分割问题。
+
+  ## 🔄 Changes
+
+  ### 核心改动
+
+  将 `getDependencies()` 方法从返回数组格式改为返回对象格式，直接与 package.json 的 dependencies 格式保持一致，从根本上避免了字符串解析问题。
+
+  ### 文件变更
+
+  - **src/lib/tool/ToolSandbox.js**
+
+    - 新增对象格式支持（优先）
+    - 保留数组格式兼容性（带弃用警告）
+    - 使用 `lastIndexOf('@')` 解析旧格式
+
+  - **src/lib/tool/ToolInterface.js**
+
+    - 更新示例代码使用新的对象格式
+    - 文档说明新格式规范
+
+  - **src/lib/tool/SandboxErrorManager.js**
+
+    - 兼容两种格式的错误处理
+    - 更新错误提示使用新格式
+
+  - **resource/role/luban/**
+    - 更新工具开发相关文档
+    - 所有示例改用新的对象格式
+
+  ### 新增测试工具
+
+  - 创建 `tool-tester` 工具用于回归测试
+  - 专门测试 scoped 包的支持情况
+  - 可用于后续 ToolSandbox 功能验证
+
+  ## 🧪 Testing
+
+  - ✅ 创建 tool-tester 测试工具
+  - ✅ Scoped 包识别测试通过
+  - ✅ 依赖格式验证通过
+  - ✅ 向后兼容性确认
+
+  ## 💥 Breaking Changes
+
+  ⚠️ `getDependencies()` 方法现在应返回对象格式而非数组格式：
+
+  **旧格式**（已弃用，但仍支持）：
+
+  ```javascript
+  getDependencies() {
+    return [
+      'lodash@^4.17.21',
+      '@sindresorhus/is@^6.0.0'
+    ];
+  }
+  ```
+
+  **新格式**（推荐）：
+
+  ```javascript
+  getDependencies() {
+    return {
+      'lodash': '^4.17.21',
+      '@sindresorhus/is': '^6.0.0'
+    };
+  }
+  ```
+
+  ## 🔗 Related
+
+  - Fixes #236
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
 ## 0.2.3
 
 ### Patch Changes
