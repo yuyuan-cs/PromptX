@@ -1,0 +1,3 @@
+- github 的所有交互都应该使用 gh cli
+- 除非角色本身有要求，否则默认不应该使用 serena mcp
+- 使用 serena mcp activate 项目的路径是/workspace/projects
