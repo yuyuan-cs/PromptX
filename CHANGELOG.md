@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- [#244](https://github.com/Deepractice/PromptX/pull/244) [`bee924f`](https://github.com/Deepractice/PromptX/commit/bee924f71adf94c82bee461c9aba6c447f7ae02d) Thanks [@deepracticexs](https://github.com/deepracticexs)! - refactor: 实现 VM 层文件系统边界控制 (#243)
+
+  ## Summary
+
+  实现了 ToolSandbox 的 VM 层文件系统边界控制，确保工具无法访问工作目录之外的文件。
+
+  ## 实现内容
+
+  - ✅ 在 SandboxIsolationManager 中实现 createRestrictedFS() 方法
+  - ✅ 透明拦截所有 fs 操作，自动检查路径边界
+  - ✅ 阻止相对路径(../)和绝对路径越权访问
+  - ✅ 禁用危险操作(child_process, eval, process.binding)
+  - ✅ 添加 boundary-test 工具验证安全控制
+
+  ## 测试结果
+
+  所有安全测试通过（100% 拦截率）：
+
+  - Normal Access: 2/2 passed ✅
+  - Relative Path Escape: 3/3 passed ✅
+  - Absolute Path Escape: 3/3 passed ✅
+  - Dangerous Operations: 4/4 passed ✅
+
+  ## Related Issue
+
+  Closes #243
+
+  ## Test plan
+
+  - [x] boundary-test 工具的所有测试用例通过
+  - [x] 正常文件操作不受影响
+  - [x] 路径越权被正确拦截
+  - [x] 危险操作被成功阻止
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
 ## 1.3.0
 
 ### Minor Changes
