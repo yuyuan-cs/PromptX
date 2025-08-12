@@ -1,5 +1,91 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- [#240](https://github.com/Deepractice/PromptX/pull/240) [`7922841`](https://github.com/Deepractice/PromptX/commit/7922841e10ec8c7903ab5d9260f774c34f357ec0) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: 实现 filesystem 工具解决 HTTP 服务模式文件访问 (#230)
+
+  ## 📋 概述
+
+  实现了 `@tool://filesystem` 工具，解决 Issue #230 提出的 HTTP 服务模式下文件系统访问问题。
+
+  ## 🎯 解决的问题
+
+  - ✅ 女娲/鲁班等角色在远程部署时无法访问文件系统
+  - ✅ 本地和远程部署需要不同的文件操作代码
+  - ✅ 缺少统一的文件操作接口
+
+  ## 💡 实现方案
+
+  ### 核心设计
+
+  - 基于 MCP filesystem 接口规范设计参数和方法
+  - 工具访问 PromptX 服务所在位置的文件系统
+  - 所有操作限制在 `~/.promptx` 目录内
+
+  ### 支持的操作
+
+  - `read_text_file` - 读取文本文件
+  - `read_media_file` - 读取媒体文件（Base64）
+  - `write_file` - 写入文件
+  - `edit_file` - 编辑文件
+  - `list_directory` - 列出目录
+  - `search_files` - 搜索文件
+  - `create_directory` - 创建目录
+  - `move_file` - 移动文件
+  - `get_file_info` - 获取文件信息
+  - 更多...
+
+  ## 🔧 技术细节
+
+  - 工具位置：`resource/tool/filesystem/` (包级别)
+  - 依赖管理：支持 ES Module（未来可升级到 MCP 包）
+  - 安全机制：路径验证，防止越权访问
+  - 返回格式：统一的成功/失败结构
+
+  ## ✅ 测试验证
+
+  - [x] 基础读写功能测试
+  - [x] 目录操作测试
+  - [x] 安全限制测试
+  - [x] 包级别工具发现测试
+
+  ## 📝 使用示例
+
+  ```javascript
+  // 女娲创建角色
+  await promptx_tool({
+    tool_resource: "@tool://filesystem",
+    parameters: {
+      method: "write_file",
+      path: "resource/role/newbot.md",
+      content: roleDefinition
+    }
+  })
+
+  // 鲁班读取工具
+  await promptx_tool({
+    tool_resource: "@tool://filesystem",
+    parameters: {
+      method: "read_text_file",
+      path: "resource/tool/example.js"
+    }
+  })
+  ```
+
+  ## 🚀 后续计划
+
+  - [ ] 升级使用 MCP 官方 filesystem 包
+  - [ ] 添加更多高级功能（watch、diff 等）
+  - [ ] 优化性能和错误处理
+
+  Closes #230
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
+  Co-Authored-By: Claude <noreply@anthropic.com>
+
 ## 1.1.0
 
 ### Minor Changes
