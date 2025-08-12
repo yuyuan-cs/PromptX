@@ -1,5 +1,66 @@
 # Changelog
 
+## 1.5.0
+
+### Minor Changes
+
+- [#247](https://github.com/Deepractice/PromptX/pull/247) [`0d95b4c`](https://github.com/Deepractice/PromptX/commit/0d95b4ca3558eaee7c15f67c4fb132aab424234b) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: 适配女娲和鲁班角色到新架构 (#245)
+
+  ## Summary
+
+  - 完整适配女娲和鲁班两个核心角色到新的 PromptX 架构
+  - 支持 VM 层文件系统边界控制和三层资源架构
+  - 统一使用 filesystem 工具进行文件操作
+
+  ## Changes
+
+  ### 女娲角色适配
+
+  ✅ 已在之前的提交中完成：
+
+  - 创建 `role-creation-filesystem.execution.md` 说明 filesystem 工具使用
+  - 更新角色创建流程使用 filesystem 工具
+  - 适配三层资源架构（User/Project/Package）
+
+  ### 鲁班角色适配
+
+  ✅ 本次提交完成：
+
+  - 创建 `tool-creation-filesystem.execution.md` 详细说明 filesystem 工具使用
+  - 更新 `tool-development-workflow.execution.md`：
+    - Step 2.1 改为使用 filesystem 工具创建文件
+    - Step 4.2 更新为使用 welcome 刷新机制
+  - 更新 `luban.role.md` 添加 filesystem execution 引用
+  - 更新 Package 级别注册表
+
+  ## Architecture Changes
+
+  - **VM 层安全边界**：所有文件操作必须通过 filesystem 工具
+  - **三层资源架构**：User > Project > Package 优先级
+  - **资源刷新机制**：从 init 改为 welcome 负责资源发现
+  - **依赖格式**：保持对象格式 `{ 'package': 'version' }`
+
+  ## Related Issues
+
+  - Closes #245
+  - Related to #244 (VM 层文件系统边界控制)
+  - Related to #241 #242 (User-level resource architecture)
+
+  ## Test Plan
+
+  - [x] 女娲角色激活正常
+  - [x] 鲁班角色激活正常
+  - [x] filesystem 工具集成文档完整
+  - [x] welcome 资源刷新机制工作正常
+  - [x] Package 注册表更新成功
+
+  ## Notes
+
+  - 分支命名问题：当前分支名缺少#号，应为 `feat/#245-...`，但为保持历史连续性暂不修改
+  - 创建了 Issue #246 跟踪工具沙箱文件访问限制问题
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
 ## 1.4.0
 
 ### Minor Changes
