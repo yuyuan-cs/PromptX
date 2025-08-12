@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.3.0
+
+### Minor Changes
+
+- [#242](https://github.com/Deepractice/PromptX/pull/242) [`807fade`](https://github.com/Deepractice/PromptX/commit/807fade95a23c738ecb8049164f93bacf85c0577) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: Implement User-level resource architecture (#241)
+
+  ## Summary
+
+  Implements the User-level resource architecture to support cross-project resource sharing with a three-tier priority system.
+
+  Closes #241
+
+  ## Changes
+
+  - ✅ Created `UserDiscovery` class for discovering User-level resources in `~/.promptx/resource/`
+  - ✅ Updated `DiscoveryManager` to support three-tier priority: User (3) > Project (2) > Package (1)
+  - ✅ Moved registry refresh from `InitCommand` to `WelcomeCommand` for better resource discovery
+  - ✅ Updated display order to show User resources first in welcome output
+  - ✅ Successfully tested User-level resource creation and discovery
+
+  ## Test Results
+
+  - Created test User-level roles using filesystem tool
+  - Verified roles appear in welcome output with correct priority
+  - Confirmed cross-project resource sharing works as expected
+
+  ## Architecture Benefits
+
+  - 🌍 **Cross-project reuse**: Create once, use everywhere
+  - ⭐ **Highest priority**: User resources override system defaults
+  - 💾 **Persistent storage**: Resources stored in MCP Server's ~/.promptx directory
+  - 📦 **Clean separation**: Three independent namespaces with clear priorities
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
 ## 1.2.0
 
 ### Minor Changes
