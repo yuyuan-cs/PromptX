@@ -1,16 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(promptx:*)",
-      "Bash(node:*)",
-      "Bash(mkdir:*)",
-      "Bash(npm test:*)",
-      "Bash(git restore:*)",
-      "Bash(rm:*)",
-      "Bash(ls:*)",
-      "Bash(find:*)",
-      "Bash(npx:*)"
-    ],
-    "deny": []
+    "defaultMode": "bypassPermissions"
   }
 }

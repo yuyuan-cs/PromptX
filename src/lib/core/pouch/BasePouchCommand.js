@@ -98,8 +98,7 @@ class BasePouchCommand {
           .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
           .join('\n')
 
-        return `
-${divider}
+        return `${divider}
 🎯 锦囊目的：${purpose}
 ${divider}
 
@@ -110,8 +109,7 @@ ${content}
 ${nextSteps}
 
 📍 当前状态：${pateoas.currentState}
-${divider}
-`
+${divider}`
       }
     }
   }

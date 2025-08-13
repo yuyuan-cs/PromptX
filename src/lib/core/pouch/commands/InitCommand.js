@@ -1,6 +1,6 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const { getGlobalResourceManager } = require('../../resource')
-const { COMMANDS } = require('../../../../constants')
+const { COMMANDS, PACKAGE_NAMES } = require('../../../../constants')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
 const ProjectManager = require('../../../utils/ProjectManager')
@@ -99,12 +99,16 @@ class InitCommand extends BasePouchCommand {
     // 2. 基础环境准备 - 现在可以安全使用项目路径
     await this.ensurePromptXDirectory(projectPath)
 
-    // 3. 生成项目级资源注册表 - 现在 ProjectDiscovery 可以正确获取项目路径
-    const registryStats = await this.generateProjectRegistry(projectPath)
+    // 3. 项目级注册表现在由 WelcomeCommand 在需要时生成
+    const registryStats = { 
+      message: `✅ 项目资源目录已准备就绪
+   📂 目录: .promptx/resource
+   💾 注册表将在首次查看资源时自动生成`,
+      totalResources: 0 
+    }
 
-    // 4. 最后步骤：刷新全局 ResourceManager
-    // 确保所有依赖项目状态的组件都已正确初始化后，再初始化 ResourceManager
-    await this.refreshGlobalResourceManager()
+    // 4. ResourceManager 的刷新现在由 WelcomeCommand 负责
+    // init 只负责项目环境初始化，不负责资源发现
 
     // 生成配置文件名
     const configFileName = this.projectManager.generateConfigFileName(projectConfig.mcpId, ideType, projectConfig.transport, projectPath)
@@ -122,12 +126,6 @@ class InitCommand extends BasePouchCommand {
 
 ## 📋 项目资源注册表
 ${registryStats.message}
-
-## 🚀 下一步建议
-- 使用 \`welcome\` 发现可用的专业角色
-- 使用 \`action\` 激活特定角色获得专业能力  
-- 使用 \`learn\` 深入学习专业知识
-- 使用 \`remember/recall\` 管理专业记忆
 
 💡 **多项目支持**: 现在支持同时在多个项目中使用PromptX，项目间完全隔离！
 💡 **提示**: ${registryStats.totalResources > 0 ? '项目资源已优化为注册表模式，性能大幅提升！' : '现在可以开始创建项目级资源了！'}`
@@ -223,7 +221,7 @@ ${registryStats.message}
         const packageJson = await fs.readJSON(packageJsonPath)
         const baseVersion = packageJson.version || '未知版本'
         const nodeVersion = process.version
-        const packageName = packageJson.name || 'dpml-prompt'
+        const packageName = packageJson.name || PACKAGE_NAMES.LEGACY
         
         return `${baseVersion} (${packageName}@${baseVersion}, Node.js ${nodeVersion})`
       }

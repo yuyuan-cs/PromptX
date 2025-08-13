@@ -144,6 +144,11 @@ class ActionCommand extends BasePouchCommand {
         const projectProtocol = this.resourceManager.protocols.get('project')
         const relativePath = filePath.replace('@project://', '')
         filePath = await projectProtocol.resolvePath(relativePath)
+      } else if (filePath.startsWith('@user://')) {
+        // 处理User级资源路径
+        const userProtocol = this.resourceManager.protocols.get('user')
+        const relativePath = filePath.replace('@user://', '')
+        filePath = await userProtocol.resolvePath(relativePath)
       }
 
       // 读取角色文件内容
@@ -284,13 +289,6 @@ promptx learn principle://${roleInfo.id}
 3. **知识确认**：📚 "我已具备领域专业知识！"
 4. **编排确认**：🎪 "我已理解技能的组合使用方式！"
 
-## 🎯 下一步操作
-
-角色激活完成后，可以：
-- 📝 **开始专业工作** - 运用角色能力解决实际问题
-- 🔍 **调用记忆** - 使用 \`promptx recall\` 检索相关经验
-- 🔄 **切换角色** - 使用 \`promptx welcome\` 选择其他专业角色
-
 💡 **设计理念**：基于 DPML 基础协议组合，通过thought和execution的灵活编排实现角色能力。`
 
     return guide
@@ -343,6 +341,9 @@ ${result.content}
     const { id: roleId } = roleInfo
 
     let content = `🎭 **角色激活完成：\`${roleId}\` (${roleInfo.name})** - 所有技能已自动加载\n`
+
+    // 自动执行 prime 激活语义网络（放在最前面）
+    content += await this.executePrime(roleId)
 
     // 加载思维模式技能（仅包含独立的thought引用）
     if (thoughts.size > 0) {
@@ -417,37 +418,65 @@ ${result.content}
     }
     
     content += `💡 **现在可以立即开始以 \`${roleId}\` (${roleInfo.name}) 身份提供专业服务！**\n`
-
-    // 自动执行 recall 命令
-    content += await this.executeRecall(roleId)
+    
+    // 添加认知工作流温和提醒
+    content += `\n---\n`
+    content += `🧠 认知工作流提醒：\n`
+    content += `你已经激活了专业角色，获得了强大的能力。\n`
+    content += `记住认知三步循环，让记忆像呼吸一样自然：\n\n`
+    content += `1️⃣ 开始任务前 → Recall 相关经验\n`
+    content += `2️⃣ 执行任务中 → 应用已有知识\n`
+    content += `3️⃣ 任务完成后 → Remember 新的学习\n\n`
+    content += `💡 下一步：如果要开始任务，先 recall 相关概念激活记忆网络。\n`
 
     return content
   }
 
   /**
-   * 自动执行 recall 命令
+   * 自动执行 prime 激活语义网络
    */
-  async executeRecall (roleId) {
+  async executePrime (roleId) {
     try {
-      // 懒加载 RecallCommand
-      const RecallCommand = require('./RecallCommand')
-      const recallCommand = new RecallCommand()
+      // 导入 CognitionManager
+      const { CognitionManager } = require('../../cognition/CognitionManager')
+      const cognitionManager = new CognitionManager(this.resourceManager)
       
-      // 执行 recall，获取所有记忆（传入角色ID参数）
-      const recallContent = await recallCommand.getContent([roleId])
+      // 获取角色的认知实例并激活语义网络
+      const cognition = await cognitionManager.getCognition(roleId)
+      const semanticMermaid = await cognition.prime()
       
-      return `---
-## 🧠 自动记忆检索结果
-${recallContent}
-⚠️ **重要**: recall已自动执行完成，以上记忆将作为角色工作的重要参考依据
+      if (!semanticMermaid || semanticMermaid.trim() === '') {
+        // 语义网络为空，静默处理
+        return ''
+      }
+      
+      let output = `---
+## 🧠 语义网络激活（记忆检索索引）
+\`\`\`mermaid
+${semanticMermaid}
+\`\`\`
+📌 **重要说明**：上述 mindmap 是你的记忆检索索引！
+- 🔍 **用途**：使用 recall 工具时，必须从这个 mindmap 中选择精确概念作为检索线索
+- 💡 **示例**：如果 mindmap 中有"用户体验"，recall 时直接使用"用户体验"，不要拆分成"用户"+"体验"
+- ⚡ **技巧**：概念越精确，检索效果越好。优先使用 mindmap 中的叶子节点概念
 `
+      
+      // 尝试激活程序性记忆
+      try {
+        const proceduralPatterns = await cognition.primeProcedural()
+        if (proceduralPatterns) {
+          output += '\n' + proceduralPatterns
+        }
+      } catch (error) {
+        // 程序性记忆激活失败不影响主流程
+        logger.debug('Procedural prime failed:', error)
+      }
+      
+      return output
     } catch (error) {
-      logger.error('Auto recall error:', error)
-      return `---
-## 🧠 自动记忆检索结果
-⚠️ **记忆检索出现问题**: ${error.message}
-💡 **建议**: 可使用 MCP PromptX 工具的 recall 功能来检索相关记忆
-`
+      logger.error('Auto prime error:', error)
+      // Prime失败不影响角色激活，静默处理
+      return ''
     }
   }
 
@@ -473,12 +502,12 @@ ${recallContent}
     }
 
     return {
-      currentState: 'role_activated_with_memory',
-      availableTransitions: ['welcome', 'remember', 'learn'],
+      currentState: 'role_activated',
+      availableTransitions: ['welcome', 'remember', 'learn', 'recall'],
       nextActions: [
         {
           name: '开始专业服务',
-          description: '角色已激活并完成记忆检索，可直接提供专业服务',
+          description: '角色已激活，语义网络已预热，可直接提供专业服务',
           method: '开始对话',
           priority: 'high'
         },
@@ -554,43 +583,26 @@ ${recallContent}
    * 格式化带有项目检查的输出
    */
   formatOutputWithProjectCheck(purpose, content, pateoas, projectPrompt) {
-    const output = {
-      purpose,
-      content,
-      pateoas,
-      context: this.context,
-      format: this.outputFormat,
-      projectPrompt
-    }
-
+    // 先调用父类的 formatOutput 获取标准格式
+    const baseOutput = super.formatOutput(purpose, content, pateoas)
+    
+    // 如果是 JSON 格式，添加 projectPrompt
     if (this.outputFormat === 'json') {
-      return output
+      return {
+        ...baseOutput,
+        projectPrompt
+      }
     }
-
-    // 人类可读格式
+    
+    // 人类可读格式：在基础输出前加上项目提示
     return {
-      ...output,
-      toString () {
-        const divider = '='.repeat(60)
-        const nextSteps = (pateoas.nextActions || [])
-          .map(action => `  - ${action.name}: ${action.description}\n    方式: ${action.method || action.command || '通过MCP工具'}`)
-          .join('\n')
-
+      ...baseOutput,
+      toString() {
+        const baseString = baseOutput.toString()
+        // 在基础输出前插入项目提示
         return `${projectPrompt}
 
-${divider}
-🎯 锦囊目的：${purpose}
-${divider}
-
-📜 锦囊内容：
-${content}
-
-🔄 下一步行动：
-${nextSteps}
-
-📍 当前状态：${pateoas.currentState}
-${divider}
-`
+${baseString}`
       }
     }
   }

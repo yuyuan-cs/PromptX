@@ -1,0 +1,164 @@
+name: Branch Validator
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  create:
+
+jobs:
+  validate-branch:
+    name: Validate Branch Name
+    runs-on: ubuntu-latest
+    
+    outputs:
+      branch_valid: ${{ steps.validate.outputs.valid }}
+      issue_number: ${{ steps.validate.outputs.issue_number }}
+      branch_type: ${{ steps.validate.outputs.branch_type }}
+    
+    steps:
+      - name: Get branch name
+        id: branch_info
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH="${{ github.head_ref }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "🌿 Branch name: $BRANCH"
+
+      - name: Validate branch naming convention
+        id: validate
+        run: |
+          BRANCH="${{ steps.branch_info.outputs.branch }}"
+          
+          # Define patterns
+          VALID_PATTERN="^(feature|fix|doc|refactor|chore)/#[0-9]+-[a-z0-9-]+$"
+          PROTECTED_BRANCHES="^(main|develop|test|staging)$"
+          
+          # Check if protected branch
+          if [[ "$BRANCH" =~ $PROTECTED_BRANCHES ]]; then
+            echo "✅ Protected branch: $BRANCH"
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "branch_type=protected" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check branch name format
+          if [[ ! "$BRANCH" =~ $VALID_PATTERN ]]; then
+            echo "❌ Invalid branch name: $BRANCH"
+            echo ""
+            echo "Branch name must follow pattern: {type}/#{issue-number}-{description}"
+            echo ""
+            echo "Valid types: feature, fix, doc, refactor, chore"
+            echo ""
+            echo "Examples:"
+            echo "  - feature/#123-add-login"
+            echo "  - fix/#456-memory-leak"
+            echo "  - doc/#789-update-readme"
+            echo ""
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Extract components
+          BRANCH_TYPE=$(echo "$BRANCH" | cut -d'/' -f1)
+          ISSUE_NUMBER=$(echo "$BRANCH" | grep -oE '#[0-9]+' | tr -d '#')
+          DESCRIPTION=$(echo "$BRANCH" | sed 's/.*#[0-9]*-//')
+          
+          echo "✅ Valid branch name"
+          echo "  Type: $BRANCH_TYPE"
+          echo "  Issue: #$ISSUE_NUMBER"
+          echo "  Description: $DESCRIPTION"
+          
+          # Set outputs
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "branch_type=$BRANCH_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Check if issue exists
+        if: steps.validate.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = '${{ steps.validate.outputs.issue_number }}';
+            
+            if (!issueNumber) {
+              console.log('No issue number to check');
+              return;
+            }
+            
+            try {
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNumber)
+              });
+              
+              console.log(`✅ Issue #${issueNumber} exists: ${issue.title}`);
+              
+              // Add issue link to PR if this is a PR event
+              if (context.eventName === 'pull_request') {
+                const prNumber = context.issue.number;
+                
+                // Get current PR body
+                const { data: pr } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber
+                });
+                
+                // Check if issue link already exists
+                if (!pr.body || !pr.body.includes(`#${issueNumber}`)) {
+                  const newBody = pr.body 
+                    ? `${pr.body}\n\nResolves #${issueNumber}`
+                    : `Resolves #${issueNumber}`;
+                  
+                  // Update PR body
+                  await github.rest.pulls.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: prNumber,
+                    body: newBody
+                  });
+                  
+                  console.log(`Added issue link to PR body`);
+                }
+              }
+            } catch (error) {
+              console.error(`❌ Issue #${issueNumber} not found`);
+              core.setFailed(`Issue #${issueNumber} does not exist. Please create the issue first.`);
+            }
+
+      - name: Add labels based on branch type
+        if: github.event_name == 'pull_request' && steps.validate.outputs.branch_type != 'protected'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchType = '${{ steps.validate.outputs.branch_type }}';
+            const prNumber = context.issue.number;
+            
+            // Map branch type to label
+            const labelMap = {
+              'feature': 'type: feature',
+              'fix': 'type: fix',
+              'doc': 'type: docs',
+              'refactor': 'type: refactor',
+              'chore': 'type: chore'
+            };
+            
+            const label = labelMap[branchType];
+            
+            if (label) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: [label]
+                });
+                console.log(`✅ Added label: ${label}`);
+              } catch (error) {
+                console.error(`Failed to add label: ${error.message}`);
+              }
+            }

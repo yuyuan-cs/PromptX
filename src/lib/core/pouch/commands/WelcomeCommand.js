@@ -1,10 +1,13 @@
 const BasePouchCommand = require('../BasePouchCommand')
 const fs = require('fs-extra')
 const path = require('path')
+const os = require('os')
 const { getGlobalResourceManager } = require('../../resource')
 const ProjectManager = require('../../../utils/ProjectManager')
 const { getGlobalProjectManager } = require('../../../utils/ProjectManager')
 const { getGlobalServerEnvironment } = require('../../../utils/ServerEnvironment')
+const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
+const UserDiscovery = require('../../resource/discovery/UserDiscovery')
 const logger = require('../../../utils/logger')
 
 /**
@@ -24,26 +27,88 @@ class WelcomeCommand extends BasePouchCommand {
   }
 
   /**
+   * 刷新所有资源（注册表文件 + ResourceManager）
+   * 这是 welcome 命令的核心功能，确保能发现所有最新的资源
+   */
+  async refreshAllResources() {
+    try {
+      // 1. 刷新注册表文件
+      await this.refreshAllRegistries()
+      
+      // 2. 刷新 ResourceManager，重新加载所有资源
+      logger.info('[WelcomeCommand] Refreshing ResourceManager to discover new resources...')
+      await this.resourceManager.initializeWithNewArchitecture()
+      
+    } catch (error) {
+      logger.warn('[WelcomeCommand] 资源刷新失败:', error.message)
+      // 不抛出错误，确保 welcome 命令能继续执行
+    }
+  }
+
+  /**
+   * 刷新所有注册表
+   * 在加载资源前先刷新注册表，确保显示最新的资源
+   */
+  async refreshAllRegistries() {
+    try {
+      logger.info('[WelcomeCommand] 开始刷新所有注册表...')
+      
+      // 1. User 级注册表刷新（如果目录存在）
+      const userResourceDir = path.join(os.homedir(), '.promptx/resource')
+      if (await fs.pathExists(userResourceDir)) {
+        const userDiscovery = new UserDiscovery()
+        await userDiscovery.generateRegistry()
+        logger.info('[WelcomeCommand] User 级注册表已刷新')
+      } else {
+        logger.debug('[WelcomeCommand] User 级资源目录不存在，跳过刷新')
+      }
+      
+      // 2. Project 级注册表刷新
+      try {
+        const projectDiscovery = new ProjectDiscovery()
+        await projectDiscovery.generateRegistry()
+        logger.info('[WelcomeCommand] Project 级注册表已刷新')
+      } catch (error) {
+        logger.debug('[WelcomeCommand] Project 级注册表刷新失败（可能不在项目中）:', error.message)
+      }
+      
+      // 3. Package 级通常不需要刷新（构建时生成）
+      logger.debug('[WelcomeCommand] Package 级注册表无需刷新（构建时生成）')
+      
+    } catch (error) {
+      logger.warn('[WelcomeCommand] 注册表刷新失败:', error.message)
+    }
+  }
+
+  /**
    * 动态加载角色注册表 - 使用新的RegistryData架构
    */
   async loadRoleRegistry () {
-    // 确保ResourceManager已初始化
-    if (!this.resourceManager.initialized) {
-      await this.resourceManager.initializeWithNewArchitecture()
-    }
+    logger.info('[WelcomeCommand] Loading role registry...')
     
-    // 直接使用ResourceManager的注册表，无需重复处理
-    return this.resourceManager.registryData.getResourcesByProtocol('role')
+    // 资源刷新已经在 getContent 中的 refreshAllResources 完成
+    // 这里直接使用ResourceManager的注册表
+    const roles = this.resourceManager.registryData.getResourcesByProtocol('role')
+    
+    // 记录加载的角色信息
+    logger.info('[WelcomeCommand] Loaded roles:', {
+      count: roles.length,
+      roleList: roles.map(r => ({
+        id: r.id,
+        source: r.source,
+        reference: r.reference
+      }))
+    })
+    
+    return roles
   }
 
   /**
    * 动态加载工具注册表
    */
   async loadToolRegistry () {
-    // 确保ResourceManager已初始化
-    if (!this.resourceManager.initialized) {
-      await this.resourceManager.initializeWithNewArchitecture()
-    }
+    // 资源刷新已经在 getContent 中的 refreshAllResources 完成
+    // 这里直接使用ResourceManager的注册表
     
     // 获取tool和manual资源
     const tools = this.resourceManager.registryData.getResourcesByProtocol('tool')
@@ -165,6 +230,9 @@ class WelcomeCommand extends BasePouchCommand {
   }
 
   async getContent (args) {
+    // 首先刷新所有资源，确保发现最新的角色和工具
+    await this.refreshAllResources()
+    
     const roleRegistry = await this.loadRoleRegistry()
     const toolRegistry = await this.loadToolRegistry()
     const allRoles = Object.values(roleRegistry)
@@ -193,8 +261,8 @@ class WelcomeCommand extends BasePouchCommand {
 
     let roleIndex = 1
     
-    // 优先显示系统角色
-    const sourceOrder = ['package', 'merged', 'project', 'user', 'fallback', 'unknown']
+    // User 级优先显示（优先级最高）
+    const sourceOrder = ['user', 'project', 'package', 'merged', 'fallback', 'unknown']
     
     for (const source of sourceOrder) {
       if (!rolesBySource[source] || rolesBySource[source].length === 0) continue

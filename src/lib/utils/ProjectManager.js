@@ -534,4 +534,5 @@ function getGlobalProjectManager() {
 }
 
 module.exports = ProjectManager
+module.exports.ProjectManager = ProjectManager
 module.exports.getGlobalProjectManager = getGlobalProjectManager

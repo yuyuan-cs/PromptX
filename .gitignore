@@ -19,6 +19,7 @@ build/
 coverage/
 .nyc_output
 *.lcov
+test-output/
 
 # Logs
 logs/
@@ -66,9 +67,33 @@ Thumbs.db
 tmp/
 temp/
 
+# Act local testing
+.github/.env.act
+
 # Application specific
 /.memory/
-/.promptx/
+
+# PromptX resources - selective ignore
+# Keep role definitions (public resources)
+!/.promptx/
+!/.promptx/resource/
+!/.promptx/resource/role/
+!/.promptx/resource/role/**/*.md
+!/.promptx/resource/thought/
+!/.promptx/resource/thought/**/*.md
+!/.promptx/resource/execution/
+!/.promptx/resource/execution/**/*.md
+!/.promptx/resource/knowledge/
+!/.promptx/resource/knowledge/**/*.md
+
+# Ignore private/runtime data
+/.promptx/memory/
+/.promptx/config/
+/.promptx/*.bin
+/.promptx/*.json
+/.promptx/*.log
+/.promptx/resource/project.registry.json
+
 /.idea/
 /.vscode/
 
@@ -77,3 +102,12 @@ temp/
 .husky/_
 
 .kilocode/
+
+# act本地测试文件
+.env.act
+.secrets
+*.local
+
+# temp dir
+temp/
+tmp/
