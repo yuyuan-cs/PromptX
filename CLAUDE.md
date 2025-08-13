@@ -8,3 +8,9 @@
 
 - promptx 的日志打印需要使用utils中的 logger 而不是 console
 - promptx 项目的运行日志在 ~/.promptx/logs
+
+- 使用 pnpm 管理项目
+
+- Claude Code 的项目日志在 ~/.claude/projects/ 目录
+
+- 如果要测试 promptx-local 的功能，改了代码需要停下来等待用户重启才能继续测试

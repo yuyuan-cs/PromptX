@@ -44,7 +44,7 @@
     "CHANGELOG.md"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.1",
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "@reaxi/node-detect-runtime": "^0.1.0",
     "body-parser": "^1.20.3",
     "boxen": "^5.1.2",
@@ -55,6 +55,7 @@
     "env-paths": "2.2.1",
     "eta": "^3.5.0",
     "express": "^5.1.0",
+    "fastmcp": "^3.14.4",
     "find-monorepo-root": "^1.0.3",
     "find-pkg-dir": "^2.0.0",
     "find-up": "^7.0.0",
