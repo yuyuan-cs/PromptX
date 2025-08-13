@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.6.0
+
+### Minor Changes
+
+- [#256](https://github.com/Deepractice/PromptX/pull/256) [`59e76e2`](https://github.com/Deepractice/PromptX/commit/59e76e2fca8824a471813b06597a50c8fbc8cb84) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 完整测试基于 PR 标签的发布工作流
+
+- [#256](https://github.com/Deepractice/PromptX/pull/256) [`59e76e2`](https://github.com/Deepractice/PromptX/commit/59e76e2fca8824a471813b06597a50c8fbc8cb84) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: 完整测试基于 PR 标签的发布工作流
+
+  ## 🚀 完整测试新的发布机制
+
+  ### 测试内容
+
+  - 创建了一个 minor 版本的 changeset
+  - 测试完整的工作流程
+
+  ### 期望行为
+
+  1. **auto-labeler** 应该自动添加：
+
+     - `changeset/minor` (基于 feat 类型)
+     - `merge/squash`
+     - `publish/dev` (目标是 develop 分支)
+
+  2. **合并后** npm-publisher 应该：
+     - 检测到 `publish/dev` 标签
+     - 消费 changeset
+     - 发布到 npm 的 dev tag
+
+  ***
+
+  🧪 完整工作流测试
+
 ## 1.5.3
 
 ### Patch Changes
