@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.6.1
+
+### Patch Changes
+
+- [#257](https://github.com/Deepractice/PromptX/pull/257) [`cf7b3b6`](https://github.com/Deepractice/PromptX/commit/cf7b3b6183463e427ba1b196c205d023372997e7) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 最终测试基于 PR 标签的完整发布流程
+
+- [#257](https://github.com/Deepractice/PromptX/pull/257) [`cf7b3b6`](https://github.com/Deepractice/PromptX/commit/cf7b3b6183463e427ba1b196c205d023372997e7) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 最终测试完整的发布工作流
+
+  ## 🎯 最终验证
+
+  修复了并发冲突问题后的最终测试
+
+  ### 期望结果
+
+  ✅ auto-labeler 自动添加标签
+  ✅ 合并后 npm-publisher 检测标签并发布
+  ✅ changeset 版本消费成功
+  ✅ 发布到 npm dev tag
+
+  ***
+
+  🏁 最终测试
+
 ## 1.6.0
 
 ### Minor Changes
