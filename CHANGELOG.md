@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.5.3
+
+### Patch Changes
+
+- [#255](https://github.com/Deepractice/PromptX/pull/255) [`1f76c80`](https://github.com/Deepractice/PromptX/commit/1f76c80013de3ec879f34a6eb6142d9f9d64f84e) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 修复 changeset 的 GitHub token 配置
+
+- [#255](https://github.com/Deepractice/PromptX/pull/255) [`1f76c80`](https://github.com/Deepractice/PromptX/commit/1f76c80013de3ec879f34a6eb6142d9f9d64f84e) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 测试 GH_PAT 配置的发布流程
+
+  ## 测试目的
+
+  验证修复后的 GH_PAT 配置是否能正常工作
+
+  ## 期望结果
+
+  - auto-labeler 应该添加：
+    - `changeset/patch`
+    - `merge/squash`
+    - `publish/dev`
+  - 合并后应该正常发布到 npm dev tag
+
+  ***
+
+  🧪 测试 PR
+
 ## 1.5.2
 
 ### Patch Changes
