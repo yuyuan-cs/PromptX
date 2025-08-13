@@ -1,5 +1,77 @@
 # Changelog
 
+## 1.5.1
+
+### Patch Changes
+
+- [#252](https://github.com/Deepractice/PromptX/pull/252) [`4435518`](https://github.com/Deepractice/PromptX/commit/4435518424b25d5ecf0685854cf3122161316b84) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 统一 MCP 传输层实现，使用 FastMCP 框架 (#248)
+
+  ## 📝 概述
+
+  使用 FastMCP 框架统一了 PromptX 的 MCP 传输层实现，解决了 Issue #248 中提到的 StreamableHTTP 统一问题。
+
+  ## 🎯 解决的问题
+
+  - 解决 #248 - 统一使用 StreamableHTTP 传输层
+  - 修复工具参数传递和序列化问题
+  - 优化代码结构，减少重复实现
+
+  ## ✨ 主要改动
+
+  ### 新增文件
+
+  - `MCPStdioServerInterface.js` - Stdio 服务器接口定义
+  - `MCPHttpServerInterface.js` - HTTP 服务器接口定义
+  - `FastMCPStdioServer.js` - 基于 FastMCP 的 Stdio 服务器
+  - `FastMCPHttpServer.js` - 基于 FastMCP 的 HTTP 服务器
+
+  ### 删除文件
+
+  - `toolDefinitions.js` - 改为直接从 definitions 目录加载
+  - `MCPServerStdioCommand.js` - 被 FastMCPStdioServer 替代
+  - `MCPServerHttpCommand.js` - 被 FastMCPHttpServer 替代
+
+  ### 关键修复
+
+  1. **Zod Schema 转换问题**：修复了无 properties 的 object 类型导致参数丢失的问题
+  2. **工具参数序列化**：统一了参数传递格式，修复了 promptx_tool 的参数问题
+  3. **工具注册去重**：添加了重复检查机制，避免工具重复注册
+
+  ## 🧪 测试结果
+
+  - ✅ Stdio 模式：所有 7 个工具正常工作
+  - ✅ HTTP 模式：Claude Code 成功连接，工具正常执行
+  - ✅ 参数传递：复杂对象参数（如 filesystem 工具）正确传递
+
+  ## 📊 架构优势
+
+  - **代码复用**：stdio 和 http 模式共享相同的工具注册和执行逻辑
+  - **可维护性**：大幅减少重复代码
+  - **扩展性**：便于添加新的传输模式（如 WebSocket）
+  - **标准化**：清晰的接口定义便于未来维护
+
+  ## 📦 依赖更新
+
+  ```json
+  "fastmcp": "^3.14.4",
+  "zod": "^3.24.1"
+  ```
+
+  ## 🔍 验证步骤
+
+  1. 启动 Stdio 模式：`promptx mcp-server`
+  2. 启动 HTTP 模式：`promptx mcp-server -t http`
+  3. 在 Claude Code 中使用 `/mcp` 命令测试连接
+  4. 测试各种工具功能
+
+  ## 📝 Changeset
+
+  本 PR 包含 minor 版本更新，主要是新功能和架构改进。
+
+  🤖 Generated with [Claude Code](https://claude.ai/code)
+
+  Co-Authored-By: Claude <noreply@anthropic.com>
+
 ## 1.5.0
 
 ### Minor Changes
