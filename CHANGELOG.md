@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.5.2
+
+### Patch Changes
+
+- [#254](https://github.com/Deepractice/PromptX/pull/254) [`605fe0b`](https://github.com/Deepractice/PromptX/commit/605fe0b06816d3e6f3cbf011124d5d30deb18ed4) Thanks [@deepracticexs](https://github.com/deepracticexs)! - test: 验证基于 PR 标签的发布流程
+
+  ## 测试目的
+
+  测试新的基于 PR 标签的发布机制是否正常工作。
+
+  ## 测试内容
+
+  - 添加了一个 patch 版本的 changeset
+  - PR 创建时应该自动添加标签：
+    - `changeset/patch` (基于 PR 标题的 test 类型)
+    - `merge/squash`
+    - `publish/dev` (因为目标是 develop 分支且有版本变更)
+
+  ## 验证点
+
+  1. auto-labeler 是否正确添加标签
+  2. 合并后 npm-publisher 是否正确触发
+  3. 是否能正确发布到 dev tag
+
+  ***
+
+  🧪 这是一个测试 PR
+
+- [#254](https://github.com/Deepractice/PromptX/pull/254) [`605fe0b`](https://github.com/Deepractice/PromptX/commit/605fe0b06816d3e6f3cbf011124d5d30deb18ed4) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 测试基于 PR 标签的发布机制
+
 ## 1.5.1
 
 ### Patch Changes
