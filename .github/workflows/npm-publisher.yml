@@ -167,6 +167,8 @@ jobs:
       - name: Consume changesets
         id: changesets
         if: github.ref_name == 'develop'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           # Install changeset CLI
           npm install -D @changesets/cli
