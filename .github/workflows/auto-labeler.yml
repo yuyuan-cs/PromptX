@@ -155,7 +155,6 @@ jobs:
             console.log('🏷️ Adding labels:', labelsToAdd);
             
             // Add publish label based on target branch and changeset label
-            const targetBranch = pr.base.ref;
             const hasVersionChange = !labelsToAdd.includes('changeset/none') && !existingLabelNames.includes('changeset/none');
             
             if (hasVersionChange) {
