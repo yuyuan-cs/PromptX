@@ -288,6 +288,19 @@ jobs:
             // Add version change label if applicable
             if (versionChanged) {
               labels.push('version/update');
+              
+              // Add publish label based on target branch
+              switch(target) {
+                case 'test':
+                  labels.push('publish/alpha');
+                  break;
+                case 'staging':
+                  labels.push('publish/beta');
+                  break;
+                case 'main':
+                  labels.push('publish/latest');
+                  break;
+              }
             }
             
             // Add auto-merge label if requested

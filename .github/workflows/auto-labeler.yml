@@ -154,6 +154,34 @@ jobs:
             
             console.log('🏷️ Adding labels:', labelsToAdd);
             
+            // Add publish label based on target branch and changeset label
+            const targetBranch = pr.base.ref;
+            const hasVersionChange = !labelsToAdd.includes('changeset/none') && !existingLabelNames.includes('changeset/none');
+            
+            if (hasVersionChange) {
+              // Add publish label based on target branch
+              let publishLabel = null;
+              switch(targetBranch) {
+                case 'develop':
+                  publishLabel = 'publish/dev';
+                  break;
+                case 'test':
+                  publishLabel = 'publish/alpha';
+                  break;
+                case 'staging':
+                  publishLabel = 'publish/beta';
+                  break;
+                case 'main':
+                  publishLabel = 'publish/latest';
+                  break;
+              }
+              
+              if (publishLabel && !existingLabelNames.includes(publishLabel)) {
+                labelsToAdd.push(publishLabel);
+                console.log(`🚀 Adding publish label: ${publishLabel}`);
+              }
+            }
+            
             // Add the labels
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
@@ -169,9 +197,14 @@ jobs:
             commentBody += `- Source branch: \`${sourceBranch}\`\n`;
             commentBody += `- Target branch: \`${targetBranch}\`\n\n`;
             
-            const hasChangesetNone = labelsToAdd.includes('changeset/none');
-            if (!hasChangesetNone) {
-              commentBody += '📦 Version will be updated and automatically published after merge.\n\n';
+            const hasChangesetNone = labelsToAdd.includes('changeset/none') || existingLabelNames.includes('changeset/none');
+            const hasPublishLabel = labelsToAdd.some(l => l.startsWith('publish/'));
+            
+            if (hasPublishLabel) {
+              const publishTag = labelsToAdd.find(l => l.startsWith('publish/')).replace('publish/', '');
+              commentBody += `📦 Version will be published to **${publishTag}** tag after merge.\n\n`;
+            } else if (!hasChangesetNone) {
+              commentBody += '📦 Version will be updated but not published (no publish label).\n\n';
             } else {
               commentBody += '⏸️ No version change needed (changeset/none).\n\n';
             }

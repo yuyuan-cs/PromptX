@@ -1,15 +1,13 @@
 name: NPM Publisher
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
       - staging
       - test
       - develop
-    paths:
-      - 'package.json'
-      - 'CHANGELOG.md'
   workflow_dispatch:
     inputs:
       publish_tag:
@@ -32,9 +30,9 @@ jobs:
   prepare-release:
     name: Prepare Release
     runs-on: ubuntu-latest
-    # Skip if commit message contains [skip ci]
+    # Only run if PR was merged or manually triggered
     if: |
-      !contains(github.event.head_commit.message, '[skip ci]') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
       github.event_name == 'workflow_dispatch'
     outputs:
       should_publish: ${{ steps.check.outputs.should_publish }}
@@ -60,41 +58,36 @@ jobs:
             exit 0
           fi
           
-          # For push events, check if version was updated
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            # Check if commit message indicates version update
-            COMMIT_MSG="${{ github.event.head_commit.message }}"
-            if [[ "$COMMIT_MSG" == *"chore: version packages"* ]]; then
-              echo "📦 Version update detected from commit message"
-              
-              # Determine tag based on branch
-              BRANCH="${{ github.ref_name }}"
-              case "$BRANCH" in
-                "main")
-                  TAG="latest"
-                  ;;
-                "staging")
-                  TAG="beta"
-                  ;;
-                "test")
-                  TAG="alpha"
-                  ;;
-                "develop")
-                  TAG="dev"
-                  ;;
-                *)
-                  echo "should_publish=false" >> $GITHUB_OUTPUT
-                  echo "ℹ️ Branch $BRANCH does not trigger automatic publishing"
-                  exit 0
-                  ;;
-              esac
-              
+          # For PR events, check for publish labels
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "🏷️ Checking PR labels for publish instructions..."
+            
+            # Get PR labels
+            PR_LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+            echo "PR Labels: $PR_LABELS"
+            
+            # Check for publish/* labels
+            PUBLISH_LABEL=""
+            if echo "$PR_LABELS" | grep -q '"publish/dev"'; then
+              PUBLISH_LABEL="dev"
+            elif echo "$PR_LABELS" | grep -q '"publish/alpha"'; then
+              PUBLISH_LABEL="alpha"
+            elif echo "$PR_LABELS" | grep -q '"publish/beta"'; then
+              PUBLISH_LABEL="beta"
+            elif echo "$PR_LABELS" | grep -q '"publish/latest"'; then
+              PUBLISH_LABEL="latest"
+            elif echo "$PR_LABELS" | grep -q '"publish/snapshot"'; then
+              PUBLISH_LABEL="snapshot"
+            fi
+            
+            if [[ -n "$PUBLISH_LABEL" ]]; then
+              echo "✅ Found publish label: publish/$PUBLISH_LABEL"
               echo "should_publish=true" >> $GITHUB_OUTPUT
-              echo "publish_tag=$TAG" >> $GITHUB_OUTPUT
-              echo "📦 Will publish to: $TAG"
+              echo "publish_tag=$PUBLISH_LABEL" >> $GITHUB_OUTPUT
+              echo "📦 Will publish to: $PUBLISH_LABEL"
             else
               echo "should_publish=false" >> $GITHUB_OUTPUT
-              echo "ℹ️ Not a version update commit"
+              echo "ℹ️ No publish label found, skipping publish"
             fi
           else
             echo "should_publish=false" >> $GITHUB_OUTPUT
