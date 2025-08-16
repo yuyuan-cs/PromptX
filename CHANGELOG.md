@@ -1,5 +1,114 @@
 # Changelog
 
+## 1.6.1
+
+### Patch Changes
+
+- [#257](https://github.com/Deepractice/PromptX/pull/257) [`cf7b3b6`](https://github.com/Deepractice/PromptX/commit/cf7b3b6183463e427ba1b196c205d023372997e7) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 最终测试基于 PR 标签的完整发布流程
+
+- [#257](https://github.com/Deepractice/PromptX/pull/257) [`cf7b3b6`](https://github.com/Deepractice/PromptX/commit/cf7b3b6183463e427ba1b196c205d023372997e7) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 最终测试完整的发布工作流
+
+  ## 🎯 最终验证
+
+  修复了并发冲突问题后的最终测试
+
+  ### 期望结果
+
+  ✅ auto-labeler 自动添加标签
+  ✅ 合并后 npm-publisher 检测标签并发布
+  ✅ changeset 版本消费成功
+  ✅ 发布到 npm dev tag
+
+  ***
+
+  🏁 最终测试
+
+## 1.6.0
+
+### Minor Changes
+
+- [#256](https://github.com/Deepractice/PromptX/pull/256) [`59e76e2`](https://github.com/Deepractice/PromptX/commit/59e76e2fca8824a471813b06597a50c8fbc8cb84) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 完整测试基于 PR 标签的发布工作流
+
+- [#256](https://github.com/Deepractice/PromptX/pull/256) [`59e76e2`](https://github.com/Deepractice/PromptX/commit/59e76e2fca8824a471813b06597a50c8fbc8cb84) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: 完整测试基于 PR 标签的发布工作流
+
+  ## 🚀 完整测试新的发布机制
+
+  ### 测试内容
+
+  - 创建了一个 minor 版本的 changeset
+  - 测试完整的工作流程
+
+  ### 期望行为
+
+  1. **auto-labeler** 应该自动添加：
+
+     - `changeset/minor` (基于 feat 类型)
+     - `merge/squash`
+     - `publish/dev` (目标是 develop 分支)
+
+  2. **合并后** npm-publisher 应该：
+     - 检测到 `publish/dev` 标签
+     - 消费 changeset
+     - 发布到 npm 的 dev tag
+
+  ***
+
+  🧪 完整工作流测试
+
+## 1.5.3
+
+### Patch Changes
+
+- [#255](https://github.com/Deepractice/PromptX/pull/255) [`1f76c80`](https://github.com/Deepractice/PromptX/commit/1f76c80013de3ec879f34a6eb6142d9f9d64f84e) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 修复 changeset 的 GitHub token 配置
+
+- [#255](https://github.com/Deepractice/PromptX/pull/255) [`1f76c80`](https://github.com/Deepractice/PromptX/commit/1f76c80013de3ec879f34a6eb6142d9f9d64f84e) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 测试 GH_PAT 配置的发布流程
+
+  ## 测试目的
+
+  验证修复后的 GH_PAT 配置是否能正常工作
+
+  ## 期望结果
+
+  - auto-labeler 应该添加：
+    - `changeset/patch`
+    - `merge/squash`
+    - `publish/dev`
+  - 合并后应该正常发布到 npm dev tag
+
+  ***
+
+  🧪 测试 PR
+
+## 1.5.2
+
+### Patch Changes
+
+- [#254](https://github.com/Deepractice/PromptX/pull/254) [`605fe0b`](https://github.com/Deepractice/PromptX/commit/605fe0b06816d3e6f3cbf011124d5d30deb18ed4) Thanks [@deepracticexs](https://github.com/deepracticexs)! - test: 验证基于 PR 标签的发布流程
+
+  ## 测试目的
+
+  测试新的基于 PR 标签的发布机制是否正常工作。
+
+  ## 测试内容
+
+  - 添加了一个 patch 版本的 changeset
+  - PR 创建时应该自动添加标签：
+    - `changeset/patch` (基于 PR 标题的 test 类型)
+    - `merge/squash`
+    - `publish/dev` (因为目标是 develop 分支且有版本变更)
+
+  ## 验证点
+
+  1. auto-labeler 是否正确添加标签
+  2. 合并后 npm-publisher 是否正确触发
+  3. 是否能正确发布到 dev tag
+
+  ***
+
+  🧪 这是一个测试 PR
+
+- [#254](https://github.com/Deepractice/PromptX/pull/254) [`605fe0b`](https://github.com/Deepractice/PromptX/commit/605fe0b06816d3e6f3cbf011124d5d30deb18ed4) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 测试基于 PR 标签的发布机制
+
 ## 1.5.1
 
 ### Patch Changes
