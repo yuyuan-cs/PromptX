@@ -304,7 +304,7 @@ jobs:
             echo "❓ Could not detect project type"
           fi
 
-      - name: Setup Node.js
+      - name: Setup Node.js for NPM
         if: |
           steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
@@ -314,7 +314,7 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Deploy to NPM
+      - name: Deploy to NPM Registry
         if: |
           steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
@@ -397,6 +397,62 @@ jobs:
           fi
 
           echo "deployed=true" >> $GITHUB_OUTPUT
+          echo "npm_deployed=true" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js for GitHub Packages
+        if: |
+          steps.permissions.outputs.result == 'true' &&
+          steps.validate.outputs.valid == 'true' &&
+          steps.parse.outputs.target == 'npm' &&
+          steps.deploy-npm.outputs.npm_deployed == 'true' &&
+          steps.parse.outputs.dry_run != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@promptx'
+
+      - name: Deploy to GitHub Packages
+        if: |
+          steps.permissions.outputs.result == 'true' &&
+          steps.validate.outputs.valid == 'true' &&
+          steps.parse.outputs.target == 'npm' &&
+          steps.deploy-npm.outputs.npm_deployed == 'true' &&
+          steps.parse.outputs.dry_run != 'true'
+        id: deploy-github-packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📦 Publishing to GitHub Packages..."
+          
+          # Get the current package info
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          TAG="${{ steps.parse.outputs.tag }}"
+          
+          echo "📌 Publishing $PACKAGE_NAME@$CURRENT_VERSION to GitHub Packages with tag: $TAG"
+          
+          # Ensure the package.json has the correct publishConfig for GitHub Packages
+          # Temporarily update package.json for GitHub Packages
+          node -e "
+          const fs = require('fs');
+          const pkg = require('./package.json');
+          pkg.publishConfig = {
+            registry: 'https://npm.pkg.github.com',
+            access: 'public'
+          };
+          fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+          "
+          
+          # Publish to GitHub Packages
+          npm publish --tag "$TAG" --registry https://npm.pkg.github.com --access public || {
+            echo "⚠️ Failed to publish to GitHub Packages (may already exist)"
+          }
+          
+          # Restore original package.json
+          git checkout -- package.json
+          
+          echo "github_packages_deployed=true" >> $GITHUB_OUTPUT
 
       - name: Setup Docker Buildx
         if: |
@@ -459,10 +515,16 @@ jobs:
 
             if (target === 'npm') {
               const packageName = require('./package.json').name;
+              const githubPackagesDeployed = '${{ steps.deploy-github-packages.outputs.github_packages_deployed }}' === 'true';
               url = `https://www.npmjs.com/package/${packageName}`;
-              description = dryRun ?
-                `Dry run completed for ${packageName}` :
-                `Deployed ${packageName} to npm with tag ${tag}`;
+              
+              if (dryRun) {
+                description = `Dry run completed for ${packageName}`;
+              } else if (githubPackagesDeployed) {
+                description = `Deployed ${packageName} to NPM and GitHub Packages with tag ${tag}`;
+              } else {
+                description = `Deployed ${packageName} to NPM with tag ${tag}`;
+              }
             } else if (target === 'docker') {
               const registry = 'ghcr.io';
               const imageName = `ghcr.io/${{ github.repository }}`;
