@@ -1,4 +1,4 @@
-name: Deploy Command
+name: 'Deploy Command'
 
 on:
   issue_comment:
@@ -32,9 +32,9 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.issue && contains(github.event.comment.body, '/deploy'))
-    
+
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       packages: write
@@ -42,11 +42,11 @@ jobs:
       issues: write
       pull-requests: write
       id-token: write  # For OIDC
-    
+
     environment:
       name: deploy
       url: ${{ steps.deploy.outputs.url }}
-    
+
     steps:
       - name: Parse command
         id: parse
@@ -63,11 +63,11 @@ jobs:
             # Parse from comment
             COMMENT="${{ github.event.comment.body }}"
             echo "Raw comment: $COMMENT"
-            
+
             # Extract command line
             COMMAND=$(echo "$COMMENT" | grep -o '/deploy[^/]*' | head -1 || echo "")
             echo "Extracted command: $COMMAND"
-            
+
             # Parse target (npm or docker)
             if echo "$COMMAND" | grep -q "npm"; then
               TARGET="npm"
@@ -76,21 +76,21 @@ jobs:
             else
               TARGET=""
             fi
-            
+
             # Parse tag (dev, beta, latest)
             if echo "$COMMAND" | grep -q -- "--tag"; then
               TAG=$(echo "$COMMAND" | sed -n 's/.*--tag[[:space:]]\+\([^[:space:]]*\).*/\1/p')
             else
               TAG="latest"
             fi
-            
+
             # Parse dry-run
             if echo "$COMMAND" | grep -q -- "--dry-run"; then
               DRY_RUN="true"
             else
               DRY_RUN="false"
             fi
-            
+
             # Parse auto flag (for automated deployments)
             if echo "$COMMAND" | grep -q -- "--auto"; then
               AUTO="true"
@@ -98,12 +98,12 @@ jobs:
               AUTO="false"
             fi
           fi
-          
+
           echo "target=$TARGET" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
           echo "auto=$AUTO" >> $GITHUB_OUTPUT
-      
+
       - name: Check permissions
         id: permissions
         uses: actions/github-script@v7
@@ -114,26 +114,26 @@ jobs:
               console.log('Manual trigger - skipping permission check');
               return true;
             }
-            
+
             const { owner, repo } = context.repo;
             const username = context.payload.comment.user.login;
-            
+
             // Allow github-actions bot for automated deployments
             if (username === 'github-actions[bot]' || username === 'github-actions') {
               console.log('Allowing github-actions bot');
               return true;
             }
-            
+
             try {
               const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
                 owner,
                 repo,
                 username
               });
-              
+
               const allowed = ['admin', 'maintain', 'write'].includes(permission.permission);
               console.log(`User ${username} has ${permission.permission} permission: ${allowed ? 'allowed' : 'denied'}`);
-              
+
               if (!allowed) {
                 await github.rest.issues.createComment({
                   owner,
@@ -142,56 +142,56 @@ jobs:
                   body: `❌ @${username} You don't have permission to deploy. Need write access or higher.`
                 });
               }
-              
+
               return allowed;
             } catch (error) {
               console.error('Error checking permissions:', error);
               return false;
             }
           result-encoding: string
-      
+
       - name: Validate command
         id: validate
         if: steps.permissions.outputs.result == 'true'
         run: |
           TARGET="${{ steps.parse.outputs.target }}"
           TAG="${{ steps.parse.outputs.tag }}"
-          
+
           # Run validation script
           cat > validate.sh << 'EOF'
           #!/bin/bash
           set -e
-          
+
           TARGET="$1"
           TAG="$2"
-          
+
           # Validate target
           if [[ -z "$TARGET" ]]; then
             echo "error=Missing deployment target. Use: /deploy <npm|docker> --tag <dev|beta|latest>" >> $GITHUB_OUTPUT
             echo "valid=false" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           if [[ "$TARGET" != "npm" && "$TARGET" != "docker" ]]; then
             echo "error=Invalid target: $TARGET. Must be 'npm' or 'docker'" >> $GITHUB_OUTPUT
             echo "valid=false" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           # Validate tag
           if [[ "$TAG" != "dev" && "$TAG" != "beta" && "$TAG" != "latest" ]]; then
             echo "error=Invalid tag: $TAG. Must be 'dev', 'beta', or 'latest'" >> $GITHUB_OUTPUT
             echo "valid=false" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           echo "valid=true" >> $GITHUB_OUTPUT
           echo "✅ Command validated: deploy $TARGET with tag $TAG"
           EOF
-          
+
           chmod +x validate.sh
           ./validate.sh "$TARGET" "$TAG"
-      
+
       - name: React to comment
         if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
         uses: actions/github-script@v7
@@ -203,7 +203,7 @@ jobs:
               comment_id: context.payload.comment.id,
               content: 'rocket'
             });
-      
+
       - name: Post validation error
         if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'false'
         uses: actions/github-script@v7
@@ -218,7 +218,7 @@ jobs:
               issue_number: context.issue.number,
               body: `❌ **Deploy Failed**\n\n${error}\n\nUsage: \`/deploy <npm|docker> --tag <dev|beta|latest>\``
             });
-      
+
       - name: Checkout code
         if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
         uses: actions/checkout@v4
@@ -227,7 +227,7 @@ jobs:
           # 根据tag选择不同的分支
           # dev -> develop, beta -> release/PR, latest -> main
           ref: ${{ steps.parse.outputs.tag == 'dev' && 'develop' || (steps.parse.outputs.tag == 'latest' && 'main' || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number) || github.ref)) }}
-      
+
       - name: Create deployment
         if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
         id: deployment
@@ -236,16 +236,16 @@ jobs:
           script: |
             const target = '${{ steps.parse.outputs.target }}';
             const tag = '${{ steps.parse.outputs.tag }}';
-            
+
             // Map tag to environment
             const envMap = {
               'dev': 'development',
               'beta': 'staging',
               'latest': 'production'
             };
-            
+
             const environment = `${target}-${envMap[tag]}`;
-            
+
             // Get the ref to deploy
             let ref = context.sha;
             if (context.payload.issue.pull_request) {
@@ -256,7 +256,7 @@ jobs:
               });
               ref = pr.data.head.sha;
             }
-            
+
             // Create deployment
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
@@ -273,11 +273,11 @@ jobs:
                 auto: '${{ steps.parse.outputs.auto }}'
               }
             });
-            
+
             core.setOutput('deployment_id', deployment.data.id);
             core.setOutput('environment', environment);
             console.log(`Created deployment #${deployment.data.id} for ${environment}`);
-            
+
             // Set initial status
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
@@ -287,7 +287,7 @@ jobs:
               description: `Deploying ${target} to ${envMap[tag]}`
             });
           result-encoding: string
-      
+
       - name: Detect project type
         if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
         id: detect
@@ -303,33 +303,33 @@ jobs:
             echo "type=unknown" >> $GITHUB_OUTPUT
             echo "❓ Could not detect project type"
           fi
-      
+
       - name: Setup Node.js
         if: |
-          steps.permissions.outputs.result == 'true' && 
+          steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'npm'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      
+
       - name: Deploy to NPM
         if: |
-          steps.permissions.outputs.result == 'true' && 
+          steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'npm'
         id: deploy-npm
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.ORG_NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: |
           TAG="${{ steps.parse.outputs.tag }}"
           DRY_RUN="${{ steps.parse.outputs.dry_run }}"
-          
+
           echo "📦 Deploying to NPM with tag: $TAG"
           echo "🔍 Dry run mode: $DRY_RUN"
-          
+
           # Install dependencies if needed
           if [ -f "pnpm-lock.yaml" ]; then
             npm install -g pnpm
@@ -342,21 +342,21 @@ jobs:
           else
             npm install
           fi
-          
+
           # Get package name and current version
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          
+
           echo "📦 Package: $PACKAGE_NAME"
           echo "📌 Current version: $CURRENT_VERSION"
-          
+
           # Handle dev tag with auto-increment
           if [ "$TAG" = "dev" ]; then
             echo "🔄 Checking for existing dev versions..."
-            
+
             # Get all published versions with dev tag
             EXISTING_VERSIONS=$(npm view "$PACKAGE_NAME" versions --json 2>/dev/null | jq -r '.[]' | grep -E "${CURRENT_VERSION}-dev\." || echo "")
-            
+
             if [ -z "$EXISTING_VERSIONS" ]; then
               # No dev versions exist, start with dev.1
               DEV_NUMBER=1
@@ -365,21 +365,21 @@ jobs:
               HIGHEST_DEV=$(echo "$EXISTING_VERSIONS" | sed -n "s/.*-dev\.\([0-9]*\).*/\1/p" | sort -n | tail -1)
               DEV_NUMBER=$((HIGHEST_DEV + 1))
             fi
-            
+
             # Update version for dev
             NEW_VERSION="${CURRENT_VERSION}-dev.${DEV_NUMBER}"
             echo "📈 Auto-incremented dev version: $NEW_VERSION"
-            
+
             # Update package.json with new version
             npm version "$NEW_VERSION" --no-git-tag-version
           fi
-          
+
           # Build if needed
           if [ -f "tsconfig.json" ] || [ -f "build" ] || grep -q '"build":' package.json; then
             echo "🔨 Building package..."
             npm run build || true
           fi
-          
+
           # Publish or dry run
           if [ "$DRY_RUN" = "true" ]; then
             echo "🧪 Running npm publish in dry-run mode..."
@@ -387,7 +387,7 @@ jobs:
           else
             echo "🚀 Publishing to NPM..."
             npm publish --tag "$TAG" --access public
-            
+
             # Output the published version
             if [ "$TAG" = "dev" ]; then
               echo "published_version=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -395,44 +395,42 @@ jobs:
               echo "published_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
             fi
           fi
-          
+
           echo "deployed=true" >> $GITHUB_OUTPUT
-      
+
       - name: Setup Docker Buildx
         if: |
-          steps.permissions.outputs.result == 'true' && 
+          steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'docker'
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to Docker Hub
         if: |
-          steps.permissions.outputs.result == 'true' && 
+          steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'docker' &&
-          steps.parse.outputs.dry_run != 'true' &&
-          secrets.DOCKER_USERNAME != ''
+          steps.parse.outputs.dry_run != 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Login to GitHub Container Registry
         if: |
-          steps.permissions.outputs.result == 'true' && 
+          steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'docker' &&
-          steps.parse.outputs.dry_run != 'true' &&
-          secrets.DOCKER_USERNAME == ''
+          steps.parse.outputs.dry_run != 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Deploy to Docker
         if: |
-          steps.permissions.outputs.result == 'true' && 
+          steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'docker'
         id: deploy-docker
@@ -442,24 +440,20 @@ jobs:
           # Copy docker deploy script
           cp commands/deploy/scripts/docker.sh ./
           chmod +x docker.sh
-          
+
           TAG="${{ steps.parse.outputs.tag }}"
           DRY_RUN="${{ steps.parse.outputs.dry_run }}"
-          
+
           # Determine registry
-          if [ -n "${{ secrets.DOCKER_USERNAME }}" ]; then
-            REGISTRY="docker.io"
-          else
-            REGISTRY="ghcr.io"
-          fi
-          
+          REGISTRY="ghcr.io"
+
           ./docker.sh --tag "$TAG" --registry "$REGISTRY" --dry-run "$DRY_RUN"
-          
+
           echo "deployed=true" >> $GITHUB_OUTPUT
-      
+
       - name: Update deployment status (success)
         if: |
-          steps.permissions.outputs.result == 'true' && 
+          steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           (steps.deploy-npm.outputs.deployed == 'true' || steps.deploy-docker.outputs.deployed == 'true')
         uses: actions/github-script@v7
@@ -468,29 +462,25 @@ jobs:
             const target = '${{ steps.parse.outputs.target }}';
             const tag = '${{ steps.parse.outputs.tag }}';
             const dryRun = '${{ steps.parse.outputs.dry_run }}' === 'true';
-            
+
             let url = '';
             let description = '';
-            
+
             if (target === 'npm') {
               const packageName = require('./package.json').name;
               url = `https://www.npmjs.com/package/${packageName}`;
-              description = dryRun ? 
-                `Dry run completed for ${packageName}` : 
+              description = dryRun ?
+                `Dry run completed for ${packageName}` :
                 `Deployed ${packageName} to npm with tag ${tag}`;
             } else if (target === 'docker') {
-              const registry = '${{ secrets.DOCKER_USERNAME }}' ? 'docker.io' : 'ghcr.io';
-              const imageName = registry === 'ghcr.io' ? 
-                `ghcr.io/${{ github.repository }}` : 
-                `${{ github.repository }}`;
-              if (registry === 'ghcr.io') {
-                url = `https://github.com/${{ github.repository }}/pkgs/container/${imageName.split('/').pop()}`;
-              }
-              description = dryRun ? 
-                `Dry run completed for ${imageName}` : 
+              const registry = 'ghcr.io';
+              const imageName = `ghcr.io/${{ github.repository }}`;
+              url = `https://github.com/${{ github.repository }}/pkgs/container/${imageName.split('/').pop()}`;
+              description = dryRun ?
+                `Dry run completed for ${imageName}` :
                 `Deployed ${imageName}:${tag}`;
             }
-            
+
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -499,18 +489,18 @@ jobs:
               environment_url: url,
               description: description
             });
-            
+
             // Post success comment
             const isAuto = '${{ steps.parse.outputs.auto }}' === 'true';
             if (!isAuto) {
-              let message = dryRun ? 
+              let message = dryRun ?
                 `✅ **Deploy Preview Successful**\n\n${description}` :
                 `🚀 **Deploy Successful**\n\n${description}`;
-              
+
               if (url) {
                 message += `\n\n🔗 [View Deployment](${url})`;
               }
-              
+
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -518,7 +508,7 @@ jobs:
                 body: message
               });
             }
-      
+
       - name: Update deployment status (failure)
         if: failure() && steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
         uses: actions/github-script@v7
@@ -533,7 +523,7 @@ jobs:
                 description: 'Deployment failed'
               });
             }
-            
+
             const isAuto = '${{ steps.parse.outputs.auto }}' === 'true';
             if (!isAuto) {
               await github.rest.issues.createComment({
