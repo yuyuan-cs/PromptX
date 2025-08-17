@@ -193,7 +193,7 @@ jobs:
           ./validate.sh "$TARGET" "$TAG"
 
       - name: React to comment
-        if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
+        if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true' && github.event_name == 'issue_comment'
         uses: actions/github-script@v7
         with:
           script: |
@@ -205,7 +205,7 @@ jobs:
             });
 
       - name: Post validation error
-        if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'false'
+        if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'false' && github.event_name == 'issue_comment'
         uses: actions/github-script@v7
         env:
           VALIDATION_ERROR: ${{ steps.validate.outputs.error }}
@@ -492,7 +492,7 @@ jobs:
 
             // Post success comment
             const isAuto = '${{ steps.parse.outputs.auto }}' === 'true';
-            if (!isAuto) {
+            if (!isAuto && context.eventName === 'issue_comment') {
               let message = dryRun ?
                 `✅ **Deploy Preview Successful**\n\n${description}` :
                 `🚀 **Deploy Successful**\n\n${description}`;
@@ -525,7 +525,7 @@ jobs:
             }
 
             const isAuto = '${{ steps.parse.outputs.auto }}' === 'true';
-            if (!isAuto) {
+            if (!isAuto && context.eventName === 'issue_comment') {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
