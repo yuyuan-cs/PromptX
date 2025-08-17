@@ -248,7 +248,7 @@ jobs:
 
             // Get the ref to deploy
             let ref = context.sha;
-            if (context.payload.issue.pull_request) {
+            if (context.payload.issue && context.payload.issue.pull_request) {
               const pr = await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -405,17 +405,8 @@ jobs:
           steps.parse.outputs.target == 'docker'
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
-        if: |
-          steps.permissions.outputs.result == 'true' &&
-          steps.validate.outputs.valid == 'true' &&
-          steps.parse.outputs.target == 'docker' &&
-          steps.parse.outputs.dry_run != 'true'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
+      # Docker Hub login skipped - no credentials configured
+      
       - name: Login to GitHub Container Registry
         if: |
           steps.permissions.outputs.result == 'true' &&
@@ -518,7 +509,7 @@ jobs:
               await github.rest.repos.createDeploymentStatus({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                deployment_id: ${{ steps.deployment.outputs.deployment_id }},
+                deployment_id: '${{ steps.deployment.outputs.deployment_id }}',
                 state: 'failure',
                 description: 'Deployment failed'
               });
