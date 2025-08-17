@@ -233,15 +233,14 @@ jobs:
             echo "No version lock found"
           fi
       
-      - name: Detect project type
+      - name: Set project type
         if: steps.permissions.outputs.allowed == 'true'
         id: detect
         shell: bash
         run: |
-          chmod +x ./commands/release/scripts/detect.sh
-          PROJECT_TYPE=$(./commands/release/scripts/detect.sh)
-          echo "project_type=$PROJECT_TYPE" >> $GITHUB_OUTPUT
-          echo "Detected project type: $PROJECT_TYPE"
+          # PromptX is a Node.js project
+          echo "project_type=node" >> $GITHUB_OUTPUT
+          echo "Detected project type: node"
       
       - name: Check changesets
         if: |
@@ -408,22 +407,73 @@ jobs:
         id: release
         shell: bash
         run: |
-          PROJECT_TYPE="${{ steps.detect.outputs.project_type }}"
           VERSION="${{ steps.version.outputs.version }}"
           IS_PRERELEASE="${{ steps.version.outputs.is_prerelease }}"
           PRERELEASE="${{ steps.parse.outputs.prerelease }}"
           
-          # Export for scripts
-          export PROJECT_TYPE
-          export VERSION
-          export IS_PRERELEASE
-          export PRERELEASE
-          export BRANCH="${{ steps.branch.outputs.branch }}"
+          echo "Executing Node.js release for version $VERSION"
+          echo "Is prerelease: ${IS_PRERELEASE:-false}"
+          echo "Prerelease type: ${PRERELEASE:-none}"
           
-          # Run release script
-          chmod +x ./commands/release/scripts/${PROJECT_TYPE}.sh
-          ./commands/release/scripts/${PROJECT_TYPE}.sh
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           
+          # Verify version in package.json matches
+          if [ -f "package.json" ]; then
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            
+            if [ "$CURRENT_VERSION" != "$VERSION" ]; then
+              echo "Notice: package.json version ($CURRENT_VERSION) differs from release version ($VERSION)"
+              
+              if [ "$IS_PRERELEASE" = "true" ]; then
+                echo "Creating prerelease $VERSION from base version $CURRENT_VERSION"
+              else
+                echo "Updating package.json to version $VERSION"
+                node -e "
+                  const fs = require('fs');
+                  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+                  pkg.version = '$VERSION';
+                  fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n');
+                  console.log('Updated package.json to version ' + pkg.version);
+                "
+                
+                # Update lock files if they exist
+                if [ -f "pnpm-lock.yaml" ]; then
+                  if command -v pnpm &> /dev/null; then
+                    pnpm install --lockfile-only --silent
+                    echo "Updated pnpm-lock.yaml"
+                  fi
+                fi
+                
+                # Commit changes
+                git add package.json pnpm-lock.yaml 2>/dev/null || true
+                git commit -m "chore(release): v$VERSION [skip ci]" || echo "No changes to commit"
+              fi
+            else
+              echo "✓ package.json version is already $VERSION"
+            fi
+          fi
+          
+          # Create and push tag
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "⚠️ Tag v$VERSION already exists"
+            if [ "$IS_PRERELEASE" != "true" ]; then
+              echo "Updating tag to point to current commit (production release)"
+              git tag -f "v$VERSION" -m "Release v$VERSION (production)"
+              git push origin "v$VERSION" --force
+            else
+              echo "Skipping tag creation for prerelease (already exists)"
+            fi
+          else
+            git tag "v$VERSION" -m "Release v$VERSION"
+            git push origin "v$VERSION"
+          fi
+          
+          # Push current branch
+          git push origin HEAD
+          
+          echo "✅ Node.js release completed for v$VERSION"
           echo "success=true" >> $GITHUB_OUTPUT
       
       - name: Update or create version lock
