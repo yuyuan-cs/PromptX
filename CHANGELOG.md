@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.0
+
+### Minor Changes
+
+- [#265](https://github.com/Deepractice/PromptX/pull/265) [`73fb727`](https://github.com/Deepractice/PromptX/commit/73fb727c68c922d3f5abafed2c1c706bb7903064) Thanks [@deepracticexs](https://github.com/deepracticexs)! - Release version 1.6.0-dev.0 for development testing
+
+### Patch Changes
+
+- [`b5adcb8`](https://github.com/Deepractice/PromptX/commit/b5adcb8983f9ddee6bb93e8ef7a9a980192ebeb2) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 本地测试发布工作流
+
+## 1.6.0
+
+### Minor Changes
+
+- [#265](https://github.com/Deepractice/PromptX/pull/265) [`73fb727`](https://github.com/Deepractice/PromptX/commit/73fb727c68c922d3f5abafed2c1c706bb7903064) Thanks [@deepracticexs](https://github.com/deepracticexs)! - Release version 1.6.0-dev.0 for development testing
+
+### Patch Changes
+
+- [`b5adcb8`](https://github.com/Deepractice/PromptX/commit/b5adcb8983f9ddee6bb93e8ef7a9a980192ebeb2) Thanks [@deepracticexs](https://github.com/deepracticexs)! - 本地测试发布工作流
+
 ## 1.6.1
 
 ### Patch Changes
