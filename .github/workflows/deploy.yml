@@ -185,7 +185,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
+          # 根据tag选择不同的分支
+          # dev -> develop, beta -> release/PR, latest -> main
+          ref: ${{ steps.parse.outputs.tag == 'dev' && 'develop' || (steps.parse.outputs.tag == 'latest' && 'main' || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number) || github.ref)) }}
       
       - name: Create deployment
         if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
@@ -251,10 +253,17 @@ jobs:
         if: steps.permissions.outputs.result == 'true' && steps.validate.outputs.valid == 'true'
         id: detect
         run: |
-          # Copy detect script
-          cp commands/deploy/scripts/detect.sh ./
-          chmod +x detect.sh
-          ./detect.sh
+          # Detect project type based on files present
+          if [ -f "package.json" ]; then
+            echo "type=node" >> $GITHUB_OUTPUT
+            echo "📦 Detected Node.js project"
+          elif [ -f "Dockerfile" ]; then
+            echo "type=docker" >> $GITHUB_OUTPUT
+            echo "🐳 Detected Docker project"
+          else
+            echo "type=unknown" >> $GITHUB_OUTPUT
+            echo "❓ Could not detect project type"
+          fi
       
       - name: Setup Node.js
         if: |
@@ -276,14 +285,77 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: |
-          # Copy npm deploy script
-          cp commands/deploy/scripts/npm.sh ./
-          chmod +x npm.sh
-          
           TAG="${{ steps.parse.outputs.tag }}"
           DRY_RUN="${{ steps.parse.outputs.dry_run }}"
           
-          ./npm.sh --tag "$TAG" --dry-run "$DRY_RUN"
+          echo "📦 Deploying to NPM with tag: $TAG"
+          echo "🔍 Dry run mode: $DRY_RUN"
+          
+          # Install dependencies if needed
+          if [ -f "pnpm-lock.yaml" ]; then
+            npm install -g pnpm
+            pnpm install --frozen-lockfile
+          elif [ -f "yarn.lock" ]; then
+            npm install -g yarn
+            yarn install --frozen-lockfile
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+          
+          # Get package name and current version
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          echo "📦 Package: $PACKAGE_NAME"
+          echo "📌 Current version: $CURRENT_VERSION"
+          
+          # Handle dev tag with auto-increment
+          if [ "$TAG" = "dev" ]; then
+            echo "🔄 Checking for existing dev versions..."
+            
+            # Get all published versions with dev tag
+            EXISTING_VERSIONS=$(npm view "$PACKAGE_NAME" versions --json 2>/dev/null | jq -r '.[]' | grep -E "${CURRENT_VERSION}-dev\." || echo "")
+            
+            if [ -z "$EXISTING_VERSIONS" ]; then
+              # No dev versions exist, start with dev.1
+              DEV_NUMBER=1
+            else
+              # Find the highest dev number
+              HIGHEST_DEV=$(echo "$EXISTING_VERSIONS" | sed -n "s/.*-dev\.\([0-9]*\).*/\1/p" | sort -n | tail -1)
+              DEV_NUMBER=$((HIGHEST_DEV + 1))
+            fi
+            
+            # Update version for dev
+            NEW_VERSION="${CURRENT_VERSION}-dev.${DEV_NUMBER}"
+            echo "📈 Auto-incremented dev version: $NEW_VERSION"
+            
+            # Update package.json with new version
+            npm version "$NEW_VERSION" --no-git-tag-version
+          fi
+          
+          # Build if needed
+          if [ -f "tsconfig.json" ] || [ -f "build" ] || grep -q '"build":' package.json; then
+            echo "🔨 Building package..."
+            npm run build || true
+          fi
+          
+          # Publish or dry run
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🧪 Running npm publish in dry-run mode..."
+            npm publish --dry-run --tag "$TAG"
+          else
+            echo "🚀 Publishing to NPM..."
+            npm publish --tag "$TAG" --access public
+            
+            # Output the published version
+            if [ "$TAG" = "dev" ]; then
+              echo "published_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            else
+              echo "published_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            fi
+          fi
           
           echo "deployed=true" >> $GITHUB_OUTPUT
       
