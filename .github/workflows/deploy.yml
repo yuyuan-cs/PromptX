@@ -1,4 +1,4 @@
-name: Deploy Command
+name: 'Deploy Command'
 
 on:
   issue_comment:
