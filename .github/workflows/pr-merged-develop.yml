@@ -112,8 +112,9 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             
-            // Wait for previous operations to complete
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Wait for start release to complete
+            console.log('⏳ Waiting for version bump to complete...');
+            await new Promise(resolve => setTimeout(resolve, 5000));
             
             // Check if we should skip deployment
             const skipDeploy = pr.body && (
@@ -132,40 +133,35 @@ jobs:
               return;
             }
             
-            // Detect if this is a deployable project
-            let deployTarget = null;
+            // Always deploy npm package for PromptX project
+            console.log('📦 Triggering automatic NPM deployment to dev tag...');
             
-            // Check files changed in the PR to determine deploy target
-            const { data: files } = await github.rest.pulls.listFiles({
+            // Post the deploy command
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: pr.number
+              issue_number: pr.number,
+              body: '/deploy npm --tag dev --auto'
             });
             
-            const hasPackageJson = files.some(f => f.filename === 'package.json');
-            const hasDockerfile = files.some(f => f.filename === 'Dockerfile');
+            console.log(`✅ Triggered npm dev deployment for PR #${pr.number}`);
             
-            if (hasPackageJson) {
-              deployTarget = 'npm';
-              console.log('📦 NPM deployment target detected');
-            } else if (hasDockerfile) {
-              deployTarget = 'docker';
-              console.log('🐳 Docker deployment target detected');
-            }
-            
-            if (deployTarget) {
-              // Trigger dev deployment
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                body: `/deploy ${deployTarget} --tag dev --auto`
-              });
+            // Post summary
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: `## 🚀 Automated Release Pipeline Triggered
               
-              console.log(`✅ Triggered dev deployment for PR #${pr.number}`);
-            } else {
-              console.log('ℹ️ No deployable changes detected, skipping auto-deploy');
-            }
+📋 **Actions performed:**
+1. ✅ Version bumped via \`/start release --preview\`
+2. ✅ NPM deployment triggered with \`dev\` tag
+3. 📦 Package will be published to:
+   - NPM Registry: https://www.npmjs.com/package/@promptx/cli
+   - GitHub Packages: https://github.com/Deepractice/PromptX/packages
+
+🔄 **Status:** In progress...`
+            });
             
       - name: Delete feature branch
         if: github.event.pull_request.merged == true
