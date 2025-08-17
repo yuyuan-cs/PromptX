@@ -321,7 +321,7 @@ jobs:
           steps.parse.outputs.target == 'npm'
         id: deploy-npm
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.ORG_NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: |
           TAG="${{ steps.parse.outputs.tag }}"
@@ -410,8 +410,7 @@ jobs:
           steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'docker' &&
-          steps.parse.outputs.dry_run != 'true' &&
-          secrets.DOCKER_USERNAME != ''
+          steps.parse.outputs.dry_run != 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -422,8 +421,7 @@ jobs:
           steps.permissions.outputs.result == 'true' &&
           steps.validate.outputs.valid == 'true' &&
           steps.parse.outputs.target == 'docker' &&
-          steps.parse.outputs.dry_run != 'true' &&
-          secrets.DOCKER_USERNAME == ''
+          steps.parse.outputs.dry_run != 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -447,11 +445,7 @@ jobs:
           DRY_RUN="${{ steps.parse.outputs.dry_run }}"
 
           # Determine registry
-          if [ -n "${{ secrets.DOCKER_USERNAME }}" ]; then
-            REGISTRY="docker.io"
-          else
-            REGISTRY="ghcr.io"
-          fi
+          REGISTRY="ghcr.io"
 
           ./docker.sh --tag "$TAG" --registry "$REGISTRY" --dry-run "$DRY_RUN"
 
@@ -479,13 +473,9 @@ jobs:
                 `Dry run completed for ${packageName}` :
                 `Deployed ${packageName} to npm with tag ${tag}`;
             } else if (target === 'docker') {
-              const registry = '${{ secrets.DOCKER_USERNAME }}' ? 'docker.io' : 'ghcr.io';
-              const imageName = registry === 'ghcr.io' ?
-                `ghcr.io/${{ github.repository }}` :
-                `${{ github.repository }}`;
-              if (registry === 'ghcr.io') {
-                url = `https://github.com/${{ github.repository }}/pkgs/container/${imageName.split('/').pop()}`;
-              }
+              const registry = 'ghcr.io';
+              const imageName = `ghcr.io/${{ github.repository }}`;
+              url = `https://github.com/${{ github.repository }}/pkgs/container/${imageName.split('/').pop()}`;
               description = dryRun ?
                 `Dry run completed for ${imageName}` :
                 `Deployed ${imageName}:${tag}`;
