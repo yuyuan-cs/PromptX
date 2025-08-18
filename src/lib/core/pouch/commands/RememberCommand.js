@@ -115,7 +115,7 @@ class RememberCommand extends BasePouchCommand {
       .map(([type, count]) => `${type}: ${count}个`)
       .join(', ')
     
-    return `✅ AI已批量内化 ${engrams.length} 个记忆：
+    let output = `✅ AI已批量内化 ${engrams.length} 个记忆：
 
 ## 📊 批量记忆统计
 - **类型分布**: ${typeStats}
@@ -127,18 +127,9 @@ class RememberCommand extends BasePouchCommand {
 - ✅ **原子性保持**: 每个概念独立存储，避免混淆
 - ✅ **关联性建立**: 相关概念自动建立语义连接  
 - ✅ **检索精确**: 原子Cue确保精确匹配
-- ✅ **类型分离**: ATOMIC实体、LINK关系、PATTERN模式分别存储
-
----
-🎉 认知循环完成！
-你已经完成了 Remember（呼气），新知识已被保存。
-
-这次循环让你：
-✅ 避免了重复错误
-✅ 积累了新经验
-✅ 为未来的任务做好准备
-
-💡 下次任务：记得先 Recall，让记忆帮助你更好地完成。`
+- ✅ **类型分离**: ATOMIC实体、LINK关系、PATTERN模式分别存储`
+    
+    return output
   }
 
   /**
