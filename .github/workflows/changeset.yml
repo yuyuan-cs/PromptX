@@ -195,7 +195,12 @@ jobs:
           CHANGES=""
           
           # Get all commits in this PR
-          COMMITS=$(git log origin/${BASE_BRANCH}..HEAD --oneline)
+          # Use merge-base to ensure we get the correct commit range
+          MERGE_BASE=$(git merge-base origin/${BASE_BRANCH} HEAD)
+          COMMITS=$(git log ${MERGE_BASE}..HEAD --oneline)
+          
+          echo "📊 Analyzing commits from ${MERGE_BASE} to HEAD"
+          echo "📋 Found $(echo "$COMMITS" | wc -l) commits to analyze"
           
           while IFS= read -r commit; do
             echo "Analyzing: $commit"
@@ -207,18 +212,18 @@ jobs:
               continue
             fi
             
-            # Extract commit type using unified regex
-            COMMIT_TYPE=$(echo "$commit" | sed -nE 's/^[a-f0-9]+ (feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert|enhance)(\(.+?\))?:.*/\1/p')
+            # Extract commit type using unified regex (支持 enhancement 和 enhance)
+            COMMIT_TYPE=$(echo "$commit" | sed -nE 's/^[a-f0-9]+ (feat|fix|docs|style|refactor|perf|test|chore|build|ci|revert|enhance|enhancement)(\(.+?\))?:.*/\1/p')
             
             if [ -n "$COMMIT_TYPE" ]; then
               case "$COMMIT_TYPE" in
                 # Minor version bumps
-                feat|enhance)
+                feat|enhance|enhancement)
                   if [ "$VERSION_TYPE" != "major" ]; then
                     VERSION_TYPE="minor"
                   fi
                   EMOJI="✨"
-                  [ "$COMMIT_TYPE" == "enhance" ] && EMOJI="🎨"
+                  [ "$COMMIT_TYPE" == "enhance" ] || [ "$COMMIT_TYPE" == "enhancement" ] && EMOJI="🎨"
                   CHANGES="${CHANGES}\n${EMOJI} ${COMMIT_TYPE^}: ${commit}"
                   ;;
                 
