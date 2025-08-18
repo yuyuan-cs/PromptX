@@ -251,9 +251,27 @@ jobs:
         id: detect
         shell: bash
         run: |
-          # Run detection script
-          chmod +x ./commands/changeset/scripts/detect.sh
-          PROJECT_TYPE=$(./commands/changeset/scripts/detect.sh)
+          # Detect project type inline
+          if [ -f "package.json" ]; then
+            PROJECT_TYPE="node"
+          elif [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
+            PROJECT_TYPE="python"
+          elif [ -f "go.mod" ]; then
+            PROJECT_TYPE="go"
+          elif [ -f "pom.xml" ]; then
+            PROJECT_TYPE="java-maven"
+          elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+            PROJECT_TYPE="java-gradle"
+          elif [ -f "Cargo.toml" ]; then
+            PROJECT_TYPE="rust"
+          elif [ -f "composer.json" ]; then
+            PROJECT_TYPE="php"
+          elif [ -f "Gemfile" ]; then
+            PROJECT_TYPE="ruby"
+          else
+            PROJECT_TYPE="unknown"
+          fi
+          
           echo "project_type=$PROJECT_TYPE" >> $GITHUB_OUTPUT
           echo "Detected project type: $PROJECT_TYPE"
       
@@ -281,23 +299,36 @@ jobs:
           # Use custom message or PR title
           CHANGESET_MESSAGE="${MESSAGE:-$PR_TITLE}"
           
-          # Export variables for implementation scripts
-          export CHANGESET_TYPE="$TYPE"
-          export CHANGESET_MESSAGE="$CHANGESET_MESSAGE"
-          export PR_NUMBER="$PR_NUMBER"
-          export PR_AUTHOR="$PR_AUTHOR"
-          export AUTO_MODE="${{ steps.parse.outputs.mode }}"
-          
-          # Call appropriate implementation based on project type
-          IMPL_SCRIPT="./commands/changeset/scripts/${PROJECT_TYPE}.sh"
-          if [ -f "$IMPL_SCRIPT" ]; then
-            echo "Using implementation: $IMPL_SCRIPT"
-            chmod +x "$IMPL_SCRIPT"
-            $IMPL_SCRIPT
+          # Handle Node.js project directly (since PromptX is a Node project)
+          if [ "$PROJECT_TYPE" == "node" ]; then
+            # Check if changesets is configured
+            if [ ! -f ".changeset/config.json" ]; then
+              echo "Changesets not configured. Run: npx changeset init"
+              exit 1
+            fi
+            
+            # Create changeset file
+            TIMESTAMP=$(date +%s)
+            FILENAME=".changeset/${TIMESTAMP}-pr-${PR_NUMBER}-${TYPE}.md"
+            
+            # Get package name from package.json
+            PACKAGE_NAME=$(node -e "console.log(require('./package.json').name || '@unknown/package')")
+            
+            # Create changeset content
+            cat > "$FILENAME" << EOF
+---
+"${PACKAGE_NAME}": ${TYPE}
+---
+
+${CHANGESET_MESSAGE}
+
+Contributed by @${PR_AUTHOR} via #${PR_NUMBER}
+EOF
+            
+            echo "Created Node.js changeset: $FILENAME"
           else
-            echo "No specific implementation for $PROJECT_TYPE, using generic"
-            chmod +x ./commands/changeset/scripts/generic.sh
-            ./commands/changeset/scripts/generic.sh
+            echo "Project type $PROJECT_TYPE is not Node.js, skipping changeset creation"
+            exit 1
           fi
           
           echo "changeset_created=true" >> $GITHUB_OUTPUT
