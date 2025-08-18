@@ -9,8 +9,12 @@ on:
 
 jobs:
   trigger-release-preview:
-    # Only trigger for actual PR merges, not direct pushes
-    if: github.event.pull_request.merged == true && github.event.pull_request.number != null
+    # Only trigger for actual PR merges, not direct pushes, and skip bot-triggered events
+    if: |
+      github.event.pull_request.merged == true && 
+      github.event.pull_request.number != null &&
+      github.actor != 'github-actions[bot]' &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -24,11 +28,6 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
           
-      - name: Skip if triggered by bot
-        if: github.actor == 'github-actions[bot]' || github.actor == 'dependabot[bot]'
-        run: |
-          echo "⏭️ Skipping workflow triggered by bot"
-          exit 0
           
       - name: Check for changesets
         id: check
