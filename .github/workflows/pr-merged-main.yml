@@ -78,15 +78,16 @@ jobs:
             // Wait for notification
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            // Create final release (without prerelease flag)
+            // Graduate prerelease to stable version
+            // 使用 --graduate 将 beta/rc 版本转为正式版
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              body: '/release'
+              body: '/release --graduate'
             });
             
-            console.log('✅ Triggered /release for production');
+            console.log('✅ Triggered /release --graduate to promote to stable version');
             
       # Taylor工作流优化：移除不必要的同步
       # 原因：
