@@ -638,7 +638,7 @@ jobs:
         if: |
           steps.permissions.outputs.allowed == 'true' &&
           steps.parse.outputs.preview != 'true' &&
-          steps.parse.outputs.prerelease == '' &&
+          (steps.parse.outputs.prerelease == '' || steps.parse.outputs.graduate == 'true') &&
           steps.release.outputs.success == 'true'
         shell: bash
         run: |
