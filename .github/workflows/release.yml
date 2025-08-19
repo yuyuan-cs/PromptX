@@ -661,7 +661,8 @@ jobs:
           steps.parse.outputs.preview != 'true' &&
           steps.release.outputs.success == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT_TOKEN to trigger other workflows (like release-created.yml)
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"

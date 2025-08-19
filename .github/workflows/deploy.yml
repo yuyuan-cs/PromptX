@@ -350,8 +350,16 @@ jobs:
           echo "📦 Package: $PACKAGE_NAME"
           echo "📌 Current version: $CURRENT_VERSION"
 
+          # Handle version override from command (for beta/release)
+          OVERRIDE_VERSION="${{ steps.parse.outputs.version }}"
+          
+          if [ -n "$OVERRIDE_VERSION" ]; then
+            # Use the version from command (for beta/release deployments)
+            echo "📌 Using version from command: $OVERRIDE_VERSION"
+            npm version "$OVERRIDE_VERSION" --no-git-tag-version --allow-same-version
+            NEW_VERSION="$OVERRIDE_VERSION"
           # Handle dev tag with auto-increment
-          if [ "$TAG" = "dev" ]; then
+          elif [ "$TAG" = "dev" ]; then
             echo "🔄 Checking for existing dev versions..."
 
             # Get all published versions with dev tag
@@ -389,7 +397,7 @@ jobs:
             npm publish --tag "$TAG" --access public
 
             # Output the published version
-            if [ "$TAG" = "dev" ]; then
+            if [ -n "$NEW_VERSION" ]; then
               echo "published_version=$NEW_VERSION" >> $GITHUB_OUTPUT
             else
               echo "published_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT

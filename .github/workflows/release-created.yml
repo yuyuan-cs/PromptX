@@ -17,7 +17,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          # Use the tag directly, not as a branch name
+          ref: refs/tags/${{ github.event.release.tag_name }}
           fetch-depth: 0
           
       - name: Detect project type
@@ -174,8 +175,10 @@ jobs:
             // Wait a moment for the notification to be posted
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Trigger the deployment command
-            const deployCommand = `/deploy ${target} --tag ${deployTag} --auto`;
+            // Trigger the deployment command with version from tag
+            const releaseTag = '${{ steps.tag.outputs.release_tag }}';
+            const version = releaseTag.replace('v', ''); // Remove 'v' prefix if present
+            const deployCommand = `/deploy ${target} --tag ${deployTag} --version ${version} --auto`;
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,
