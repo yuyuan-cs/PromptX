@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.7.1
+
+### Patch Changes
+
+- [#280](https://github.com/Deepractice/PromptX/pull/280) [`8774593`](https://github.com/Deepractice/PromptX/commit/8774593e0b8ad9464b15b6e312755a23b74d57df) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 修复 LongTerm recall 无法检索 mindmap 节点的问题 (#273)
+
+  Contributed by @deepracticexs via #280
+
+## 1.7.1
+
+### Patch Changes
+
+- [#280](https://github.com/Deepractice/PromptX/pull/280) [`8774593`](https://github.com/Deepractice/PromptX/commit/8774593e0b8ad9464b15b6e312755a23b74d57df) Thanks [@deepracticexs](https://github.com/deepracticexs)! - fix: 修复 LongTerm recall 无法检索 mindmap 节点的问题 (#273)
+
+  Contributed by @deepracticexs via #280
+
 ## 1.7.0
 
 ### Minor Changes
