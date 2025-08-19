@@ -432,11 +432,23 @@ jobs:
           
           echo "📌 Publishing $PACKAGE_NAME@$CURRENT_VERSION to GitHub Packages with tag: $TAG"
           
-          # Ensure the package.json has the correct publishConfig for GitHub Packages
+          # Setup npm authentication for GitHub Packages
+          echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
+          echo "@deepractice:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          
           # Temporarily update package.json for GitHub Packages
+          # GitHub Packages requires the package name to match the GitHub org
           node -e "
           const fs = require('fs');
           const pkg = require('./package.json');
+          const originalName = pkg.name;
+          
+          // GitHub Packages requires @org/package format matching the GitHub org
+          if (pkg.name.startsWith('@promptx/')) {
+            pkg.name = pkg.name.replace('@promptx/', '@deepractice/promptx-');
+            console.log('📝 Adjusted package name for GitHub Packages:', originalName, '->', pkg.name);
+          }
+          
           pkg.publishConfig = {
             registry: 'https://npm.pkg.github.com',
             access: 'public'
@@ -444,9 +456,10 @@ jobs:
           fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
           "
           
-          # Publish to GitHub Packages
+          # Publish to GitHub Packages with proper auth
           npm publish --tag "$TAG" --registry https://npm.pkg.github.com --access public || {
-            echo "⚠️ Failed to publish to GitHub Packages (may already exist)"
+            echo "⚠️ Failed to publish to GitHub Packages (may already exist or permission issue)"
+            echo "📋 This is expected if the version already exists"
           }
           
           # Restore original package.json
