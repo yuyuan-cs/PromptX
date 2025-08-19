@@ -354,16 +354,16 @@ jobs:
             # Get package name from package.json
             PACKAGE_NAME=$(node -e "console.log(require('./package.json').name || '@unknown/package')")
             
-            # Create changeset content
-            cat > "$FILENAME" <<-CHANGESET_END
----
-"${PACKAGE_NAME}": ${TYPE}
----
-
-${CHANGESET_MESSAGE}
-
-Contributed by @${PR_AUTHOR} via #${PR_NUMBER}
-CHANGESET_END
+            # Create changeset content using printf to avoid heredoc issues
+            printf '%s\n' \
+              '---' \
+              "\"${PACKAGE_NAME}\": ${TYPE}" \
+              '---' \
+              '' \
+              "${CHANGESET_MESSAGE}" \
+              '' \
+              "Contributed by @${PR_AUTHOR} via #${PR_NUMBER}" \
+              > "$FILENAME"
             
             echo "Created Node.js changeset: $FILENAME"
           else
