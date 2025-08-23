@@ -8,7 +8,7 @@ const { WordCue } = require('./components/WordCue.js');
 const { GraphSchema } = require('./components/GraphSchema.js');
 const { NetworkSemantic } = require('./components/NetworkSemantic.js');
 const { peggyMindmap } = require('./mindmap/PeggyMindmap.js');
-const logger = require('../../../../utils/logger');
+const logger = require('../../../../utils/logger.js');
 
 class MindService {
   constructor() {
@@ -67,9 +67,10 @@ class MindService {
    * 记忆新内容 - 解析 mindmap 并添加到语义网络
    * @param {string} mindmapText - Mermaid mindmap 格式的文本
    * @param {string} semanticName - 目标语义网络名称
+   * @param {Object} engram - 可选的engram对象，包含强度值等元信息
    * @returns {Promise<NetworkSemantic>} 更新后的语义网络
    */
-  async remember(mindmapText, semanticName = 'global-semantic') {
+  async remember(mindmapText, semanticName = 'global-semantic', engram = null) {
     if (!mindmapText || typeof mindmapText !== 'string') {
       throw new Error('Invalid mindmap text provided');
     }
@@ -92,6 +93,14 @@ class MindService {
     // 3. 解析 mindmap 为 Schema
     const newSchema = peggyMindmap.parse(normalizedMindmap);
     console.log('[MindService.remember] Parsed schema:', newSchema.name);
+    
+    // 3.5 如果有engram，将强度值应用到所有Cue
+    if (engram && engram.strength !== undefined) {
+      console.log('[MindService.remember] Applying engram strength:', engram.strength);
+      newSchema.getCues().forEach(cue => {
+        cue.strength = engram.strength;
+      });
+    }
     
     // 4. 语义等价性检测和 Schema 合并
     const semanticEquivalents = this._findSemanticEquivalents(semantic, newSchema.name);
@@ -160,6 +169,8 @@ class MindService {
    * @returns {Promise<string>} Mermaid mindmap 格式的文本
    */
   async exportToMindmap(semanticName = 'global-semantic') {
+    logger.info('[MindService.exportToMindmap] Starting export:', { semanticName });
+    
     // 使用当前实例或加载新的
     if (!this.currentSemantic || this.currentSemantic.name !== semanticName) {
       this.currentSemantic = await NetworkSemantic.load(this.storagePath, semanticName);
@@ -167,24 +178,59 @@ class MindService {
     const semantic = this.currentSemantic;
     
     const schemas = semantic.getAllSchemas();
+    logger.info('[MindService.exportToMindmap] Schemas found:', {
+      count: schemas.length,
+      names: schemas.map(s => s.name),
+      cueLayerSize: semantic.cueLayer?.size || 0,
+      schemaLayerSize: semantic.schemaLayer?.size || 0
+    });
+    
+    // 统一使用 'mind' 作为虚拟根节点
+    const rootNodeName = 'mind';
+    
     if (schemas.length === 0) {
-      return `mindmap\n  ((${semantic.name}))`;
+      logger.warn('[MindService.exportToMindmap] No schemas found, returning empty mindmap');
+      return `mindmap\n  ((${rootNodeName}))`;
     }
     
-    // 如果只有一个 Schema，直接序列化
+    // 始终创建统一的 mindmap 结构，即使只有一个 Schema
+    const lines = ['mindmap'];
+    lines.push(`  ((${rootNodeName}))`);
+    
+    // 如果只有一个 Schema，特殊处理以保持层级结构
     if (schemas.length === 1) {
-      let mindmap = peggyMindmap.serialize(schemas[0]);
+      const schema = schemas[0];
+      lines.push(`    ${schema.name}`);
+      
+      // 从 PeggyMindmap 序列化获取子节点
+      const serialized = peggyMindmap.serialize(schema);
+      const serializedLines = serialized.split('\n');
+      
+      // 跳过 mindmap 声明和根节点，只保留子节点
+      let inContent = false;
+      serializedLines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed === 'mindmap') return;
+        if (trimmed.startsWith('((') && trimmed.endsWith('))')) {
+          inContent = true;
+          return;
+        }
+        if (inContent && trimmed) {
+          // 增加缩进层级
+          const leadingSpaces = line.match(/^(\s*)/)[1].length;
+          lines.push(`      ${line.substring(leadingSpaces)}`);
+        }
+      });
+      
       // 应用拦截器的 onPrime 处理
+      let mindmap = lines.join('\n');
       if (semantic.interceptor && semantic.interceptor.onPrime) {
         mindmap = semantic.interceptor.onPrime(mindmap);
       }
       return mindmap;
     }
     
-    // 多个 Schema，创建统一的 mindmap
-    const lines = ['mindmap'];
-    lines.push(`  ((${semantic.name}))`);
-    
+    // 多个 Schema 时的处理
     // 每个 Schema 作为根节点的子节点
     schemas.forEach(schema => {
       lines.push(`    ${schema.name}`);
@@ -217,6 +263,7 @@ class MindService {
       // 递归添加节点
       const addCue = (cue, indent) => {
         // 添加 strength 信息 (如果存在)
+        logger.info(`[MindService.exportToMindmap] Processing cue: ${cue.word}, strength: ${cue.strength}, type: ${typeof cue.strength}`);
         const strengthInfo = cue.strength !== undefined ? ` [${cue.strength.toFixed(2)}]` : '';
         lines.push(`${' '.repeat(indent)}${cue.word}${strengthInfo}`);
         cue.getConnections().forEach(childWord => {
@@ -267,17 +314,34 @@ class MindService {
    */
   async primeSemantic(semanticName = 'global-semantic') {
     console.log('[MindService.primeSemantic] Loading semantic:', semanticName);
+    logger.info('[MindService.primeSemantic] Starting prime for:', { 
+      semanticName, 
+      storagePath: this.storagePath,
+      hasCached: !!this.currentSemantic,
+      cachedName: this.currentSemantic?.name 
+    });
     
     // 优先使用缓存的实例，只有在没有缓存或名称不同时才重新加载
     if (!this.currentSemantic || this.currentSemantic.name !== semanticName) {
       logger.info('[MindService.primeSemantic] Loading from storage');
       this.currentSemantic = await NetworkSemantic.load(this.storagePath, semanticName);
+      logger.info('[MindService.primeSemantic] Loaded semantic:', {
+        name: this.currentSemantic.name,
+        schemasCount: this.currentSemantic.getAllSchemas().length,
+        cueLayerSize: this.currentSemantic.cueLayer?.size || 0,
+        schemaLayerSize: this.currentSemantic.schemaLayer?.size || 0
+      });
     } else {
       logger.info('[MindService.primeSemantic] Using cached semantic network');
     }
     
     // 转换为 mindmap
-    return this.exportToMindmap(semanticName);
+    const mindmap = await this.exportToMindmap(semanticName);
+    logger.info('[MindService.primeSemantic] Generated mindmap:', {
+      length: mindmap.length,
+      preview: mindmap.substring(0, 200)
+    });
+    return mindmap;
   }
 
   /**

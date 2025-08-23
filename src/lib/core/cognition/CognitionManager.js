@@ -1,223 +1,303 @@
-// CognitionManager - 管理角色与认知的关系
-// 每个角色拥有独立的认知实例，存储在 @user://.promptx/cognition/{role}
-
-const { Cognition } = require('./Cognition');
+const fs = require('fs').promises;
 const path = require('path');
-const fs = require('fs-extra');
+const os = require('os');
+const CognitionSystem = require('./CognitionSystem');
 const logger = require('../../utils/logger');
 
+/**
+ * CognitionManager - 认知系统管理器
+ * 
+ * 负责管理多个角色的认知系统实例
+ * 每个角色都有独立的 CognitionSystem 实例和存储路径
+ * 
+ * 使用单例模式确保内存状态一致性
+ * 
+ * 存储结构：
+ * ~/.promptx/cognition/
+ *   ├── java-developer/
+ *   │   └── mind.json
+ *   ├── product-manager/
+ *   │   └── mind.json
+ *   └── copywriter/
+ *       └── mind.json
+ */
 class CognitionManager {
-  constructor(resourceManager) {
+  constructor(resourceManager = null) {
     this.resourceManager = resourceManager;
-    this.cognitions = new Map(); // role -> Cognition instance
-    this.userProtocol = null; // 延迟初始化
+    this.systems = new Map(); // roleId -> CognitionSystem
+    this.basePath = path.join(os.homedir(), '.promptx', 'cognition');
+  }
+  
+  /**
+   * 获取单例实例
+   * @param {Object} resourceManager - 可选的资源管理器
+   * @returns {CognitionManager}
+   */
+  static getInstance(resourceManager = null) {
+    if (!CognitionManager.instance) {
+      CognitionManager.instance = new CognitionManager(resourceManager);
+      logger.info('[CognitionManager] Created singleton instance');
+    }
+    return CognitionManager.instance;
   }
 
   /**
-   * 确保资源管理器已初始化
+   * 获取角色的存储路径
+   * @param {string} roleId - 角色ID
+   * @returns {string} 存储路径
    */
-  async ensureInitialized() {
-    if (!this.resourceManager.initialized) {
-      logger.info('⚙️ [CognitionManager] ResourceManager未初始化，正在初始化...');
-      await this.resourceManager.initializeWithNewArchitecture();
-      logger.success('⚙️ [CognitionManager] ResourceManager初始化完成');
-    }
-    
-    // 获取 user 协议
-    if (!this.userProtocol) {
-      this.userProtocol = this.resourceManager.protocols.get('user');
-      if (!this.userProtocol) {
-        throw new Error('UserProtocol not found in ResourceManager');
-      }
+  getRolePath(roleId) {
+    return path.join(this.basePath, roleId);
+  }
+
+  /**
+   * 获取角色的 network.json 文件路径
+   * @param {string} roleId - 角色ID
+   * @returns {string} network.json 文件路径
+   */
+  getNetworkFilePath(roleId) {
+    return path.join(this.getRolePath(roleId), 'network.json');
+  }
+
+  /**
+   * 确保角色的存储目录存在
+   * @param {string} roleId - 角色ID
+   */
+  async ensureRoleDirectory(roleId) {
+    const rolePath = this.getRolePath(roleId);
+    try {
+      await fs.mkdir(rolePath, { recursive: true });
+      logger.debug(`[CognitionManager] Ensured directory for role: ${roleId}`);
+    } catch (error) {
+      logger.error(`[CognitionManager] Failed to create directory for role ${roleId}:`, error);
+      throw error;
     }
   }
 
   /**
-   * 获取或创建角色的认知实例
-   * @param {string} role - 角色ID
-   * @returns {Promise<Cognition>} 角色的认知实例
+   * 获取或创建角色的认知系统实例
+   * @param {string} roleId - 角色ID
+   * @returns {CognitionSystem} 认知系统实例
    */
-  async getCognition(role) {
-    // 验证角色名
-    if (!role || typeof role !== 'string' || role.trim() === '') {
-      throw new Error('角色ID不能为空');
-    }
-    
-    // 确保已初始化
-    await this.ensureInitialized();
-    
-    // 如果已存在，直接返回
-    if (this.cognitions.has(role)) {
-      logger.debug(`🧠 [CognitionManager] 返回已存在的认知实例: ${role}`);
-      return this.cognitions.get(role);
-    }
-
-    logger.info(`🧠 [CognitionManager] 创建新的认知实例: ${role}`);
-    
-    // 创建角色专属的认知目录
-    const cognitionPath = `.promptx/cognition/${role}`;
-    const cognitionDir = await this.userProtocol.resolvePath(cognitionPath);
-    
-    // 确保目录存在
-    await fs.ensureDir(cognitionDir);
-    logger.debug(`📁 [CognitionManager] 认知目录已创建: ${cognitionDir}`);
-    
-    // 配置认知实例
-    const config = {
-      longTermPath: path.join(cognitionDir, 'longterm.db'),
-      semanticPath: cognitionDir,  // 直接使用认知目录，不再创建子目录
-      proceduralPath: path.join(cognitionDir, 'procedural.json')  // 和longterm.db在同一目录
-    };
-    
-    // 创建认知实例
-    const cognition = new Cognition(config);
-    this.cognitions.set(role, cognition);
-    
-    logger.success(`✅ [CognitionManager] 认知实例创建完成: ${role}`);
-    return cognition;
-  }
-
-  /**
-   * 记住 - 为指定角色保存记忆（支持批量）
-   * @param {string} role - 角色ID
-   * @param {Array} engrams - Engram对象数组，每个包含 {content, schema, strength, type}
-   */
-  async remember(role, engrams) {
-    // 确保输入是数组
-    if (!Array.isArray(engrams)) {
-      throw new Error('engrams 必须是数组格式');
-    }
-    
-    if (engrams.length === 0) {
-      throw new Error('engrams 数组不能为空');
-    }
-    
-    const cognition = await this.getCognition(role);
-    const results = [];
-    
-    // 循环调用底层的单个remember方法
-    for (let i = 0; i < engrams.length; i++) {
-      const { content, schema, strength, type = 'ATOMIC' } = engrams[i];
+  async getSystem(roleId) {
+    if (!this.systems.has(roleId)) {
+      logger.info(`[CognitionManager] Creating new CognitionSystem for role: ${roleId}`);
       
-      // 验证必需字段
-      if (!content || !schema || typeof strength !== 'number') {
-        throw new Error(`Engram ${i + 1}: content, schema, strength 是必需字段`);
-      }
+      // 确保目录存在
+      await this.ensureRoleDirectory(roleId);
       
+      // 创建新的认知系统实例
+      const system = new CognitionSystem();
+      
+      // 尝试加载已有的认知数据
+      const networkFilePath = this.getNetworkFilePath(roleId);
       try {
-        const result = await cognition.remember(content, schema, strength, type);
-        results.push(result);
+        await system.network.load(networkFilePath);
+        logger.info(`[CognitionManager] Loaded existing network data for role: ${roleId}`);
       } catch (error) {
-        throw new Error(`Engram ${i + 1}: ${error.message}`);
+        // 文件不存在或解析失败，使用空的认知系统
+        if (error.code !== 'ENOENT') {
+          logger.warn(`[CognitionManager] Failed to load network data for role ${roleId}:`, error.message);
+        } else {
+          logger.debug(`[CognitionManager] No existing network data for role: ${roleId}`);
+        }
+      }
+      
+      this.systems.set(roleId, system);
+    }
+    
+    return this.systems.get(roleId);
+  }
+
+  /**
+   * 保存角色的认知数据
+   * @param {string} roleId - 角色ID
+   */
+  async saveSystem(roleId) {
+    const system = this.systems.get(roleId);
+    if (!system) {
+      logger.warn(`[CognitionManager] No system to save for role: ${roleId}`);
+      return;
+    }
+
+    try {
+      // 确保目录存在
+      await this.ensureRoleDirectory(roleId);
+      
+      // 使用 Network 的 persist 方法直接保存
+      const networkFilePath = this.getNetworkFilePath(roleId);
+      await system.network.persist(networkFilePath);
+      
+      logger.info(`[CognitionManager] Saved network data for role: ${roleId}`);
+    } catch (error) {
+      logger.error(`[CognitionManager] Failed to save network data for role ${roleId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Prime - 获取角色的认知概览
+   * @param {string} roleId - 角色ID
+   * @returns {Mind} Mind 对象
+   */
+  async prime(roleId) {
+    logger.info(`[CognitionManager] Prime for role: ${roleId}`);
+    
+    const system = await this.getSystem(roleId);
+    logger.debug(`[CognitionManager] System network size before prime: ${system.network.size()}`);
+    
+    const mind = system.prime();
+    
+    if (!mind) {
+      logger.warn(`[CognitionManager] Prime returned null for role: ${roleId}`);
+      return null;
+    }
+    
+    logger.debug(`[CognitionManager] Prime returned Mind:`, {
+      hasMind: !!mind,
+      activatedCuesSize: mind?.activatedCues?.size || 0,
+      connectionsCount: mind?.connections?.length || 0
+    });
+    
+    return mind;
+  }
+
+  /**
+   * Recall - 从角色的认知中检索相关记忆
+   * @param {string} roleId - 角色ID
+   * @param {string} query - 查询词
+   * @returns {Mind} Mind 对象
+   */
+  async recall(roleId, query) {
+    logger.info(`[CognitionManager] Recall for role: ${roleId}, query: "${query}"`);
+    
+    const system = await this.getSystem(roleId);
+    
+    // 执行recall
+    const mind = system.recall(query);
+    
+    if (!mind) {
+      logger.warn(`[CognitionManager] Recall returned null for role: ${roleId}, query: ${query}`);
+      return null;
+    }
+    
+    return mind;
+  }
+
+  /**
+   * Remember - 保存新的记忆到角色的认知系统
+   * @param {string} roleId - 角色ID
+   * @param {Array} engrams - 记忆数组
+   */
+  async remember(roleId, engrams) {
+    logger.info(`[CognitionManager] Remember for role: ${roleId}, ${engrams.length} engrams`);
+    
+    const system = await this.getSystem(roleId);
+    
+    for (const engram of engrams) {
+      try {
+        // 解析 schema 为层级结构
+        const concepts = this.parseSchema(engram.schema);
+        
+        if (concepts.length === 0) {
+          logger.warn(`[CognitionManager] Empty schema for engram:`, engram);
+          continue;
+        }
+        
+        // 直接使用 system.remember 传递 concepts 数组
+        // CognitionSystem.remember 会调用 Remember.execute
+        system.remember(concepts);
+        
+        logger.debug(`[CognitionManager] Processed engram:`, {
+          type: engram.type,
+          concepts: concepts.length,
+          strength: engram.strength
+        });
+        
+      } catch (error) {
+        logger.error(`[CognitionManager] Failed to process engram:`, error);
       }
     }
     
-    return results;
+    // 保存更新后的认知数据
+    await this.saveSystem(roleId);
+    
+    logger.success(`[CognitionManager] Successfully saved ${engrams.length} engrams for role: ${roleId}`);
   }
 
   /**
-   * 回忆 - 从指定角色检索记忆
-   * @param {string} role - 角色ID
-   * @param {string} cue - 检索线索
-   * @returns {Promise<Array>} 匹配的记忆列表
+   * 解析 schema 字符串为概念列表
+   * @param {string} schema - 结构化的知识表示
+   * @returns {Array<string>} 概念列表
    */
-  async recall(role, cue) {
-    const cognition = await this.getCognition(role);
-    return cognition.recall(cue);
+  parseSchema(schema) {
+    if (!schema) return [];
+    
+    // 按行分割，处理缩进层级
+    const lines = schema.split('\n').filter(line => line.trim());
+    const concepts = [];
+    
+    for (const line of lines) {
+      // 移除缩进和特殊符号，提取概念
+      const concept = line.trim().replace(/^[-*>#\s]+/, '').trim();
+      if (concept) {
+        concepts.push(concept);
+      }
+    }
+    
+    return concepts;
   }
 
   /**
-   * 启动效应 - 预激活角色的语义网络
-   * @param {string} role - 角色ID
-   * @returns {Promise<string>} Mermaid mindmap 格式的字符串
+   * 清理角色的认知数据
+   * @param {string} roleId - 角色ID
    */
-  async prime(role) {
-    const cognition = await this.getCognition(role);
-    return cognition.prime();
-  }
-
-  /**
-   * 获取所有活跃的认知实例
-   * @returns {Map} role -> Cognition 映射
-   */
-  getActiveCognitions() {
-    return new Map(this.cognitions);
-  }
-
-  /**
-   * 清理指定角色的认知实例（释放内存）
-   * @param {string} role - 角色ID
-   */
-  clearCognition(role) {
-    if (this.cognitions.has(role)) {
-      logger.info(`🧹 [CognitionManager] 清理认知实例: ${role}`);
-      this.cognitions.delete(role);
+  async clearRole(roleId) {
+    logger.warn(`[CognitionManager] Clearing cognition data for role: ${roleId}`);
+    
+    // 从内存中移除
+    this.systems.delete(roleId);
+    
+    // 删除文件
+    try {
+      const networkFilePath = this.getNetworkFilePath(roleId);
+      await fs.unlink(networkFilePath);
+      logger.info(`[CognitionManager] Deleted network file for role: ${roleId}`);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        logger.error(`[CognitionManager] Failed to delete network file for role ${roleId}:`, error);
+      }
     }
   }
 
   /**
-   * 清理所有认知实例
+   * 获取所有已存储的角色列表
    */
-  clearAll() {
-    logger.info(`🧹 [CognitionManager] 清理所有认知实例`);
-    this.cognitions.clear();
+  async listRoles() {
+    try {
+      await fs.mkdir(this.basePath, { recursive: true });
+      const entries = await fs.readdir(this.basePath, { withFileTypes: true });
+      
+      const roles = [];
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          // 检查是否有 network.json 文件
+          const networkFilePath = this.getNetworkFilePath(entry.name);
+          try {
+            await fs.access(networkFilePath);
+            roles.push(entry.name);
+          } catch {
+            // 没有 network.json 文件，跳过
+          }
+        }
+      }
+      
+      return roles;
+    } catch (error) {
+      logger.error('[CognitionManager] Failed to list roles:', error);
+      return [];
+    }
   }
-
-
-  /**
-   * 思考 - 处理 Thought 对象并返回渲染后的 prompt
-   * 
-   * === 新设计：纯粹的转发层 ===
-   * 
-   * CognitionManager 只负责：
-   * 1. 获取角色对应的认知实例
-   * 2. 转发 thought 对象
-   * 3. 返回渲染后的 prompt 字符串
-   * 
-   * @param {string} role - 角色ID
-   * @param {Thought} thought - 完整的 Thought 对象
-   * @returns {Promise<string>} 返回渲染后的 prompt 字符串，用于指导生成下一个 Thought
-   * 
-   * @example
-   * // 第一次思考：AI 做出三个核心决策
-   * const prompt1 = await cognitionManager.think('scientist', {
-   *   goalEngram: { 
-   *     content: "推理天空呈现蓝色的光学原理",
-   *     schema: "自然现象\\n  光学现象\\n    大气散射"
-   *   },
-   *   thinkingPattern: "reasoning",  // AI 选择推理模式
-   *   spreadActivationCues: ["天空", "蓝色", "光学"]  // AI 选择激活线索
-   * });
-   * // 返回的 prompt1 是一个渲染好的字符串，包含了思考指导
-   * 
-   * // 第二次思考：基于上一轮结果继续
-   * const prompt2 = await cognitionManager.think('scientist', {
-   *   goalEngram: { 
-   *     content: "深入分析瑞利散射机制",
-   *     schema: "物理学\\n  光学\\n    散射理论"
-   *   },
-   *   thinkingPattern: "analytical",  // AI 切换到分析模式
-   *   spreadActivationCues: ["瑞利散射", "波长", "强度"],
-   *   insightEngrams: [
-   *     { content: "蓝光波长短，被散射更多" }
-   *   ],
-   *   previousThought: thought1  // 包含前一轮的思考结果
-   * });
-   */
-  async think(role, thought) {
-    // 获取角色的认知实例
-    const cognition = await this.getCognition(role);
-    
-    // 直接转发到底层认知的 think 方法
-    // TODO: 底层 cognition.think() 负责：
-    // 1. 基于 thinkingPattern 选择对应的 Pattern 实现
-    // 2. 执行记忆检索（基于 spreadActivationCues）
-    // 3. 推断思考状态
-    // 4. 渲染最终的 prompt
-    return cognition.think(thought);
-  }
-
-
 }
 
-module.exports = { CognitionManager };
+module.exports = CognitionManager;
