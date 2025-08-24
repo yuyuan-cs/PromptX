@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.9.0
+
+### Minor Changes
+
+- [#286](https://github.com/Deepractice/PromptX/pull/286) [`50d6d2c`](https://github.com/Deepractice/PromptX/commit/50d6d2c6480e90d3bbc5ab98efa396cb68a865a1) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: 认知循环的先验架构改进：从假言命令到绝对命令
+
+  Contributed by @deepracticexs via #286
+
+- [#287](https://github.com/Deepractice/PromptX/pull/287) [`3da84c6`](https://github.com/Deepractice/PromptX/commit/3da84c6fddc44fb5578421d320ee52e59f241157) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: [Discussion] 认知循环过程完整分析与优化讨论
+
+  Contributed by @deepracticexs via #287
+
+- [#289](https://github.com/Deepractice/PromptX/pull/289) [`2712aa4`](https://github.com/Deepractice/PromptX/commit/2712aa4b71e9752f77a3f5943006f99f904f157e) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: Desktop Client: Develop PromptX Desktop Application to Lower User Barriers
+
+  Contributed by @deepracticexs via #289
+
+## 1.8.0
+
+### Minor Changes
+
+- [#286](https://github.com/Deepractice/PromptX/pull/286) [`50d6d2c`](https://github.com/Deepractice/PromptX/commit/50d6d2c6480e90d3bbc5ab98efa396cb68a865a1) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: 认知循环的先验架构改进：从假言命令到绝对命令
+
+  Contributed by @deepracticexs via #286
+
+- [#287](https://github.com/Deepractice/PromptX/pull/287) [`3da84c6`](https://github.com/Deepractice/PromptX/commit/3da84c6fddc44fb5578421d320ee52e59f241157) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: [Discussion] 认知循环过程完整分析与优化讨论
+
+  Contributed by @deepracticexs via #287
+
+- [#289](https://github.com/Deepractice/PromptX/pull/289) [`2712aa4`](https://github.com/Deepractice/PromptX/commit/2712aa4b71e9752f77a3f5943006f99f904f157e) Thanks [@deepracticexs](https://github.com/deepracticexs)! - feat: Desktop Client: Develop PromptX Desktop Application to Lower User Barriers
+
+  Contributed by @deepracticexs via #289
+
 ## 1.7.1
 
 ### Patch Changes
