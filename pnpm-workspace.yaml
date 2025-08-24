@@ -1,0 +1,8 @@
+packages:
+  - '.'  # Root package (@promptx/cli)
+  - apps/*
+  - packages/*
+
+ignoredBuiltDependencies:
+  - electron
+  - esbuild
