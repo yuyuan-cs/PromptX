@@ -76,6 +76,11 @@ jobs:
 
       - name: Create release branch
         run: |
+          # Delete branch if exists (locally and remotely)
+          git branch -D release/${{ steps.version.outputs.VERSION }} 2>/dev/null || true
+          git push origin --delete release/${{ steps.version.outputs.VERSION }} 2>/dev/null || true
+          
+          # Create fresh branch
           git checkout -b release/${{ steps.version.outputs.VERSION }}
 
       - name: Commit version updates
