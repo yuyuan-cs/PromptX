@@ -52,6 +52,8 @@ jobs:
 
       - name: Version packages
         id: version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -n "${{ github.event.inputs.custom_version }}" ]; then
             # Use custom version
