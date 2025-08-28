@@ -128,7 +128,6 @@ jobs:
             --title "🚀 Release v${{ steps.version.outputs.VERSION }}" \
             --base main \
             --head release/${{ steps.version.outputs.VERSION }} \
-            --body "$BODY" \
-            --label "release"
+            --body "$BODY"
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}

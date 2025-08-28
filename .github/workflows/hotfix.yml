@@ -80,8 +80,6 @@ jobs:
             --title "🔥 Hotfix v${{ github.event.inputs.version }}" \
             --base main \
             --head hotfix/${{ github.event.inputs.version }} \
-            --body "$BODY" \
-            --label "hotfix" \
-            --label "urgent"
+            --body "$BODY"
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
