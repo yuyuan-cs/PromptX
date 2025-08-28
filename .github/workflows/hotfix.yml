@@ -60,7 +60,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           branch: hotfix/${{ github.event.inputs.version }}
           base: main
           title: "Hotfix v${{ github.event.inputs.version }}"

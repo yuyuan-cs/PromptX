@@ -79,8 +79,9 @@ git push origin v1.9.1
 ## 🔐 需要的 Secrets
 
 在 GitHub 仓库设置中添加：
-- `NPM_TOKEN`: npm 发布 token
-- `GITHUB_TOKEN`: 自动提供，无需设置
+- `PAT_TOKEN`: GitHub Personal Access Token（已配置）
+- `NPM_TOKEN`: npm 发布 token（需要添加）
+- `ORG_NPM_TOKEN`: 组织级 npm token（已配置）
 
 ## 🎯 快速命令
 
