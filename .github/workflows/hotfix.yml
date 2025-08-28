@@ -59,29 +59,28 @@ jobs:
 
       - name: Create Pull Request
         run: |
+          BODY="## 🔥 Hotfix v${{ github.event.inputs.version }}
+          
+          This hotfix is based on tag: ${{ github.event.inputs.base_tag }}
+          
+          ### Issues Fixed
+          - [ ] Issue #XXX: Description
+          
+          ### Testing
+          - [ ] Hotfix tested locally
+          - [ ] No regression in main functionality
+          
+          ### Deployment
+          After merge:
+          1. Tag will be created manually
+          2. npm packages will be published
+          3. Desktop apps will be built"
+          
           gh pr create \
             --title "🔥 Hotfix v${{ github.event.inputs.version }}" \
             --base main \
             --head hotfix/${{ github.event.inputs.version }} \
-            --body "$(cat << 'EOF'
-            ## Hotfix v${{ github.event.inputs.version }}
-            
-            This hotfix is based on tag: ${{ github.event.inputs.base_tag }}
-            
-            ### Issues Fixed
-            - [ ] Issue #XXX: Description
-            
-            ### Testing
-            - [ ] Hotfix tested locally
-            - [ ] No regression in main functionality
-            
-            ### Deployment
-            After merge:
-            1. Tag will be created automatically
-            2. npm packages will be published
-            3. Desktop apps will be built
-            EOF
-            )" \
+            --body "$BODY" \
             --label "hotfix" \
             --label "urgent"
         env:
