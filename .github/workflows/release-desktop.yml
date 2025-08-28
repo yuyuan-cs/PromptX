@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build packages
+      - name: Build all packages
         run: pnpm build
 
       - name: Build macOS app
@@ -59,7 +59,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build packages
+      - name: Build all packages
         run: pnpm build
 
       - name: Build Windows app
@@ -92,7 +92,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build packages
+      - name: Build all packages
         run: pnpm build
 
       - name: Build Linux app

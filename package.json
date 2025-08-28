@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "PROMPTX_ENV=development node src/bin/promptx.js",
+    "build": "pnpm -r build",
     "test": "jest --passWithNoTests",
     "test:unit": "jest --passWithNoTests",
     "test:integration": "jest --passWithNoTests",
