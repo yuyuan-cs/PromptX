@@ -2,11 +2,22 @@
 
 ## 🚀 完整发布流程
 
+### 步骤 0: 添加变更记录（开发时）
+```bash
+# 添加变更记录
+pnpm changeset
+
+# 选择：
+# 1. 哪些包有变更
+# 2. 版本类型（major/minor/patch）
+# 3. 输入变更描述
+```
+
 ### 步骤 1: 开始新版本
 1. 进入 GitHub Actions 页面
 2. 选择 "Start Release" workflow
 3. 点击 "Run workflow"
-4. 输入版本号（如 `1.10.0`）
+4. 可选：输入自定义版本号（留空则根据 changesets 自动计算）
 5. 点击运行
 
 这会自动：
