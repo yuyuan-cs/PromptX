@@ -1,0 +1,79 @@
+name: Start Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.10.0)'
+        required: true
+        type: string
+
+jobs:
+  start-release:
+    name: Create Release Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch
+        run: |
+          git checkout -b release/${{ github.event.inputs.version }}
+          git push origin release/${{ github.event.inputs.version }}
+
+      - name: Update versions
+        run: |
+          # Update root package.json
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json')); p.version='${{ github.event.inputs.version }}'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n');"
+          
+          # Update all workspace packages
+          pnpm recursive exec -- node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json')); p.version='${{ github.event.inputs.version }}'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n');" || true
+
+      - name: Commit version updates
+        run: |
+          git add .
+          git commit -m "chore: bump version to ${{ github.event.inputs.version }}" || echo "No changes to commit"
+          git push origin release/${{ github.event.inputs.version }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: release/${{ github.event.inputs.version }}
+          base: main
+          title: "Release v${{ github.event.inputs.version }}"
+          body: |
+            ## Release v${{ github.event.inputs.version }}
+            
+            This PR contains the version updates for release v${{ github.event.inputs.version }}.
+            
+            ### Checklist
+            - [ ] Version bumped
+            - [ ] CHANGELOG updated
+            - [ ] Tests passing
+            - [ ] Build successful
+            
+            ### Release Notes
+            _Please add release notes here_
+          labels: release
