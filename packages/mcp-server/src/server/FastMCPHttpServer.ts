@@ -3,8 +3,14 @@
  * 使用 FastMCP 框架实现 HTTP/SSE 传输的 MCP 服务器
  */
 
-import { FastMCP } from 'fastmcp'
-import { z } from 'zod'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import { randomUUID } from 'crypto';
+import express, { Request, Response } from 'express';
 import { MCPOutputAdapter } from '../MCPOutputAdapter'
 import logger from '@promptx/logger'
 
@@ -12,14 +18,19 @@ import logger from '@promptx/logger'
 let getGlobalServerEnvironment: any
 let cli: any
 
+const SESSION_ID_HEADER_NAME = 'mcp-session-id';
+
 /**
- * FastMCP HTTP 服务器实现
+ * FastMCP HTTP 服务器实现 - 使用正确的 Schema 模式
  */
 export class FastMCPHttpServer {
   name: string
   version: string
   description: string
-  server: any
+  mcpServer: Server
+  transports: { [sessionId: string]: StreamableHTTPServerTransport }
+  app: express.Application | null
+  httpServer: any
   tools: Map<string, any>
   toolDefinitions: any[]
   outputAdapter: MCPOutputAdapter
@@ -33,8 +44,24 @@ export class FastMCPHttpServer {
     this.version = options.version || '1.0.0';
     this.description = options.description || 'PromptX MCP Server - AI-powered command execution framework';
     
-    // FastMCP 实例
-    this.server = null;
+    // MCP Server 实例
+    this.mcpServer = new Server(
+      {
+        name: this.name,
+        version: this.version,
+      },
+      {
+        capabilities: {
+          tools: {},
+          logging: {},
+        },
+      }
+    );
+    
+    // HTTP 服务器
+    this.transports = {};
+    this.app = null;
+    this.httpServer = null;
     
     // 工具管理
     this.tools = new Map();
@@ -135,35 +162,37 @@ export class FastMCPHttpServer {
         });
       }
 
-      // 创建 FastMCP 实例
-      this.server = new FastMCP({
-        name: this.name,
-        version: this.version as any,
-        instructions: this.description,
-        // 始终使用日志器，debug 模式会影响日志级别（在 logger 包中配置）
-        logger: logger
-      });
-      
+      // 设置工具处理
+      await this.setupTools();
+
       // 自动注册工具
       if (this.config.autoRegisterTools) {
         await this.registerPromptXTools();
       }
-      
-      // 启动服务器
-      await this.server.start({
-        transportType: 'httpStream',
-        httpStream: {
-          port: this.config.port,
-          endpoint: this.config.endpoint,
-          stateless: this.config.stateless,
-          enableJsonResponse: true,
-          // CORS 配置
-          cors: this.config.cors,
-          // 认证配置
-          auth: this.config.auth,
-          // SSL 配置
-          ssl: this.config.ssl
-        }
+
+      // 创建 Express 应用
+      this.app = express();
+      this.app.use(express.json());
+
+      const router = express.Router();
+
+      // POST 请求处理
+      router.post(this.config.endpoint, async (req: Request, res: Response) => {
+        await this.handlePostRequest(req, res);
+      });
+
+      // GET 请求处理 (SSE)
+      router.get(this.config.endpoint, async (req: Request, res: Response) => {
+        await this.handleGetRequest(req, res);
+      });
+
+      this.app.use('/', router);
+
+      // 启动 HTTP 服务器
+      await new Promise<void>((resolve) => {
+        this.httpServer = this.app!.listen(this.config.port, () => {
+          resolve();
+        });
       });
       
       // 更新状态
@@ -174,7 +203,7 @@ export class FastMCPHttpServer {
       this.status.endpoint = this.config.endpoint;
       
       logger.info(`✅ MCP HTTP Server started on http://${this.config.host}:${this.config.port}${this.config.endpoint}`);
-      logger.info(`📊 Mode: ${this.config.stateless ? 'Stateless' : 'Stateful'}`);
+      logger.info(`📊 Mode: ${this.config.stateless ? 'Stateless' : 'Stateful'} (Schema)`);
       logger.info(`🔧 Tools: ${this.tools.size} registered`);
       
       if (this.config.debug) {
@@ -195,15 +224,14 @@ export class FastMCPHttpServer {
    * 停止服务器
    */
   async stop() {
-    if (this.server) {
-      try {
-        await this.server.stop();
-        this.status.running = false;
-        logger.info('MCP HTTP Server stopped');
-      } catch (error) {
-        logger.error('Error stopping server:', error);
-        throw error;
-      }
+    if (this.httpServer) {
+      return new Promise<void>((resolve) => {
+        this.httpServer.close(() => {
+          this.status.running = false;
+          logger.info('MCP HTTP Server stopped');
+          resolve();
+        });
+      });
     }
   }
 
@@ -441,7 +469,7 @@ export class FastMCPHttpServer {
   }
 
   /**
-   * 注册工具到 FastMCP
+   * 注册工具
    */
   async registerToolToFastMCP(tool) {
     // 检查是否已经注册过
@@ -452,19 +480,7 @@ export class FastMCPHttpServer {
       return;
     }
     
-    const fastMCPTool = {
-      name: tool.name,
-      description: tool.description,
-      // 转换 JSON Schema 到 Zod
-      parameters: this.convertToZodSchema(tool.inputSchema),
-      execute: tool.handler || (async (args) => {
-        return await this.executePromptXTool(tool.name, args);
-      })
-    };
-
-    this.server.addTool(fastMCPTool);
-    
-    // 注册成功后保存到映射
+    // 直接保存工具定义，Schema 处理器会使用它们
     this.tools.set(tool.name, tool);
   }
 
@@ -518,97 +534,6 @@ export class FastMCPHttpServer {
     }
   }
 
-  /**
-   * 转换 JSON Schema 到 Zod Schema
-   */
-  convertToZodSchema(jsonSchema) {
-    if (!jsonSchema) {
-      return z.object({});
-    }
-
-    if (jsonSchema.type === 'object') {
-      const shape = {};
-      
-      if (jsonSchema.properties) {
-        for (const [key, prop] of Object.entries(jsonSchema.properties)) {
-          shape[key] = this.convertPropertyToZod(prop);
-          
-          // 处理可选字段
-          if (!jsonSchema.required?.includes(key)) {
-            shape[key] = shape[key].optional();
-          }
-        }
-      }
-      
-      return z.object(shape);
-    }
-    
-    return z.object({});
-  }
-
-  /**
-   * 转换单个属性到 Zod
-   */
-  convertPropertyToZod(prop) {
-    switch (prop.type) {
-      case 'string': {
-        let schema = z.string();
-        if (prop.description) {
-          schema = schema.describe(prop.description);
-        }
-        if (prop.enum) {
-          schema = z.enum(prop.enum) as any;
-        }
-        if (prop.pattern) {
-          schema = schema.regex(new RegExp(prop.pattern));
-        }
-        if (prop.minLength) {
-          schema = schema.min(prop.minLength);
-        }
-        if (prop.maxLength) {
-          schema = schema.max(prop.maxLength);
-        }
-        return schema;
-      }
-      
-      case 'number':
-      case 'integer': {
-        let schema = z.number();
-        if (prop.description) {
-          schema = schema.describe(prop.description);
-        }
-        if (prop.minimum !== undefined) {
-          schema = schema.min(prop.minimum);
-        }
-        if (prop.maximum !== undefined) {
-          schema = schema.max(prop.maximum);
-        }
-        if (prop.type === 'integer') {
-          schema = schema.int();
-        }
-        return schema;
-      }
-      
-      case 'boolean':
-        return z.boolean().describe(prop.description || '');
-      
-      case 'array':
-        if (prop.items) {
-          return z.array(this.convertPropertyToZod(prop.items));
-        }
-        return z.array(z.any());
-      
-      case 'object':
-        // 如果没有定义 properties，则返回一个接受任何属性的对象
-        if (!prop.properties) {
-          return z.record(z.any());
-        }
-        return this.convertToZodSchema(prop);
-      
-      default:
-        return z.any();
-    }
-  }
 
   /**
    * 转换参数为 CLI 格式
@@ -695,5 +620,147 @@ export class FastMCPHttpServer {
 
     process.once('SIGINT', () => shutdown('SIGINT'));
     process.once('SIGTERM', () => shutdown('SIGTERM'));
+  }
+
+  // ========== Schema 模式处理方法 ==========
+
+  /**
+   * 设置工具处理器
+   */
+  private async setupTools() {
+    // 注册工具列表处理器
+    this.mcpServer.setRequestHandler(
+      ListToolsRequestSchema,
+      async () => {
+        const tools = [];
+        for (const [name, tool] of this.tools) {
+          tools.push({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+          });
+        }
+        return { tools };
+      }
+    );
+
+    // 注册工具调用处理器
+    this.mcpServer.setRequestHandler(
+      CallToolRequestSchema,
+      async (request: any) => {
+        const toolName = request.params.name;
+        const tool = this.tools.get(toolName);
+        
+        if (!tool) {
+          throw new Error(`Tool not found: ${toolName}`);
+        }
+
+        try {
+          const result = await this.executePromptXTool(toolName, request.params.arguments);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: typeof result === 'string' ? result : JSON.stringify(result),
+              },
+            ],
+          };
+        } catch (error: any) {
+          throw new Error(`Tool execution failed: ${error.message}`);
+        }
+      }
+    );
+  }
+
+  /**
+   * 处理 GET 请求（SSE 模式）
+   */
+  private async handleGetRequest(req: Request, res: Response) {
+    const sessionId = req.headers[SESSION_ID_HEADER_NAME] as string | undefined;
+    
+    if (!sessionId || !this.transports[sessionId]) {
+      res.status(400).json(this.createErrorResponse('Bad Request: invalid session ID or method.'));
+      return;
+    }
+
+    logger.debug(`Establishing SSE stream for session ${sessionId}`);
+    const transport = this.transports[sessionId];
+    
+    await transport.handleRequest(req, res);
+  }
+
+  /**
+   * 处理 POST 请求
+   */
+  private async handlePostRequest(req: Request, res: Response) {
+    const sessionId = req.headers[SESSION_ID_HEADER_NAME] as string | undefined;
+    let transport: StreamableHTTPServerTransport;
+
+    logger.debug('=== POST Request ===');
+    logger.debug('Headers:', JSON.stringify(req.headers, null, 2));
+    logger.debug('Body:', JSON.stringify(req.body, null, 2));
+    logger.debug('Session ID:', sessionId);
+
+    try {
+      // 重用现有 transport
+      if (sessionId && this.transports[sessionId]) {
+        logger.debug('Reusing existing transport for session:', sessionId);
+        transport = this.transports[sessionId];
+        await transport.handleRequest(req, res, req.body);
+        return;
+      }
+
+      // 创建新 transport
+      if (!sessionId && this.isInitializeRequest(req.body)) {
+        logger.debug('Creating new transport for initialize request');
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+        });
+
+        await this.mcpServer.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+
+        // 获取生成的 session ID
+        const generatedSessionId = transport.sessionId;
+        logger.debug('Generated session ID:', generatedSessionId);
+        
+        if (generatedSessionId) {
+          this.transports[generatedSessionId] = transport;
+        }
+
+        return;
+      }
+
+      logger.debug('Invalid request - no session ID and not initialize request');
+      res.status(400).json(
+        this.createErrorResponse('Bad Request: invalid session ID or method.')
+      );
+      return;
+    } catch (error) {
+      logger.error('Error handling MCP request:', error);
+      res.status(500).json(this.createErrorResponse('Internal server error.'));
+      return;
+    }
+  }
+
+  /**
+   * 检查是否为初始化请求
+   */
+  private isInitializeRequest(body: any): boolean {
+    return body && typeof body === 'object' && body.method === 'initialize';
+  }
+
+  /**
+   * 创建错误响应
+   */
+  private createErrorResponse(message: string) {
+    return {
+      jsonrpc: '2.0',
+      error: {
+        code: -32600,
+        message,
+      },
+      id: null,
+    };
   }
 }

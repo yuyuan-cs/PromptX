@@ -18,6 +18,9 @@ export default defineConfig({
   external: [
     '@promptx/core',
     'fastmcp',
-    'zod'
+    'zod',
+    'express',
+    '@modelcontextprotocol/sdk',
+    'crypto'
   ]
 })
