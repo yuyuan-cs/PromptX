@@ -30,6 +30,7 @@ mac:
   gatekeeperAssess: false
   type: development
   artifactName: promptx-desktop-${version}-${arch}.${ext}
+  identity: "-"  # 使用ad-hoc签名
   target:
     - target: dmg
       arch:
