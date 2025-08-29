@@ -41,7 +41,7 @@ class RecallCommand extends BasePouchCommand {
       return
     }
 
-    logger.step('🧠 [RecallCommand] 开始记忆检索流程 (基于认知体系)')
+    logger.info('🧠 [RecallCommand] 开始记忆检索流程 (基于认知体系)')
     logger.info(`🔍 [RecallCommand] 角色: ${role}, 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
 
     try {
@@ -59,7 +59,7 @@ class RecallCommand extends BasePouchCommand {
       }
       
       const nodeCount = mind ? mind.activatedCues.size : 0
-      logger.success(`✅ [RecallCommand] 认知检索完成 - 激活 ${nodeCount} 个节点`)
+      logger.info(`✅ [RecallCommand] 认知检索完成 - 激活 ${nodeCount} 个节点`)
 
       // 设置上下文
       this.context.roleId = role

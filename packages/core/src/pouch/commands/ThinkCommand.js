@@ -27,7 +27,7 @@ class ThinkCommand extends BasePouchCommand {
     }
 
     try {
-      logger.step('🤔 [ThinkCommand] 开始思考流程')
+      logger.info('🤔 [ThinkCommand] 开始思考流程')
       logger.info(`🧠 [ThinkCommand] 角色: ${role}, 模式: ${thought.thinkingPattern || '未指定'}`)
       
       // 处理 spreadActivationCues：如果是字符串，转换为数组
@@ -49,7 +49,7 @@ class ThinkCommand extends BasePouchCommand {
       // 使用 CognitionManager 进行思考
       const prompt = await this.cognitionManager.think(role, thought)
 
-      logger.success('✅ [ThinkCommand] 思考指导生成完成')
+      logger.info('✅ [ThinkCommand] 思考指导生成完成')
       return this.formatThinkResponse(thought, prompt, role)
       
     } catch (error) {
