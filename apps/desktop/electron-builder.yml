@@ -52,6 +52,11 @@ win:
       arch:
         - x64
   requestedExecutionLevel: asInvoker
+  signAndEditExecutable: true
+  signingHashAlgorithms:
+    - sha256
+  rfc3161TimeStampServer: http://timestamp.digicert.com
+  signDlls: false
 
 linux:
   icon: assets/icons
