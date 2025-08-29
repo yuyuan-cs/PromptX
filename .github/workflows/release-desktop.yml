@@ -32,8 +32,11 @@ jobs:
       - name: Build macOS app
         working-directory: apps/desktop
         run: |
+          echo "Building macOS x64 version..."
           pnpm package:mac --x64
+          echo "Building macOS arm64 version..."
           pnpm package:mac --arm64
+          echo "Building macOS universal version..."
           pnpm package:mac --universal
 
       - name: Upload macOS artifacts
