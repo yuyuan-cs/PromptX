@@ -1,0 +1,85 @@
+appId: ai.deepractice.promptx.desktop
+productName: PromptX Desktop
+artifactName: promptx-desktop-${version}-${arch}.${ext}
+
+directories:
+  output: release
+  buildResources: assets
+
+files:
+  - "out/**/*"
+  - "assets/**/*"
+  - "package.json"
+  - "!**/*.map"
+  - "!out/tests/**"
+  - "!**/*.test.*"
+  - "!**/node_modules/*/{README,readme,readme.md,readme.markdown,CHANGELOG,changelog,changelog.md,CHANGE,change,test,example,examples}"
+  - "!**/node_modules/*/{.editorconfig,.eslintrc,.jshintrc,.npmignore}"
+  - "!**/node_modules/**/*.ts"
+  - "!**/node_modules/**/*.tsx"
+  - "!**/node_modules/**/*.map"
+  - "!**/node_modules/**/*.d.ts"
+  - "!**/node_modules/.bin"
+  - "!**/{test,__tests__,tests,testing}"
+  - "!**/{example,examples,docs,doc}"
+  - "!**/*.{md,MD,markdown,txt}"
+
+mac:
+  category: public.app-category.developer-tools
+  icon: assets/icons/icon.icns
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  type: development
+  target:
+    - dmg
+    - zip
+
+win:
+  icon: assets/icons/icon.png
+  target:
+    - nsis
+    - portable
+  requestedExecutionLevel: asInvoker
+
+linux:
+  icon: assets/icons
+  category: Development
+  maintainer: Deepractice
+  vendor: Deepractice
+  target:
+    - AppImage
+    - deb
+    - rpm
+    - snap
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  displayLanguageSelector: false
+  menuCategory: true
+  shortcutName: PromptX Desktop
+  uninstallDisplayName: PromptX Desktop
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  unicode: true  # Enable Unicode support for Chinese characters
+
+dmg:
+  sign: false
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# appImage configuration removed (systemIntegration is deprecated)
+
+publish:
+  - provider: github
+    owner: Deepractice
+    repo: PromptX
+    releaseType: release
+    private: false
