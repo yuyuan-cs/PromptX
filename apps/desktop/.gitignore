@@ -5,7 +5,7 @@ build/
 release/
 
 # Electron
-electron-builder.yml
+# electron-builder.yml is tracked in git
 
 # Logs
 *.log
