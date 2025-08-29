@@ -31,8 +31,16 @@ mac:
   gatekeeperAssess: false
   type: development
   target:
-    - dmg
-    - zip
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+        - universal
+    - target: zip
+      arch:
+        - x64
+        - arm64
+        - universal
 
 win:
   icon: assets/icons/icon.png
