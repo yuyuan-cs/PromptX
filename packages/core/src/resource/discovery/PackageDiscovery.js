@@ -33,24 +33,22 @@ class PackageDiscovery extends BaseDiscovery {
       const registry = resourcePackage.registry
       const resources = []
       
-      // 转换注册表格式为内部格式
-      for (const category of ['role', 'tool', 'protocol']) {
-        if (registry.resources && registry.resources[category]) {
-          for (const resource of registry.resources[category]) {
-            resources.push({
-              id: resource.id,
-              type: category,
-              path: resource.path,
-              name: resource.title || resource.id,
-              metadata: {
-                description: resource.description,
-                modified: resource.modified,
-                size: resource.size,
-                source: 'PACKAGE',
-                packageName: '@promptx/resource'
-              }
-            })
-          }
+      // v2.0.0 格式：resources 是数组
+      if (Array.isArray(registry.resources)) {
+        for (const resource of registry.resources) {
+          resources.push({
+            id: resource.id,
+            type: resource.protocol,  // 使用 protocol 字段
+            path: resource.metadata?.path || resource.reference,
+            name: resource.name || resource.id,
+            metadata: {
+              description: resource.description,
+              modified: resource.metadata?.modified,
+              size: resource.metadata?.size,
+              source: 'package',  // 小写以保持一致
+              packageName: '@promptx/resource'
+            }
+          })
         }
       }
       
@@ -81,15 +79,13 @@ class PackageDiscovery extends BaseDiscovery {
       const registryMap = new Map()
       const registry = resourcePackage.registry
       
-      // 转换为 Map 格式
-      for (const category of ['role', 'tool', 'protocol']) {
-        if (registry.resources && registry.resources[category]) {
-          for (const resource of registry.resources[category]) {
-            // 添加多种引用格式
-            const reference = `@package://resources/${resource.path}`
-            registryMap.set(resource.id, reference)
-            registryMap.set(`package:${resource.id}`, reference)
-          }
+      // v2.0.0 格式：resources 是数组
+      if (Array.isArray(registry.resources)) {
+        for (const resource of registry.resources) {
+          // 添加多种引用格式
+          const reference = resource.reference || `@package://resources/${resource.metadata?.path}`
+          registryMap.set(resource.id, reference)
+          registryMap.set(`package:${resource.id}`, reference)
         }
       }
       
@@ -148,37 +144,32 @@ class PackageDiscovery extends BaseDiscovery {
       const ResourceData = require('../ResourceData')
       
       if (!resourcePackage || !resourcePackage.registry) {
-        return new RegistryData('PACKAGE', '', [])
+        return new RegistryData('package', '', [])
       }
 
       const registry = resourcePackage.registry
       const resources = []
       
-      for (const category of ['role', 'tool', 'protocol']) {
-        if (registry.resources && registry.resources[category]) {
-          for (const resource of registry.resources[category]) {
-            resources.push(new ResourceData({
-              id: resource.id,
-              source: 'PACKAGE',
-              protocol: category,  // 使用实际的资源类型作为 protocol
-              name: resource.title || resource.id,
-              description: resource.description || '',
-              reference: `@package://resources/${resource.path}`,
-              metadata: {
-                type: category,
-                size: resource.size,
-                modified: resource.modified
-              }
-            }))
-          }
+      // v2.0.0 格式：resources 是数组，直接处理
+      if (Array.isArray(registry.resources)) {
+        for (const resource of registry.resources) {
+          resources.push(new ResourceData({
+            id: resource.id,
+            source: 'package',  // 使用小写保持一致
+            protocol: resource.protocol,  // 直接使用资源的 protocol 字段
+            name: resource.name || resource.id,
+            description: resource.description || '',
+            reference: resource.reference,
+            metadata: resource.metadata || {}
+          }))
         }
       }
       
-      return new RegistryData('PACKAGE', '@promptx/resource', resources)
+      return new RegistryData('package', '@promptx/resource', resources)
     } catch (error) {
       logger.warn(`[PackageDiscovery] 获取注册表数据失败: ${error.message}`)
       const RegistryData = require('../RegistryData')
-      return new RegistryData('PACKAGE', '', [])
+      return new RegistryData('package', '', [])
     }
   }
 

@@ -109,7 +109,7 @@ export class PromptXResourceRepository implements ResourceRepository {
       // 刷新所有资源
       await welcomeCommand.refreshAllResources()
       
-      // 加载角色和工具注册表
+      // 加载角色和工具注册表 - 这里已经只获取 role 和 tool 类型
       const roleRegistry = await welcomeCommand.loadRoleRegistry()
       const toolRegistry = await welcomeCommand.loadToolRegistry()
       

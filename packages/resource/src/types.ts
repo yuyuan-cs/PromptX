@@ -1,41 +1,67 @@
 /**
- * 资源类型定义
+ * 资源类型定义 - v2.0.0
  */
 
+/**
+ * 资源定义
+ */
 export interface Resource {
-  /** 资源唯一标识 */
+  /** 资源唯一标识（不含类型后缀） */
   id: string
-  /** 资源文件路径（相对于包根目录） */
-  path: string
-  /** 资源标题 */
-  title: string
+  /** 资源来源 (package, project, user) */
+  source: string
+  /** 资源协议类型 (role, tool, thought, execution, knowledge, manual, protocol, tag) */
+  protocol: string
+  /** 资源名称 */
+  name: string
   /** 资源描述 */
   description: string
-  /** 文件类型 (md, json) */
-  type: string
-  /** 文件大小 */
-  size: number
-  /** 最后修改时间 */
-  modified: string
-  /** 资源分类 (role, tool, protocol) */
-  category: string
-}
-
-export interface ResourceRegistry {
-  /** 注册表版本 */
-  version: string
-  /** 生成时间 */
-  generated: string
-  /** 资源总数 */
-  total: number
-  /** 按分类组织的资源 */
-  resources: {
-    role: Resource[]
-    tool: Resource[]
-    protocol: Resource[]
+  /** 资源引用路径 */
+  reference: string
+  /** 元数据 */
+  metadata: {
+    /** 相对路径 */
+    path?: string
+    /** 文件大小 */
+    size?: number
+    /** 最后修改时间 */
+    modified?: string
+    /** 创建时间 */
+    createdAt?: string
+    /** 更新时间 */
+    updatedAt?: string
+    [key: string]: any
   }
 }
 
+/**
+ * 资源注册表
+ */
+export interface ResourceRegistry {
+  /** 注册表版本 */
+  version: '2.0.0'
+  /** 资源来源 */
+  source: string
+  /** 元数据 */
+  metadata: {
+    /** 版本 */
+    version: '2.0.0'
+    /** 描述 */
+    description: string
+    /** 创建时间 */
+    createdAt: string
+    /** 更新时间 */
+    updatedAt: string
+    /** 资源数量 */
+    resourceCount: number
+  }
+  /** 资源数组 */
+  resources: Resource[]
+}
+
+/**
+ * 资源包接口
+ */
 export interface ResourcePackage {
   /** 注册表数据 */
   registry: ResourceRegistry
@@ -43,8 +69,8 @@ export interface ResourcePackage {
   getResourcePath(relativePath: string): string
   /** 根据 ID 查找资源 */
   findResourceById(id: string): Resource | undefined
-  /** 根据分类获取资源列表 */
-  getResourcesByCategory(category: 'role' | 'tool' | 'protocol'): Resource[]
+  /** 根据协议类型获取资源列表 */
+  getResourcesByProtocol(protocol: string): Resource[]
   /** 获取所有资源列表 */
   getAllResources(): Resource[]
 }

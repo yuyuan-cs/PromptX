@@ -213,9 +213,12 @@ class WelcomeCommand extends BasePouchCommand {
     // 这里直接使用ResourceManager的注册表
     const roles = this.resourceManager.registryData.getResourcesByProtocol('role')
     
+    // 严格过滤：只保留 protocol 确实是 'role' 的资源
+    const filteredRoles = roles.filter(role => role.protocol === 'role')
+    
     // 转换为对象格式以保持兼容性
     const registry = {}
-    roles.forEach(role => {
+    filteredRoles.forEach(role => {
       registry[role.id] = role
     })
     
@@ -234,9 +237,12 @@ class WelcomeCommand extends BasePouchCommand {
     // 从注册表中获取所有工具资源
     const tools = this.resourceManager.registryData.getResourcesByProtocol('tool')
     
+    // 严格过滤：只保留 protocol 确实是 'tool' 的资源
+    const filteredTools = tools.filter(tool => tool.protocol === 'tool')
+    
     // 转换为对象格式以保持兼容性
     const registry = {}
-    tools.forEach(tool => {
+    filteredTools.forEach(tool => {
       registry[tool.id] = tool
     })
     
