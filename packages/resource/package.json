@@ -21,6 +21,7 @@
     "discover": "node scripts/generate-registry.js"
   },
   "dependencies": {
+    "@promptx/logger": "workspace:*",
     "glob": "^10.4.5"
   },
   "publishConfig": {

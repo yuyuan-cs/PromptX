@@ -8,7 +8,7 @@
   ],
   "commit": false,
   "fixed": [
-    ["@promptx/*"]
+    ["root", "@promptx/*"]
   ],
   "linked": [],
   "access": "public",

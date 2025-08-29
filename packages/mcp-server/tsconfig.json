@@ -19,7 +19,7 @@
     "strictPropertyInitialization": false,
     "types": ["node"],
     "allowJs": false,
-    "resolveJsonModule": false,
+    "resolveJsonModule": true,
     "baseUrl": "./src",
     "paths": {
       "~/*": ["./*"]

@@ -2,11 +2,13 @@ import * as path from 'path'
 import * as fs from 'fs'
 import type { Resource, ResourceRegistry, ResourcePackage } from './types'
 
-// 包根目录 - 构建后 registry.json 会被复制到这里
-const packageRoot = path.join(__dirname, '..')
+const logger = require('@promptx/logger')
 
-// 注册表路径
-const registryPath = path.join(packageRoot, 'registry.json')
+// 包根目录 - 构建后的 dist 目录就是包根目录
+const packageRoot = __dirname
+
+// 注册表路径 - 直接从当前目录（dist/）读取
+const registryPath = path.join(__dirname, 'registry.json')
 
 // 加载注册表
 let registry: ResourceRegistry
@@ -24,20 +26,10 @@ try {
     throw new Error('Registry file not found')
   }
 } catch (error: any) {
-  console.warn('[@promptx/resource] Failed to load registry:', error.message)
-  // 提供空注册表作为后备
-  registry = {
-    version: '2.0.0',
-    source: 'package',
-    metadata: {
-      version: '2.0.0',
-      description: 'package 级资源注册表',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      resourceCount: 0
-    },
-    resources: []
-  }
+  logger.error('[@promptx/resource] Failed to load registry:', error.message)
+  logger.error('[@promptx/resource] Registry path:', registryPath)
+  logger.error('[@promptx/resource] __dirname:', __dirname)
+  throw new Error(`@promptx/resource package is corrupted: ${error.message}`)
 }
 
 /**

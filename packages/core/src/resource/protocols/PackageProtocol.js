@@ -53,45 +53,23 @@ class PackageProtocol extends ResourceProtocol {
 
 
   /**
-   * 获取包根目录 - 修复monorepo中的路径解析问题
+   * 获取包根目录 - 始终使用 dist 目录
    */
   async getPackageRoot () {
     try {
-      // 直接使用 @promptx/resource 包的路径
+      // 直接使用 @promptx/resource 包的 dist 目录
       const resourcePath = require.resolve('@promptx/resource')
       logger.info(`[PackageProtocol] require.resolve('@promptx/resource') returned: ${resourcePath}`)
       
-      // 从 require.resolve 返回的路径向上遍历，直到找到正确的包根目录
-      let currentDir = path.dirname(resourcePath)
-      logger.info(`[PackageProtocol] Starting directory traversal from: ${currentDir}`)
+      // require.resolve 返回的是 dist/index.js，所以 dirname 就是 dist 目录
+      const distDir = path.dirname(resourcePath)
+      logger.info(`[PackageProtocol] Using dist directory as package root: ${distDir}`)
       
-      while (currentDir !== path.dirname(currentDir)) {
-        const packageJsonPath = path.join(currentDir, 'package.json')
-        logger.debug(`[PackageProtocol] Checking package.json: ${packageJsonPath}`)
-        
-        if (fs.existsSync(packageJsonPath)) {
-          try {
-            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
-            logger.debug(`[PackageProtocol] Found package.json, name: ${packageJson.name}`)
-            
-            if (packageJson.name === '@promptx/resource') {
-              const resourcesDir = path.join(currentDir, 'resources')
-              logger.info(`[PackageProtocol] Found correct @promptx/resource package root: ${currentDir}`)
-              logger.info(`[PackageProtocol] Resources directory path: ${resourcesDir}`)
-              logger.info(`[PackageProtocol] Resources directory exists: ${fs.existsSync(resourcesDir)}`)
-              
-              return currentDir
-            }
-          } catch (parseError) {
-            logger.debug(`[PackageProtocol] Failed to parse package.json: ${parseError.message}`)
-          }
-        }
-        currentDir = path.dirname(currentDir)
-      }
+      const resourcesDir = path.join(distDir, 'resources')
+      logger.info(`[PackageProtocol] Resources directory path: ${resourcesDir}`)
+      logger.info(`[PackageProtocol] Resources directory exists: ${fs.existsSync(resourcesDir)}`)
       
-      // 如果找不到，使用原来的简化版本
-      logger.warn(`[PackageProtocol] Could not find @promptx/resource package root, using default: ${path.dirname(resourcePath)}`)
-      return path.dirname(resourcePath)
+      return distDir
       
     } catch (error) {
       logger.error(`[PackageProtocol] Cannot locate @promptx/resource package: ${error.message}`)

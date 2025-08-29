@@ -139,13 +139,18 @@ class PackageDiscovery extends BaseDiscovery {
    */
   async getRegistryData() {
     try {
+      logger.info('[PackageDiscovery] Starting getRegistryData...')
       const resourcePackage = require('@promptx/resource')
+      logger.info('[PackageDiscovery] @promptx/resource loaded successfully')
       const RegistryData = require('../RegistryData')
       const ResourceData = require('../ResourceData')
       
       if (!resourcePackage || !resourcePackage.registry) {
+        logger.warn('[PackageDiscovery] resourcePackage or registry is empty')
         return new RegistryData('package', '', [])
       }
+      
+      logger.info(`[PackageDiscovery] Registry loaded with ${resourcePackage.registry.resources?.length || 0} resources`)
 
       const registry = resourcePackage.registry
       const resources = []
@@ -165,8 +170,11 @@ class PackageDiscovery extends BaseDiscovery {
         }
       }
       
+      logger.info(`[PackageDiscovery] Successfully created ${resources.length} ResourceData objects`)
       return new RegistryData('package', '@promptx/resource', resources)
     } catch (error) {
+      logger.error(`[PackageDiscovery] Error in getRegistryData: ${error.message}`)
+      logger.error(`[PackageDiscovery] Stack trace: ${error.stack}`)
       logger.warn(`[PackageDiscovery] 获取注册表数据失败: ${error.message}`)
       const RegistryData = require('../RegistryData')
       return new RegistryData('package', '', [])

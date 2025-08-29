@@ -2,10 +2,11 @@
  * MCP输出适配器
  * 负责将PromptX CLI的富文本输出转换为MCP标准JSON格式
  */
+import pkg from '../package.json'
 
 export class MCPOutputAdapter {
   private version: string = '1.0.0'
-  private promptxVersion: string = '1.10.0'
+  private promptxVersion: string = pkg.version
   
   /**
    * 简单估算token数量
