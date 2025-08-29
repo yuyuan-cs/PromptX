@@ -31,7 +31,10 @@ jobs:
 
       - name: Build macOS app
         working-directory: apps/desktop
-        run: pnpm package:mac
+        run: |
+          pnpm package:mac --x64
+          pnpm package:mac --arm64
+          pnpm package:mac --universal
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
