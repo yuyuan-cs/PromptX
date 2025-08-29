@@ -77,9 +77,5 @@ dmg:
 
 # appImage configuration removed (systemIntegration is deprecated)
 
-publish:
-  - provider: github
-    owner: Deepractice
-    repo: PromptX
-    releaseType: release
-    private: false
+# publish配置已移除，通过CI环境变量控制发布
+# 构建时不自动发布，由upload-release job统一处理
