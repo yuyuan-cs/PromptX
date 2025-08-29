@@ -139,9 +139,11 @@ class ToolSandbox {
    * @returns {Promise<Object>} 准备结果
    */
   async prepareDependencies() {
+    logger.info(`[ToolSandbox] Starting prepareDependencies for tool ${this.toolId}`);
+    
     // 处理rebuild选项
     if (this.options.rebuild) {
-      logger.debug(`[ToolSandbox] Manually triggering sandbox rebuild`);
+      logger.info(`[ToolSandbox] Manually triggering sandbox rebuild`);
       await this.clearSandbox(true);
       // 重新初始化目录管理器
       if (this.directoryManager) {
@@ -151,7 +153,9 @@ class ToolSandbox {
     
     // 分析工具（如果需要）
     if (!this.isAnalyzed) {
+      logger.info(`[ToolSandbox] Starting tool analysis`);
       await this.analyze();
+      logger.info(`[ToolSandbox] Tool analysis completed`);
     }
     
     // 自动检测依赖是否需要更新
@@ -176,14 +180,18 @@ class ToolSandbox {
         : this.dependencies.length > 0;
         
       if (hasDependencies) {
+        logger.info(`[ToolSandbox] Installing dependencies`);
         await this.installDependencies();
+        logger.info(`[ToolSandbox] Dependencies installation completed`);
         
         // 2.1 检测 ES Module 依赖
         await this.detectAndHandleESModules();
       }
       
       // 3. 创建执行沙箱环境
+      logger.info(`[ToolSandbox] Creating execution sandbox`);
       await this.createExecutionSandbox();
+      logger.info(`[ToolSandbox] Execution sandbox created`);
       
       this.isPrepared = true;
       return { 
@@ -204,16 +212,24 @@ class ToolSandbox {
    * @returns {Promise<Object>} 执行结果
    */
   async execute(parameters = {}) {
+    logger.info(`[ToolSandbox] Starting execute for tool ${this.toolId} with params:`, JSON.stringify(parameters));
+    
     if (!this.isPrepared) {
+      logger.info(`[ToolSandbox] Tool not prepared, starting dependency preparation`);
       await this.prepareDependencies();
+      logger.info(`[ToolSandbox] Dependency preparation completed`);
     }
 
     try {
+      logger.info(`[ToolSandbox] Starting parameter validation`);
       // 1. 参数验证
       await this.validateParameters(parameters);
+      logger.info(`[ToolSandbox] Parameter validation completed`);
       
+      logger.info(`[ToolSandbox] Starting sandbox execution`);
       // 2. 在沙箱中执行工具
       const result = await this.executeInSandbox(parameters);
+      logger.info(`[ToolSandbox] Sandbox execution completed, result type: ${typeof result}`);
       
       return {
         success: true,
@@ -553,10 +569,22 @@ class ToolSandbox {
    * 运行pnpm安装
    */
   async runPnpmInstall() {
+    logger.info(`[ToolSandbox] Starting pnpm install process`);
+    
     return new Promise((resolve, reject) => {
       // 获取内置pnpm路径 - 直接从node_modules获取
       const pnpmModulePath = require.resolve('pnpm');
       const pnpmBinPath = path.join(path.dirname(pnpmModulePath), 'bin', 'pnpm.cjs');
+      
+      logger.info(`[ToolSandbox] Using pnpm at: ${pnpmBinPath}`);
+      logger.info(`[ToolSandbox] Installing in directory: ${this.directoryManager.getToolboxPath()}`);
+      
+      // 30秒超时
+      const timeout = setTimeout(() => {
+        logger.error(`[ToolSandbox] pnpm install timeout after 30s`);
+        pnpm.kill('SIGTERM');
+        reject(new Error('pnpm install timeout'));
+      }, 30000);
       
       const pnpm = spawn('node', [pnpmBinPath, 'install'], {
         cwd: this.directoryManager.getToolboxPath(),  // 使用 toolbox 路径安装依赖
@@ -575,14 +603,18 @@ class ToolSandbox {
       });
       
       pnpm.on('close', (code) => {
+        logger.info(`[ToolSandbox] pnpm process finished with code: ${code}`);
         if (code === 0) {
+          logger.info(`[ToolSandbox] pnpm install completed successfully`);
           resolve({ stdout, stderr });
         } else {
+          logger.error(`[ToolSandbox] pnpm install failed with code ${code}: ${stderr}`);
           reject(new Error(`pnpm install failed with code ${code}: ${stderr}`));
         }
       });
       
       pnpm.on('error', (error) => {
+        logger.error(`[ToolSandbox] Failed to spawn pnpm: ${error.message}`);
         reject(new Error(`Failed to spawn pnpm: ${error.message}`));
       });
     });
