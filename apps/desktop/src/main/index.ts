@@ -54,7 +54,7 @@ class PromptXDesktopApp {
     
     // Wait for app to be ready
     await app.whenReady()
-    logger.success('Electron app ready')
+    logger.info('Electron app ready')
 
     // Hide dock icon on macOS
     if (process.platform === 'darwin') {
@@ -77,19 +77,19 @@ class PromptXDesktopApp {
     // Setup ResourceManager for roles and tools
     logger.step('Setting up resource manager...')
     this.resourceManager = new ResourceManager()
-    logger.success('Resource manager initialized')
+    logger.info('Resource manager initialized')
 
     // Handle app events
     logger.step('Setting up app events...')
     this.setupAppEvents()
     
-    logger.success('PromptX Desktop initialized successfully')
+    logger.info('PromptX Desktop initialized successfully')
     
     // Auto-start server on app launch
     logger.info('Auto-starting PromptX server...')
     try {
       await startUseCase.execute()
-      logger.success('PromptX server started automatically')
+      logger.info('PromptX server started automatically')
     } catch (error) {
       logger.error('Failed to auto-start server:', error)
     }

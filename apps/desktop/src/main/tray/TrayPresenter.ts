@@ -63,7 +63,7 @@ export class TrayPresenter {
     const tray = new Tray(icon)
     tray.setToolTip('PromptX Desktop')
     
-    logger.success('Tray created with P icon')
+    logger.info('Tray created with P icon')
     return tray
   }
 
