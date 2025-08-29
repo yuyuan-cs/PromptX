@@ -38,7 +38,6 @@
     "electron": "28.3.3",
     "electron-builder": "^26.0.12",
     "electron-icon-builder": "^2.0.1",
-    "electron-vite": "^2.0.0",
-    "rimraf": "^5.0.0"
+    "electron-vite": "^2.0.0"
   }
 }
