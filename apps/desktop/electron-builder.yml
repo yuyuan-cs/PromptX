@@ -46,11 +46,11 @@ linux:
   category: Development
   maintainer: Deepractice
   vendor: Deepractice
+  executableName: promptx-desktop
   target:
     - AppImage
     - deb
     - rpm
-    - snap
 
 nsis:
   oneClick: false
