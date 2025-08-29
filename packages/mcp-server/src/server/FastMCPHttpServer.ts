@@ -656,15 +656,9 @@ export class FastMCPHttpServer {
         }
 
         try {
+          // executePromptXTool 已经返回格式化的 MCP 响应，直接返回
           const result = await this.executePromptXTool(toolName, request.params.arguments);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: typeof result === 'string' ? result : JSON.stringify(result),
-              },
-            ],
-          };
+          return result;
         } catch (error: any) {
           throw new Error(`Tool execution failed: ${error.message}`);
         }
