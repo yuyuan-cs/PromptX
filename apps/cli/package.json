@@ -3,6 +3,9 @@
   "version": "1.10.1",
   "description": "PromptX CLI - Command-line interface for the DPML-powered AI prompt framework",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "bin": {
     "promptx": "./dist/promptx.js",
     "promptx-cli": "./dist/promptx.js"
