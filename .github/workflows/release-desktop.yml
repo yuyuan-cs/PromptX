@@ -74,7 +74,8 @@ jobs:
         with:
           name: windows-build
           path: |
-            apps/desktop/release/*.exe
+            apps/desktop/release/*setup*.exe
+            apps/desktop/release/*portable*.exe
             apps/desktop/release/*.msi
           if-no-files-found: warn
 
@@ -131,7 +132,9 @@ jobs:
         with:
           files: |
             macos-build/*.dmg
-            windows-build/*.exe
+            macos-build/*.zip
+            windows-build/*setup*.exe
+            windows-build/*portable*.exe
             linux-build/*.AppImage
             linux-build/*.deb
             linux-build/*.rpm

@@ -37,8 +37,12 @@ mac:
 win:
   icon: assets/icons/icon.png
   target:
-    - nsis
-    - portable
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
   requestedExecutionLevel: asInvoker
 
 linux:
@@ -59,11 +63,15 @@ nsis:
   deleteAppDataOnUninstall: false
   displayLanguageSelector: false
   menuCategory: true
-  shortcutName: PromptX Desktop
-  uninstallDisplayName: PromptX Desktop
+  shortcutName: PromptX
+  uninstallDisplayName: PromptX
   createDesktopShortcut: true
   createStartMenuShortcut: true
   unicode: true  # Enable Unicode support for Chinese characters
+  artifactName: promptx-desktop-setup-${version}-${arch}.${ext}
+
+portable:
+  artifactName: promptx-desktop-portable-${version}-${arch}.${ext}
 
 dmg:
   sign: false
