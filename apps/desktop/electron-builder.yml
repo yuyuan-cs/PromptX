@@ -1,6 +1,9 @@
 appId: ai.deepractice.promptx.desktop
 productName: PromptX Desktop
 artifactName: promptx-desktop-${version}-${arch}.${ext}
+homepage: https://github.com/Deepractice/PromptX
+author: Deepractice
+description: PromptX Desktop - Local AI prompt management application
 
 directories:
   output: release
