@@ -82,7 +82,7 @@ portable:
   artifactName: promptx-desktop-portable-${version}-${arch}.${ext}
 
 dmg:
-  sign: false
+  # 移除sign: false，让electron-builder自动处理签名
   contents:
     - x: 130
       y: 220
