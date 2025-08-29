@@ -1,5 +1,6 @@
 appId: ai.deepractice.promptx.desktop
 productName: PromptX
+artifactName: ${name}-${version}-${os}-${arch}.${ext}
 
 directories:
   output: release
@@ -26,46 +27,22 @@ files:
 mac:
   category: public.app-category.developer-tools
   icon: assets/icons/icon.icns
-  hardenedRuntime: false
+  hardenedRuntime: true
   gatekeeperAssess: false
-  type: development
-  artifactName: promptx-desktop-${version}-${arch}.${ext}
-  identity: "-"  # 使用ad-hoc签名
+  identity: null
   target:
-    - target: dmg
-      arch:
-        - x64
-        - arm64
-        - universal
-    - target: zip
-      arch:
-        - x64
-        - arm64
-        - universal
+    - dmg
+    - zip
 
 win:
   icon: assets/icons/icon.png
   target:
-    - target: nsis
-      arch:
-        - x64
-    - target: portable
-      arch:
-        - x64
-  requestedExecutionLevel: asInvoker
-  signAndEditExecutable: true
-  signingHashAlgorithms:
-    - sha256
-  rfc3161TimeStampServer: http://timestamp.digicert.com
-  signDlls: false
+    - nsis
+    - portable
 
 linux:
   icon: assets/icons
   category: Development
-  maintainer: Deepractice
-  vendor: Deepractice
-  executableName: promptx-desktop
-  artifactName: promptx-desktop-${version}-${arch}.${ext}
   target:
     - AppImage
     - deb
@@ -73,23 +50,13 @@ linux:
 
 nsis:
   oneClick: false
-  perMachine: false
   allowToChangeInstallationDirectory: true
-  deleteAppDataOnUninstall: false
-  displayLanguageSelector: false
-  menuCategory: true
-  shortcutName: PromptX
-  uninstallDisplayName: PromptX
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  unicode: true  # Enable Unicode support for Chinese characters
-  artifactName: promptx-desktop-setup-${version}-${arch}.${ext}
-
-portable:
-  artifactName: promptx-desktop-portable-${version}-${arch}.${ext}
+  shortcutName: ${productName}
+  artifactName: ${name}-${version}-${os}-${arch}-setup.${ext}
 
 dmg:
-  # 移除sign: false，让electron-builder自动处理签名
   contents:
     - x: 130
       y: 220
@@ -98,7 +65,4 @@ dmg:
       type: link
       path: /Applications
 
-# appImage configuration removed (systemIntegration is deprecated)
-
-# publish配置已移除，通过CI环境变量控制发布
-# 构建时不自动发布，由upload-release job统一处理
+npmRebuild: false
