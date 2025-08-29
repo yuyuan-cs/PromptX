@@ -1,5 +1,5 @@
 appId: ai.deepractice.promptx.desktop
-productName: PromptX Desktop
+productName: PromptX
 artifactName: promptx-desktop-${version}-${arch}.${ext}
 
 directories:
