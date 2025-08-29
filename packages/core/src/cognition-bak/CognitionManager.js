@@ -20,7 +20,7 @@ class CognitionManager {
     if (!this.resourceManager.initialized) {
       logger.info('⚙️ [CognitionManager] ResourceManager未初始化，正在初始化...');
       await this.resourceManager.initializeWithNewArchitecture();
-      logger.success('⚙️ [CognitionManager] ResourceManager初始化完成');
+      logger.info('⚙️ [CognitionManager] ResourceManager初始化完成');
     }
     
     // 获取 user 协议
@@ -73,7 +73,7 @@ class CognitionManager {
     const cognition = new Cognition(config);
     this.cognitions.set(role, cognition);
     
-    logger.success(`✅ [CognitionManager] 认知实例创建完成: ${role}`);
+    logger.info(`✅ [CognitionManager] 认知实例创建完成: ${role}`);
     return cognition;
   }
 

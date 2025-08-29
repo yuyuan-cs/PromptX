@@ -169,7 +169,7 @@ class CognitionManager {
       mind = system.recall(anchoredState.centerWord);
       
       if (mind) {
-        logger.success(`[CognitionManager] Successfully primed from anchored state: "${anchoredState.centerWord}"`);
+        logger.info(`[CognitionManager] Successfully primed from anchored state: "${anchoredState.centerWord}"`);
       }
     }
     
@@ -268,7 +268,7 @@ class CognitionManager {
     // 保存更新后的认知数据
     await this.saveSystem(roleId);
     
-    logger.success(`[CognitionManager] Successfully saved ${engrams.length} engrams for role: ${roleId}`);
+    logger.info(`[CognitionManager] Successfully saved ${engrams.length} engrams for role: ${roleId}`);
   }
 
   /**

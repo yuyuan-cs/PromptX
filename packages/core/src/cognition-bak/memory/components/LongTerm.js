@@ -170,7 +170,7 @@ class LongTerm extends LongTermMemory {
             logger.error('[LongTerm.remember] Failed to store:', err.message);
             reject(err);
           } else {
-            logger.success('[LongTerm.remember] Successfully stored engram:', doc._id);
+            logger.info('[LongTerm.remember] Successfully stored engram:', doc._id);
             resolve();
           }
         }
