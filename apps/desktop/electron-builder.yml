@@ -1,6 +1,6 @@
 appId: ai.deepractice.promptx.desktop
 productName: PromptX
-artifactName: ${name}-${version}-${os}-${arch}.${ext}
+artifactName: promptx-desktop-${version}-${os}-${arch}.${ext}
 
 directories:
   output: release
@@ -54,7 +54,7 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: ${productName}
-  artifactName: ${name}-${version}-${os}-${arch}-setup.${ext}
+  artifactName: promptx-desktop-${version}-${os}-${arch}-setup.${ext}
 
 dmg:
   contents:
