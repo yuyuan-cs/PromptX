@@ -8,7 +8,7 @@
   ],
   "commit": false,
   "fixed": [
-    ["@promptx/cli", "@promptx/desktop"]
+    ["@promptx/*"]
   ],
   "linked": [],
   "access": "public",
