@@ -16,7 +16,7 @@
     "build": "pnpm clean && electron-vite build",
     "build:force": "pnpm clean && electron-vite build",
     "preview": "electron-vite preview",
-    "clean": "rimraf out dist release .turbo tsconfig.tsbuildinfo",
+    "clean": "rimraf out dist release tsconfig.tsbuildinfo",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
