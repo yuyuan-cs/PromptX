@@ -15,7 +15,7 @@ export class PromptXServerAdapter implements IServerPort {
 
   async start(config: ServerConfig): Promise<Result<void, ServerError>> {
     try {
-      if (this.server?.isRunning()) {
+      if (this.server?.status?.running) {
         return ResultUtil.fail(ServerError.alreadyRunning())
       }
 
@@ -38,7 +38,8 @@ export class PromptXServerAdapter implements IServerPort {
       await this.server.start()
       this.updateStatus(ServerStatus.RUNNING)
       
-      logger.info(`Server running at ${this.server.getMCPEndpoint()}`)
+      const endpoint = `http://${config.host}:${config.port}/mcp`
+      logger.info(`Server running at ${endpoint}`)
 
       return ResultUtil.ok(undefined)
     } catch (error) {
@@ -61,7 +62,7 @@ export class PromptXServerAdapter implements IServerPort {
 
   async stop(): Promise<Result<void, ServerError>> {
     try {
-      if (!this.server?.isRunning()) {
+      if (!this.server?.status?.running) {
         return ResultUtil.fail(ServerError.notRunning())
       }
 
@@ -87,7 +88,7 @@ export class PromptXServerAdapter implements IServerPort {
   }
 
   async restart(config: ServerConfig): Promise<Result<void, ServerError>> {
-    if (this.server?.isRunning()) {
+    if (this.server?.status?.running) {
       const stopResult = await this.stop()
       if (!stopResult.ok) {
         return stopResult
