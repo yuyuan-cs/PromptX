@@ -67,8 +67,17 @@ jobs:
             # Use changesets to calculate version
             pnpm changeset version
             
-            # Get the new version from package.json
-            VERSION=$(node -p "require('./package.json').version")
+            # Get the new version from any updated package (since root package.json is not managed by changesets)
+            VERSION=$(find apps packages -name "package.json" | head -1 | xargs cat | jq -r '.version')
+            
+            # Sync root package.json version to match workspace packages
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.version = '$VERSION';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log('✅ Root package.json updated to version', '$VERSION');
+            "
           fi
           
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
