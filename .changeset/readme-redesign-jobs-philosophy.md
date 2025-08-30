@@ -1,6 +1,6 @@
 ---
-"@promptx/mcp-server": major
-"@promptx/logger": patch
+"@promptx/mcp-server": minor
+"@promptx/logger": minor
 ---
 
 # 🎯 README Redesign: Steve Jobs Philosophy Applied
