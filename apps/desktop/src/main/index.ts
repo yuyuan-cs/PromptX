@@ -22,6 +22,9 @@ class PromptXDesktopApp {
   async initialize(): Promise<void> {
     logger.info('Initializing PromptX Desktop...')
     
+    // Setup Node.js environment for ToolSandbox
+    this.setupNodeEnvironment()
+    
     // Setup renderer logging - properly format and write to file
     ipcMain.on('log', (event, level, message, args) => {
       // Format the message with args properly
@@ -92,6 +95,30 @@ class PromptXDesktopApp {
       logger.info('PromptX server started automatically')
     } catch (error) {
       logger.error('Failed to auto-start server:', error)
+    }
+  }
+
+  private setupNodeEnvironment(): void {
+    // Set Node.js executable path for PromptX ToolSandbox
+    // In Electron, use the Electron executable which contains Node.js
+    process.env.PROMPTX_NODE_EXECUTABLE = process.execPath
+    
+    // CRITICAL: Set ELECTRON_RUN_AS_NODE to make Electron behave as pure Node.js
+    // This prevents the full Electron app from launching when spawning child processes
+    process.env.ELECTRON_RUN_AS_NODE = '1'
+    
+    logger.info(`Node.js environment configured for ToolSandbox: ${process.execPath}`)
+    logger.info(`ELECTRON_RUN_AS_NODE set to prevent full app launch in child processes`)
+    
+    // Also set ELECTRON_NODE_PATH for compatibility
+    process.env.ELECTRON_NODE_PATH = process.execPath
+    
+    // Update PATH to include Electron directory for child processes
+    const electronDir = path.dirname(process.execPath)
+    const currentPath = process.env.PATH || ''
+    if (!currentPath.includes(electronDir)) {
+      process.env.PATH = electronDir + path.delimiter + currentPath
+      logger.debug(`Updated PATH with Electron directory: ${electronDir}`)
     }
   }
 
