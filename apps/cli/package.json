@@ -22,10 +22,7 @@
     "@promptx/core": "workspace:*",
     "@promptx/logger": "workspace:*",
     "@promptx/mcp-server": "workspace:*",
-    "@reaxi/node-detect-runtime": "^0.1.0",
-    "chalk": "^4.1.2",
-    "commander": "^12.1.0",
-    "dotenv": "^16.4.7"
+    "commander": "^12.1.0"
   },
   "devDependencies": {},
   "engines": {
