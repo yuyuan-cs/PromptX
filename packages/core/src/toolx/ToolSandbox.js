@@ -586,7 +586,13 @@ class ToolSandbox {
         reject(new Error('pnpm install timeout'));
       }, 30000);
       
-      const pnpm = spawn('node', [pnpmBinPath, 'install'], {
+      // 使用环境变量中配置的 Node.js 路径，优先级：
+      // 1. PROMPTX_NODE_EXECUTABLE (Electron 环境)
+      // 2. 系统默认的 'node'
+      const nodeExecutable = process.env.PROMPTX_NODE_EXECUTABLE || 'node';
+      logger.info(`[ToolSandbox] Using Node.js executable: ${nodeExecutable}`);
+      
+      const pnpm = spawn(nodeExecutable, [pnpmBinPath, 'install'], {
         cwd: this.directoryManager.getToolboxPath(),  // 使用 toolbox 路径安装依赖
         stdio: 'pipe'
       });
