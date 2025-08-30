@@ -226,9 +226,17 @@ export class FastMCPHttpServer {
   async stop() {
     if (this.httpServer) {
       return new Promise<void>((resolve) => {
-        this.httpServer.close(() => {
+        // 设置超时强制关闭
+        const timeout = setTimeout(() => {
+          logger.warn('Forcing server shutdown due to timeout');
           this.status.running = false;
-          logger.info('MCP HTTP Server stopped');
+          resolve();
+        }, 1000); // 1秒超时
+
+        this.httpServer.close(() => {
+          clearTimeout(timeout);
+          this.status.running = false;
+          logger.info('MCP HTTP Server stopped gracefully');
           resolve();
         });
       });
