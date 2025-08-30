@@ -81,7 +81,7 @@ class PackageProtocol extends ResourceProtocol {
 
 
   /**
-   * 解析路径到具体的文件系统路径 - 使用 @promptx/resource
+   * 解析路径到具体的文件系统路径 - 使用 PackageResource
    * @param {string} relativePath - 相对于包根目录的路径
    * @param {QueryParams} params - 查询参数
    * @returns {Promise<string>} 解析后的绝对路径
@@ -90,20 +90,23 @@ class PackageProtocol extends ResourceProtocol {
     logger.info(`[PackageProtocol] Resolving path: ${relativePath}`)
     
     try {
-      // 使用 @promptx/resource 包
-      const resourcePackage = require('@promptx/resource')
-      logger.debug(`[PackageProtocol] Successfully loaded @promptx/resource package`)
+      // 使用新的 PackageResource API
+      const resourceModule = require('@promptx/resource')
+      logger.info(`[PackageProtocol] Resource module loaded:`, Object.keys(resourceModule))
+      const { packageResource } = resourceModule
+      logger.info(`[PackageProtocol] PackageResource type:`, typeof packageResource)
+      logger.debug(`[PackageProtocol] Successfully loaded PackageResource`)
       
       // 清理路径
       const cleanPath = relativePath.replace(/^\/+/, '')
       logger.debug(`[PackageProtocol] Cleaned path: ${cleanPath}`)
       
-      // 获取资源的绝对路径
-      const fullPath = resourcePackage.getResourcePath(cleanPath)
-      logger.info(`[PackageProtocol] getResourcePath returned: ${fullPath}`)
+      // 使用 PackageResource 解析路径（自动处理ASAR）
+      const fullPath = packageResource.resolvePath(cleanPath)
+      logger.info(`[PackageProtocol] PackageResource resolved path: ${fullPath}`)
       
       // 检查文件是否存在
-      const exists = fs.existsSync(fullPath)
+      const exists = packageResource.exists(cleanPath)
       logger.info(`[PackageProtocol] File exists: ${exists} (path: ${fullPath})`)
       
       if (!exists) {
@@ -152,6 +155,8 @@ class PackageProtocol extends ResourceProtocol {
    */
   async loadContent (resolvedPath, queryParams) {
     try {
+      // 可以直接使用PackageResource的loadContent方法
+      // 但为了保持协议层的一致性，这里继续使用传统方法
       await fsPromises.access(resolvedPath)
       const content = await fsPromises.readFile(resolvedPath, 'utf8')
       const stats = await fsPromises.stat(resolvedPath)

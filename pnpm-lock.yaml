@@ -159,6 +159,9 @@ importers:
       '@promptx/logger':
         specifier: workspace:*
         version: link:../logger
+      electron-util:
+        specifier: ^0.18.1
+        version: 0.18.1
       glob:
         specifier: ^10.4.5
         version: 10.4.5
@@ -1907,11 +1910,19 @@ packages:
     engines: {node: '>= 10.0.0'}
     hasBin: true
 
+  electron-is-dev@3.0.1:
+    resolution: {integrity: sha512-8TjjAh8Ec51hUi3o4TaU0mD3GMTOESi866oRNavj9A3IQJ7pmv+MJVmdZBFGw4GFT36X7bkqnuDNYvkQgvyI8Q==}
+    engines: {node: '>=18'}
+
   electron-publish@26.0.11:
     resolution: {integrity: sha512-a8QRH0rAPIWH9WyyS5LbNvW9Ark6qe63/LqDB7vu2JXYpi0Gma5Q60Dh4tmTqhOBQt0xsrzD8qE7C+D7j+B24A==}
 
   electron-to-chromium@1.5.211:
     resolution: {integrity: sha512-IGBvimJkotaLzFnwIVgW9/UD/AOJ2tByUmeOrtqBfACSbAw5b1G0XpvdaieKyc7ULmbwXVx+4e4Be8pOPBrYkw==}
+
+  electron-util@0.18.1:
+    resolution: {integrity: sha512-Ew1h+lDYUlGUnOQNDRo87dJDPW4R7MK2PTLbzb4nHnbFEMytTlPjxFgTfZieq1pGIdhSrDWINtXNhvp6lUEH1Q==}
+    engines: {node: '>=18'}
 
   electron-vite@2.3.0:
     resolution: {integrity: sha512-lsN2FymgJlp4k6MrcsphGqZQ9fKRdJKasoaiwIrAewN1tapYI/KINLdfEL7n10LuF0pPSNf/IqjzZbB5VINctg==}
@@ -3083,6 +3094,10 @@ packages:
   negotiator@1.0.0:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
+
+  new-github-issue-url@1.1.0:
+    resolution: {integrity: sha512-R4r7f3Q/SzlI4Q/J/0KPRf+bwxYk7BiaYEy0zTVqpikA5F1CwCHgwVReKhpYRlG1besvLdtABQGQRhFy8CyT3g==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   node-abi@3.75.0:
     resolution: {integrity: sha512-OhYaY5sDsIka7H7AtijtI9jwGYLyl29eQn/W623DiN/MIv5sUqc4g7BIDThX+gb7di9f6xK02nkp8sdfFWZLTg==}
@@ -6465,6 +6480,8 @@ snapshots:
       - debug
       - supports-color
 
+  electron-is-dev@3.0.1: {}
+
   electron-publish@26.0.11:
     dependencies:
       '@types/fs-extra': 9.0.13
@@ -6479,6 +6496,11 @@ snapshots:
       - supports-color
 
   electron-to-chromium@1.5.211: {}
+
+  electron-util@0.18.1:
+    dependencies:
+      electron-is-dev: 3.0.1
+      new-github-issue-url: 1.1.0
 
   electron-vite@2.3.0(vite@5.4.19(@types/node@24.3.0)):
     dependencies:
@@ -7781,6 +7803,8 @@ snapshots:
   negotiator@0.6.4: {}
 
   negotiator@1.0.0: {}
+
+  new-github-issue-url@1.1.0: {}
 
   node-abi@3.75.0:
     dependencies:

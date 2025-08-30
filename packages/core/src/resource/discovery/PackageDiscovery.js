@@ -22,15 +22,13 @@ class PackageDiscovery extends BaseDiscovery {
    */
   async discover() {
     try {
-      // 直接从 @promptx/resource 包加载
-      const resourcePackage = require('@promptx/resource')
+      // 使用新的 @promptx/resource API
+      const { registry } = require('@promptx/resource')
       
-      if (!resourcePackage || !resourcePackage.registry) {
-        logger.warn('[PackageDiscovery] @promptx/resource 包未正确加载或注册表为空')
+      if (!registry) {
+        logger.warn('[PackageDiscovery] @promptx/resource 注册表未正确加载')
         return []
       }
-
-      const registry = resourcePackage.registry
       const resources = []
       
       // v2.0.0 格式：resources 是数组
@@ -68,16 +66,15 @@ class PackageDiscovery extends BaseDiscovery {
    */
   async discoverRegistry() {
     try {
-      // 从 @promptx/resource 包加载
-      const resourcePackage = require('@promptx/resource')
+      // 使用新的 @promptx/resource API
+      const { registry } = require('@promptx/resource')
       
-      if (!resourcePackage || !resourcePackage.registry) {
-        logger.warn('[PackageDiscovery] @promptx/resource 包未正确加载或注册表为空')
+      if (!registry) {
+        logger.warn('[PackageDiscovery] @promptx/resource 注册表未正确加载')
         return new Map()
       }
 
       const registryMap = new Map()
-      const registry = resourcePackage.registry
       
       // v2.0.0 格式：resources 是数组
       if (Array.isArray(registry.resources)) {
@@ -140,19 +137,17 @@ class PackageDiscovery extends BaseDiscovery {
   async getRegistryData() {
     try {
       logger.info('[PackageDiscovery] Starting getRegistryData...')
-      const resourcePackage = require('@promptx/resource')
+      const { registry } = require('@promptx/resource')
       logger.info('[PackageDiscovery] @promptx/resource loaded successfully')
       const RegistryData = require('../RegistryData')
       const ResourceData = require('../ResourceData')
       
-      if (!resourcePackage || !resourcePackage.registry) {
-        logger.warn('[PackageDiscovery] resourcePackage or registry is empty')
+      if (!registry) {
+        logger.warn('[PackageDiscovery] Registry is empty')
         return new RegistryData('package', '', [])
       }
       
-      logger.info(`[PackageDiscovery] Registry loaded with ${resourcePackage.registry.resources?.length || 0} resources`)
-
-      const registry = resourcePackage.registry
+      logger.info(`[PackageDiscovery] Registry loaded with ${registry.resources?.length || 0} resources`)
       const resources = []
       
       // v2.0.0 格式：resources 是数组，直接处理
@@ -197,7 +192,8 @@ class PackageDiscovery extends BaseDiscovery {
    */
   _tryRequirePackage() {
     try {
-      return require('@promptx/resource')
+      const { registry } = require('@promptx/resource')
+      return registry ? { registry } : null
     } catch {
       return null
     }
