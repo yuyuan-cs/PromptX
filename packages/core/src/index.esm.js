@@ -23,7 +23,6 @@ export const pouch = core.pouch
 export const utils = core.utils
 
 // Also export individual utils for convenience
-export const banner = core.banner
 export const version = core.version
 export const DirectoryService = core.DirectoryService
 export const ServerEnvironment = core.ServerEnvironment

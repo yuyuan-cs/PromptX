@@ -25,7 +25,7 @@ const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 
 // Import from @promptx/core ESM
 import core from '@promptx/core'
 const { utils, pouch } = core
-const { banner: { displayBanner, displayCompactBanner }, ServerEnvironment, ProjectManager } = utils
+const { ServerEnvironment, ProjectManager } = utils
 const { cli } = pouch
 const { getGlobalServerEnvironment } = ServerEnvironment
 const { getGlobalProjectManager } = ProjectManager

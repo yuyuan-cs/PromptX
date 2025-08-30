@@ -9,5 +9,5 @@ export default defineConfig({
   target: 'es2020',
   outDir: 'dist',
   splitting: false,
-  external: ['winston', 'winston-daily-rotate-file', 'chalk']
+  external: ['pino', 'pino-pretty']
 })
