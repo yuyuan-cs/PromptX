@@ -190,9 +190,7 @@ program
       // 根据传输类型选择命令
       if (options.transport === 'stdio') {
         const mcpServer = new FastMCPStdioServer({
-          debug: options.debug,
-          name: 'promptx-mcp-stdio-server',
-          version: packageJson.version
+          debug: options.debug
         });
         await mcpServer.start();
         
@@ -201,8 +199,6 @@ program
       } else if (options.transport === 'http') {
         const mcpHttpServer = new FastMCPHttpServer({
           debug: options.debug,
-          name: 'promptx-mcp-http-server',
-          version: packageJson.version,
           port: parseInt(options.port),
           host: options.host,
           cors: options.cors,
