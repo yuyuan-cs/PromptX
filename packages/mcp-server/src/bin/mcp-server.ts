@@ -51,9 +51,7 @@ program
       if (options.transport === 'stdio') {
         logger.info(chalk.gray('📡 Starting STDIO transport mode...'))
         const mcpServer = new FastMCPStdioServer({
-          debug: options.debug,
-          name: 'promptx-mcp-server',
-          version: packageJson.version
+          debug: options.debug
         })
         await mcpServer.start()
         
@@ -65,8 +63,6 @@ program
         
         const mcpHttpServer = new FastMCPHttpServer({
           debug: options.debug,
-          name: 'promptx-mcp-server',
-          version: packageJson.version,
           port: port,
           host: options.host,
           cors: options.cors

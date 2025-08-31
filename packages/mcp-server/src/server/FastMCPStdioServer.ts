@@ -7,6 +7,7 @@ import { FastMCP } from 'fastmcp'
 import { z } from 'zod'
 import { MCPOutputAdapter } from '../MCPOutputAdapter'
 import logger from '@promptx/logger'
+import packageJson from '../../package.json'
 
 // 动态导入 @promptx/core 的 CommonJS 模块
 let getGlobalServerEnvironment: any
@@ -31,7 +32,7 @@ export class FastMCPStdioServer {
   constructor(options: any = {}) {
     // 服务器配置
     this.name = options.name || 'promptx-mcp-stdio-server';
-    this.version = options.version || '1.0.0';
+    this.version = options.version || packageJson.version;
     this.description = options.description || 'PromptX MCP Server - AI-powered command execution framework';
     
     // FastMCP 实例
@@ -111,6 +112,16 @@ export class FastMCPStdioServer {
       debug = this.config.debug
     }: any = options;
 
+    // 打印服务器配置信息
+    logger.info(`🚀 Starting FastMCP Stdio Server:
+    📝 Name: ${this.name}
+    🔢 Version: ${this.version}
+    📋 Description: ${this.description}
+    🐛 Debug: ${debug}
+    📥 Input Stream: ${!!inputStream}
+    📤 Output Stream: ${!!outputStream}
+    ⚠️  Error Stream: ${!!errorStream}`);
+
     // 保存流引用
     this.streams.input = inputStream;
     this.streams.output = outputStream;
@@ -168,6 +179,9 @@ export class FastMCPStdioServer {
 
       // 设置信号处理
       this.setupSignalHandlers();
+
+      // 设置标准 MCP Schema 验证
+      this.setupMCPSchemaValidation();
 
       return { success: true };
     } catch (error) {
@@ -657,5 +671,68 @@ export class FastMCPStdioServer {
 
     process.once('SIGINT', () => shutdown('SIGINT'));
     process.once('SIGTERM', () => shutdown('SIGTERM'));
+  }
+
+  /**
+   * 设置标准 MCP Schema 验证
+   * 确保工具调用请求符合 MCP 协议规范
+   */
+  setupMCPSchemaValidation() {
+    if (!this.server) {
+      logger.warn('Cannot setup MCP schema validation: server not initialized');
+      return;
+    }
+
+    // 覆盖 FastMCP 的默认工具处理，添加 MCP Schema 验证
+    const originalExecuteTool = this.server.executeTool?.bind(this.server);
+    
+    if (originalExecuteTool) {
+      this.server.executeTool = async (request: any) => {
+        try {
+          // 验证请求是否符合 MCP CallToolRequestSchema
+          const validationResult = CallToolRequestSchema.safeParse(request);
+          
+          if (!validationResult.success) {
+            logger.error('MCP Schema validation failed:', validationResult.error.message);
+            throw new Error(`Invalid MCP tool call request: ${validationResult.error.message}`);
+          }
+
+          // 提取 MCP 标准参数
+          const { name, arguments: args } = validationResult.data.params;
+          
+          if (this.config.debug) {
+            logger.debug(`MCP Schema validated tool call: ${name}`);
+            logger.debug('Tool arguments:', JSON.stringify(args));
+          }
+
+          // 创建符合 FastMCP 期望的请求格式
+          const fastMCPRequest = {
+            ...request,
+            params: {
+              name,
+              arguments: args
+            }
+          };
+
+          // 调用原始处理器
+          return await originalExecuteTool(fastMCPRequest);
+        } catch (error: any) {
+          logger.error('MCP Schema validation error:', error);
+          
+          // 返回符合 MCP 协议的错误响应
+          return {
+            content: [{ 
+              type: "text", 
+              text: `MCP Protocol Error: ${error?.message || String(error)}` 
+            }],
+            isError: true
+          };
+        }
+      };
+
+      logger.info('✅ MCP Schema validation layer enabled');
+    } else {
+      logger.warn('⚠️ Cannot setup MCP schema validation: FastMCP executeTool method not found');
+    }
   }
 }
