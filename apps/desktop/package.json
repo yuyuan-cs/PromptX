@@ -13,6 +13,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "postinstall": "node scripts/install-electron.cjs",
     "dev": "electron-vite dev",
     "build": "pnpm clean && electron-vite build",
     "build:force": "pnpm clean && electron-vite build",
