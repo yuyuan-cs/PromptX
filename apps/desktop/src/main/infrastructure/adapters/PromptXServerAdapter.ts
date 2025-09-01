@@ -3,7 +3,7 @@ import { ServerConfig } from '~/main/domain/entities/ServerConfig'
 import { ServerError, ServerErrorCode } from '~/main/domain/errors/ServerErrors'
 import { ServerStatus } from '~/main/domain/valueObjects/ServerStatus'
 import type { IServerPort, ServerMetrics } from '~/main/domain/ports/IServerPort'
-import { logger } from '~/shared/logger'
+import * as logger from '@promptx/logger'
 
 // Dynamic import for ESM module
 let FastMCPHttpServer: any

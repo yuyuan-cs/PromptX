@@ -86,60 +86,119 @@ export function createLogger(config: LoggerConfig = {}): pino.Logger {
     }
   }
   
-  // Build transports configuration
-  const targets: any[] = []
+  // For Electron desktop app, avoid worker thread issues
+  const isElectron = process.versions && process.versions.electron
   
-  // Console transport
-  if (finalConfig.console) {
-    targets.push({
-      target: 'pino-pretty',
-      level: finalConfig.level,
-      options: {
-        colorize: finalConfig.colors,
-        translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l',  // SYS: uses system timezone
-        ignore: 'hostname,pid,package,file,line',
-        messageFormat: '{package} [{file}:{line}] {msg}'
-      }
-    })
-  }
-  
-  // File transport
-  if (finalConfig.file) {
-    const fileConfig = typeof finalConfig.file === 'object' ? finalConfig.file : {}
-    const logDir = fileConfig.dirname || path.join(os.homedir(), '.promptx', 'logs')
-    const today = new Date().toISOString().split('T')[0]
+  if (isElectron || process.env.PROMPTX_NO_WORKERS === 'true') {
+    // For Electron: use sync mode to avoid worker thread issues
+    // Simply disable transports and use basic pino with file destination
     
-    targets.push({
-      target: 'pino/file',
-      level: finalConfig.level,
-      options: {
-        destination: path.join(logDir, `promptx-${today}.log`)
-      }
-    })
+    if (finalConfig.file) {
+      const fileConfig = typeof finalConfig.file === 'object' ? finalConfig.file : {}
+      const logDir = fileConfig.dirname || path.join(os.homedir(), '.promptx', 'logs')
+      const today = new Date().toISOString().split('T')[0]
+      const logPath = path.join(logDir, `promptx-${today}.log`)
+      
+      // Use pino.destination with sync mode for Electron
+      const dest = pino.destination({
+        dest: logPath,
+        sync: true  // Use sync to avoid worker thread issues in Electron
+      })
+      
+      return pino({
+        level: finalConfig.level || 'info',
+        base: { pid: process.pid },
+        mixin: () => getCallerInfo(),
+        // Simple formatting without pino-pretty to avoid worker threads
+        formatters: {
+          level: (label) => {
+            return { level: label }
+          },
+          log: (obj) => {
+            const { package: pkg, file, line, ...rest } = obj
+            return {
+              ...rest,
+              location: pkg && file ? `${pkg} [${file}:${line}]` : undefined
+            }
+          }
+        }
+      }, dest)
+    } else {
+      // Console only mode for Electron without pino-pretty
+      return pino({
+        level: finalConfig.level || 'info',
+        base: { pid: process.pid },
+        mixin: () => getCallerInfo(),
+        formatters: {
+          level: (label) => {
+            return { level: label }
+          },
+          log: (obj) => {
+            const { package: pkg, file, line, ...rest } = obj
+            return {
+              ...rest,
+              location: pkg && file ? `${pkg} [${file}:${line}]` : undefined
+            }
+          }
+        }
+      })
+    }
+  } else {
+    // Use transports for non-Electron environments (better for servers)
+    const targets: any[] = []
     
-    // Separate error log
-    targets.push({
-      target: 'pino/file',
-      level: 'error',
-      options: {
-        destination: path.join(logDir, `promptx-error-${today}.log`)
-      }
-    })
+    // Console transport
+    if (finalConfig.console) {
+      targets.push({
+        target: 'pino-pretty',
+        level: finalConfig.level,
+        options: {
+          colorize: finalConfig.colors,
+          translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l',
+          ignore: 'hostname,pid,package,file,line',
+          messageFormat: '{package} [{file}:{line}] {msg}'
+        }
+      })
+    }
+    
+    // File transport
+    if (finalConfig.file) {
+      const fileConfig = typeof finalConfig.file === 'object' ? finalConfig.file : {}
+      const logDir = fileConfig.dirname || path.join(os.homedir(), '.promptx', 'logs')
+      const today = new Date().toISOString().split('T')[0]
+      
+      targets.push({
+        target: 'pino/file',
+        level: finalConfig.level,
+        options: {
+          destination: path.join(logDir, `promptx-${today}.log`)
+        }
+      })
+      
+      // Separate error log
+      targets.push({
+        target: 'pino/file',
+        level: 'error',
+        options: {
+          destination: path.join(logDir, `promptx-error-${today}.log`)
+        }
+      })
+    }
+    
+    // Create logger with transports
+    if (targets.length > 0) {
+      return pino({
+        level: finalConfig.level || 'info',
+        base: { pid: process.pid },
+        mixin: () => getCallerInfo(),
+        transport: {
+          targets
+        }
+      })
+    }
   }
   
-  // Create logger with transports
-  if (targets.length > 0) {
-    return pino({
-      level: finalConfig.level || 'info',
-      base: { pid: process.pid },
-      mixin: () => getCallerInfo(),
-      transport: {
-        targets
-      }
-    })
-  }
-  
-  // Fallback to basic logger if no transports
+  // Fallback to basic logger
   return pino({
     level: finalConfig.level || 'info',
     base: { pid: process.pid },

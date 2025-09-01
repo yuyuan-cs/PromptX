@@ -9,7 +9,7 @@ import { FileConfigAdapter } from '~/main/infrastructure/adapters/FileConfigAdap
 import { ElectronNotificationAdapter } from '~/main/infrastructure/adapters/ElectronNotificationAdapter'
 import { StartServerUseCase } from '~/main/application/useCases/StartServerUseCase'
 import { StopServerUseCase } from '~/main/application/useCases/StopServerUseCase'
-import { logger } from '~/shared/logger'
+import * as logger from '@promptx/logger'
 import * as path from 'node:path'
 
 class PromptXDesktopApp {
@@ -25,35 +25,7 @@ class PromptXDesktopApp {
     // Setup Node.js environment for ToolSandbox
     this.setupNodeEnvironment()
     
-    // Setup renderer logging - properly format and write to file
-    ipcMain.on('log', (event, level, message, args) => {
-      // Format the message with args properly
-      const formattedArgs = args && args.length > 0 
-        ? (args.length === 1 && typeof args[0] === 'object' 
-          ? JSON.stringify(args[0], null, 2)
-          : args.join(' '))
-        : ''
-      
-      const logMessage = `[Renderer] ${message}${formattedArgs ? ' ' + formattedArgs : ''}`
-      
-      // Use the appropriate logger method to ensure file output
-      switch(level) {
-        case 'error':
-          logger.error(logMessage)
-          break
-        case 'warn':
-          logger.warn(logMessage)
-          break
-        case 'info':
-          logger.info(logMessage)
-          break
-        case 'debug':
-          logger.debug(logMessage)
-          break
-        default:
-          logger.log(logMessage)
-      }
-    })
+    // Remove IPC logging handler as renderers will use console directly
     
     // Wait for app to be ready
     await app.whenReady()
@@ -66,24 +38,24 @@ class PromptXDesktopApp {
     }
 
     // Setup infrastructure
-    logger.step('Setting up infrastructure...')
+    logger.info('Setting up infrastructure...')
     this.setupInfrastructure()
 
     // Setup application layer
-    logger.step('Setting up application layer...')
+    logger.info('Setting up application layer...')
     const { startUseCase, stopUseCase } = this.setupApplication()
 
     // Setup presentation layer
-    logger.step('Setting up presentation layer...')
+    logger.info('Setting up presentation layer...')
     this.setupPresentation(startUseCase, stopUseCase)
     
     // Setup ResourceManager for roles and tools
-    logger.step('Setting up resource manager...')
+    logger.info('Setting up resource manager...')
     this.resourceManager = new ResourceManager()
     logger.info('Resource manager initialized')
 
     // Handle app events
-    logger.step('Setting up app events...')
+    logger.info('Setting up app events...')
     this.setupAppEvents()
     
     logger.info('PromptX Desktop initialized successfully')

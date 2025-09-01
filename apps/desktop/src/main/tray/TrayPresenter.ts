@@ -15,7 +15,7 @@ import type { StopServerUseCase } from '~/main/application/useCases/StopServerUs
 import type { IServerPort } from '~/main/domain/ports/IServerPort'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
-import { logger } from '~/shared/logger'
+import * as logger from '@promptx/logger'
 import { createPIcon } from '~/utils/createPIcon'
 import { ResourceManager } from '~/main/ResourceManager'
 
