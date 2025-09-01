@@ -71,6 +71,5 @@ dmg:
       type: link
       path: /Applications
 
-publish: never
 
 npmRebuild: false
