@@ -592,8 +592,19 @@ class ToolSandbox {
       const nodeExecutable = process.env.PROMPTX_NODE_EXECUTABLE || 'node';
       logger.info(`[ToolSandbox] Using Node.js executable: ${nodeExecutable}`);
       
+      // 准备子进程环境变量
+      const spawnEnv = { ...process.env };
+      
+      // 如果使用 Electron 作为 Node.js，需要设置 ELECTRON_RUN_AS_NODE
+      // 但只在这个子进程中设置，不污染主进程
+      if (nodeExecutable === process.env.PROMPTX_NODE_EXECUTABLE && nodeExecutable.includes('electron')) {
+        spawnEnv.ELECTRON_RUN_AS_NODE = '1';
+        logger.info(`[ToolSandbox] Setting ELECTRON_RUN_AS_NODE=1 for this subprocess only`);
+      }
+      
       const pnpm = spawn(nodeExecutable, [pnpmBinPath, 'install'], {
         cwd: this.directoryManager.getToolboxPath(),  // 使用 toolbox 路径安装依赖
+        env: spawnEnv,  // 使用定制的环境变量
         stdio: 'pipe'
       });
       

@@ -75,12 +75,12 @@ class PromptXDesktopApp {
     // In Electron, use the Electron executable which contains Node.js
     process.env.PROMPTX_NODE_EXECUTABLE = process.execPath
     
-    // CRITICAL: Set ELECTRON_RUN_AS_NODE to make Electron behave as pure Node.js
-    // This prevents the full Electron app from launching when spawning child processes
-    process.env.ELECTRON_RUN_AS_NODE = '1'
+    // NOTE: ELECTRON_RUN_AS_NODE is NOT set globally anymore
+    // It will be set locally only when spawning Node.js processes in ToolSandbox
+    // This prevents Chromium internal services from receiving incorrect parameters
     
     logger.info(`Node.js environment configured for ToolSandbox: ${process.execPath}`)
-    logger.info(`ELECTRON_RUN_AS_NODE set to prevent full app launch in child processes`)
+    logger.info(`ELECTRON_RUN_AS_NODE will be set locally per subprocess to avoid conflicts`)
     
     // Also set ELECTRON_NODE_PATH for compatibility
     process.env.ELECTRON_NODE_PATH = process.execPath
