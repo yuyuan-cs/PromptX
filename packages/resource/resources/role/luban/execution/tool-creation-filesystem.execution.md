@@ -10,11 +10,22 @@
 
 <rule>
   ## 工具文件创建规则
-  - 使用filesystem工具的write_file方法创建工具文件
-  - 使用create_directory方法创建目录结构
-  - 根据工具用途选择存储层级（User级或Project级）
-  - User级路径：user/tool/{toolName}/
-  - Project级路径：resource/tool/{toolName}/
+  
+  ⚠️ **资源层级说明**：
+  1. **系统内置（Package级）**：
+     - 位置：`packages/resource/resources/tool/`
+     - 说明：PromptX代码库自带的核心工具，不需要创建
+  
+  2. **用户创建（User级）** ← filesystem默认在这里
+     - filesystem路径：`resource/tool/{toolName}/`
+     - 实际位置：`~/.promptx/resource/tool/`
+     - 说明：所有用户创建的工具都在这里
+     - **这是filesystem工具的默认位置**
+  
+  📌 **重要**：
+  - 使用filesystem工具创建时，直接用 `resource/tool/{toolName}/`
+  - filesystem工具自动限制在 `~/.promptx/` 目录内
+  - 用户创建的资源都在 `~/.promptx/resource/` 下
   - 工具文件命名：{toolName}.tool.js
   - 手册文件命名：{toolName}.manual.md
   - **必须执行promptx_welcome刷新注册表**：创建工具后的强制步骤
@@ -22,10 +33,8 @@
 
 <guideline>
   ## 创建指导原则
-  - 优先考虑工具的使用范围来决定存储层级
-  - 跨项目通用的工具放在User级
-  - 项目特定的工具放在Project级
-  - 系统内置工具在Package级（只读）
+  - 用户创建的工具统一放在 `resource/tool/` 下
+  - 系统内置工具在Package级（只读，不通过filesystem创建）
   - 保持工具和手册在同一目录下
   - 使用批量操作提高效率
 </guideline>
@@ -43,11 +52,12 @@
   ### Step 2: 确定存储层级
   ```mermaid
   graph TD
-      A[工具用途] --> B{使用范围}
-      B -->|跨项目通用| C[User级<br/>user/tool/]
-      B -->|项目特定| D[Project级<br/>resource/tool/]
-      B -->|系统内置| E[Package级<br/>只读]
+      A[工具用途] --> B{工具来源}
+      B -->|用户创建| C[User级<br/>resource/tool/]
+      B -->|系统内置| D[Package级<br/>只读]
   ```
+  
+  📌 **说明**：用户创建的工具都使用 `resource/tool/` 路径
   
   ### Step 3: 创建工具文件结构
   
