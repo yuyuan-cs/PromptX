@@ -4,9 +4,9 @@
   "metadata": {
     "version": "2.0.0",
     "description": "package 级资源注册表",
-    "createdAt": "2025-09-01T06:30:51.179Z",
-    "updatedAt": "2025-09-01T06:30:51.180Z",
-    "resourceCount": 43
+    "createdAt": "2025-09-01T08:12:22.175Z",
+    "updatedAt": "2025-09-01T08:12:22.176Z",
+    "resourceCount": 45
   },
   "resources": [
     {
@@ -183,10 +183,10 @@
       "reference": "@package://resources/role/luban/execution/tool-creation-filesystem.execution.md",
       "metadata": {
         "path": "resources/role/luban/execution/tool-creation-filesystem.execution.md",
-        "size": 5696,
-        "modified": "2025-09-01T03:53:48.826Z",
-        "createdAt": "2025-09-01T03:53:48.826Z",
-        "updatedAt": "2025-09-01T03:53:48.826Z"
+        "size": 6096,
+        "modified": "2025-09-01T07:44:40.144Z",
+        "createdAt": "2025-09-01T07:44:40.143Z",
+        "updatedAt": "2025-09-01T07:44:40.144Z"
       }
     },
     {
@@ -652,6 +652,36 @@
         "modified": "2025-09-01T03:53:48.839Z",
         "createdAt": "2025-09-01T03:53:48.839Z",
         "updatedAt": "2025-09-01T03:53:48.839Z"
+      }
+    },
+    {
+      "id": "promptx-log-viewer",
+      "source": "package",
+      "protocol": "manual",
+      "name": "promptx-log-viewer",
+      "description": "promptx-log-viewer 使用手册",
+      "reference": "@package://resources/tool/promptx-log-viewer/promptx-log-viewer.manual.md",
+      "metadata": {
+        "path": "resources/tool/promptx-log-viewer/promptx-log-viewer.manual.md",
+        "size": 6005,
+        "modified": "2025-09-01T07:32:46.501Z",
+        "createdAt": "2025-09-01T07:52:46.471Z",
+        "updatedAt": "2025-09-01T07:32:46.501Z"
+      }
+    },
+    {
+      "id": "promptx-log-viewer",
+      "source": "package",
+      "protocol": "tool",
+      "name": "promptx-log-viewer",
+      "description": "promptx-log-viewer 工具",
+      "reference": "@package://resources/tool/promptx-log-viewer/promptx-log-viewer.tool.js",
+      "metadata": {
+        "path": "resources/tool/promptx-log-viewer/promptx-log-viewer.tool.js",
+        "size": 12158,
+        "modified": "2025-09-01T08:11:57.528Z",
+        "createdAt": "2025-09-01T08:11:57.528Z",
+        "updatedAt": "2025-09-01T08:11:57.528Z"
       }
     }
   ]
