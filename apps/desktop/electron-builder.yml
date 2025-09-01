@@ -71,5 +71,8 @@ dmg:
       type: link
       path: /Applications
 
+publish:
+  provider: generic
+  url: https://github.com/Deepractice/PromptX/releases/download/
 
 npmRebuild: false

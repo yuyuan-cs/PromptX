@@ -34,7 +34,7 @@ jobs:
         run: |
           echo "Building all macOS versions..."
           pnpm build
-          npx electron-builder --mac --x64 --arm64 --universal --publish never
+          npx electron-builder --mac --x64 --arm64 --universal
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -73,7 +73,7 @@ jobs:
         working-directory: apps/desktop
         run: |
           pnpm build
-          npx electron-builder --win --publish never
+          npx electron-builder --win
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -113,7 +113,7 @@ jobs:
         working-directory: apps/desktop
         run: |
           pnpm build
-          npx electron-builder --linux --publish never
+          npx electron-builder --linux
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
