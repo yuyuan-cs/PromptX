@@ -32,12 +32,9 @@ jobs:
       - name: Build macOS app
         working-directory: apps/desktop
         run: |
-          echo "Building macOS x64 version..."
-          pnpm package:mac --x64
-          echo "Building macOS arm64 version..."
-          pnpm package:mac --arm64
-          echo "Building macOS universal version..."
-          pnpm package:mac --universal
+          echo "Building all macOS versions..."
+          pnpm build
+          npx electron-builder --mac --x64 --arm64 --universal
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -46,6 +43,7 @@ jobs:
           path: |
             apps/desktop/release/*.dmg
             apps/desktop/release/*.zip
+            apps/desktop/release/latest-mac.yml
           if-no-files-found: warn
 
   build-windows:
@@ -83,6 +81,7 @@ jobs:
             apps/desktop/release/*setup*.exe
             apps/desktop/release/*portable*.exe
             apps/desktop/release/*.msi
+            apps/desktop/release/latest.yml
           if-no-files-found: warn
 
   build-linux:
@@ -121,6 +120,7 @@ jobs:
             apps/desktop/release/*.deb
             apps/desktop/release/*.rpm
             apps/desktop/release/*.snap
+            apps/desktop/release/latest-linux.yml
           if-no-files-found: warn
 
   upload-release:
@@ -139,10 +139,13 @@ jobs:
           files: |
             macos-build/*.dmg
             macos-build/*.zip
+            macos-build/latest-mac.yml
             windows-build/*setup*.exe
             windows-build/*portable*.exe
+            windows-build/latest.yml
             linux-build/*.AppImage
             linux-build/*.deb
             linux-build/*.rpm
+            linux-build/latest-linux.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

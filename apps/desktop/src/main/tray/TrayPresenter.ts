@@ -13,6 +13,7 @@ import { ResultUtil } from '~/shared/Result'
 import type { StartServerUseCase } from '~/main/application/useCases/StartServerUseCase'
 import type { StopServerUseCase } from '~/main/application/useCases/StopServerUseCase'
 import type { IServerPort } from '~/main/domain/ports/IServerPort'
+import type { UpdateManager } from '~/main/application/UpdateManager'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
 import * as logger from '@promptx/logger'
@@ -38,7 +39,8 @@ export class TrayPresenter {
   constructor(
     private readonly startServerUseCase: StartServerUseCase,
     private readonly stopServerUseCase: StopServerUseCase,
-    private readonly serverPort: IServerPort
+    private readonly serverPort: IServerPort,
+    private readonly updateManager: UpdateManager
   ) {
     // Initialize resource manager
     this.resourceManager = new ResourceManager()
@@ -48,6 +50,11 @@ export class TrayPresenter {
     // Setup status listener
     this.statusListener = (status) => this.updateStatus(status)
     this.serverPort.onStatusChange(this.statusListener)
+
+    // Setup update listener
+    this.updateManager.onUpdateAvailable(() => {
+      this.initializeMenu() // Refresh menu when update is available
+    })
     
     // Initialize menu
     this.initializeMenu()
@@ -156,6 +163,13 @@ export class TrayPresenter {
       click: () => this.handleShowLogs()
     })
 
+    // Check for updates
+    menuItems.push({
+      id: 'update',
+      label: this.updateManager.isUpdateAvailable() ? 'Update Available!' : 'Check for Updates',
+      click: () => this.handleCheckUpdate()
+    })
+
     // Settings (future)
     menuItems.push({
       id: 'settings',
@@ -262,6 +276,16 @@ return
     this.logsWindow.on('closed', () => {
       this.logsWindow = null
     })
+  }
+
+  handleCheckUpdate(): void {
+    logger.info('TrayPresenter: handleCheckUpdate called')
+    try {
+      this.updateManager.checkForUpdatesManual()
+      logger.info('TrayPresenter: checkForUpdatesManual called successfully')
+    } catch (error) {
+      logger.error('TrayPresenter: Error calling checkForUpdatesManual:', error)
+    }
   }
 
   handleQuit(): void {

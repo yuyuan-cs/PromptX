@@ -32,14 +32,19 @@ mac:
   gatekeeperAssess: false
   identity: null
   target:
-    - dmg
-    - zip
+    - target: dmg
+      arch: [x64, arm64, universal]
+    - target: zip
+      arch: [universal]
 
 win:
   icon: assets/icons/icon.png
   target:
     - nsis
     - portable
+
+portable:
+  artifactName: promptx-desktop-${version}-${os}-${arch}-portable.${ext}
 
 linux:
   icon: assets/icons
@@ -65,5 +70,10 @@ dmg:
       y: 220
       type: link
       path: /Applications
+
+publish:
+  provider: github
+  owner: Deepractice
+  repo: PromptX
 
 npmRebuild: false

@@ -9,6 +9,7 @@ import { FileConfigAdapter } from '~/main/infrastructure/adapters/FileConfigAdap
 import { ElectronNotificationAdapter } from '~/main/infrastructure/adapters/ElectronNotificationAdapter'
 import { StartServerUseCase } from '~/main/application/useCases/StartServerUseCase'
 import { StopServerUseCase } from '~/main/application/useCases/StopServerUseCase'
+import { UpdateManager } from '~/main/application/UpdateManager'
 import * as logger from '@promptx/logger'
 import * as path from 'node:path'
 
@@ -18,6 +19,7 @@ class PromptXDesktopApp {
   private serverPort: PromptXServerAdapter | null = null
   private configPort: FileConfigAdapter | null = null
   private notificationPort: ElectronNotificationAdapter | null = null
+  private updateManager: UpdateManager | null = null
 
   async initialize(): Promise<void> {
     logger.info('Initializing PromptX Desktop...')
@@ -45,6 +47,11 @@ class PromptXDesktopApp {
     logger.info('Setting up application layer...')
     const { startUseCase, stopUseCase } = this.setupApplication()
 
+    // Setup UpdateManager BEFORE presentation layer
+    logger.info('Setting up update manager...')
+    this.updateManager = new UpdateManager()
+    logger.info('Update manager initialized')
+
     // Setup presentation layer
     logger.info('Setting up presentation layer...')
     this.setupPresentation(startUseCase, stopUseCase)
@@ -68,6 +75,12 @@ class PromptXDesktopApp {
     } catch (error) {
       logger.error('Failed to auto-start server:', error)
     }
+
+    // Check for updates after initialization (non-blocking)
+    logger.info('Scheduling update check...')
+    setTimeout(() => {
+      this.updateManager?.checkForUpdates()
+    }, 3000) // Check for updates 3 seconds after startup
   }
 
   private setupNodeEnvironment(): void {
@@ -129,14 +142,15 @@ class PromptXDesktopApp {
     startUseCase: StartServerUseCase,
     stopUseCase: StopServerUseCase
   ): void {
-    if (!this.serverPort) {
-      throw new Error('Server port not initialized')
+    if (!this.serverPort || !this.updateManager) {
+      throw new Error('Infrastructure not fully initialized')
     }
 
     this.trayPresenter = new TrayPresenter(
       startUseCase,
       stopUseCase,
-      this.serverPort
+      this.serverPort,
+      this.updateManager
     )
   }
 
