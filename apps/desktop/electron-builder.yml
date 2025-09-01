@@ -71,9 +71,6 @@ dmg:
       type: link
       path: /Applications
 
-publish:
-  provider: github
-  owner: Deepractice
-  repo: PromptX
+publish: never
 
 npmRebuild: false
