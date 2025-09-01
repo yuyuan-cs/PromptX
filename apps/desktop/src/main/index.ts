@@ -143,11 +143,9 @@ class PromptXDesktopApp {
   private setupAppEvents(): void {
     // Prevent app from quitting when all windows are closed
     app.on('window-all-closed', () => {
-      // On macOS, keep app running in background
-      if (process.platform !== 'darwin') {
-        app.quit()
-      }
-      // On macOS, do nothing - app stays in menu bar
+      // Keep app running in system tray on all platforms
+      // Do nothing - app stays in system tray
+      // User can quit from tray menu
     })
 
     // Handle app quit - use synchronous cleanup
