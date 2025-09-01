@@ -71,7 +71,9 @@ jobs:
 
       - name: Build Windows app
         working-directory: apps/desktop
-        run: pnpm package:win -- --publish never
+        run: |
+          pnpm build
+          npx electron-builder --win --publish never
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -109,7 +111,9 @@ jobs:
 
       - name: Build Linux app
         working-directory: apps/desktop
-        run: pnpm package:linux -- --publish never
+        run: |
+          pnpm build
+          npx electron-builder --linux --publish never
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
