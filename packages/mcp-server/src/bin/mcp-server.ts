@@ -14,7 +14,7 @@ import chalk from 'chalk'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { FastMCPStdioServer, FastMCPHttpServer } from '../index.js'
+import { MCPServerManager } from '../index.js'
 import logger from '@promptx/logger'
 
 // Get package.json
@@ -42,37 +42,14 @@ program
     try {
       logger.info(chalk.cyan(`🚀 PromptX MCP Server v${packageJson.version}`))
       
-      // 设置调试模式
-      if (options.debug) {
-        process.env.MCP_DEBUG = 'true'
-      }
-
-      // Start server based on transport type
-      if (options.transport === 'stdio') {
-        logger.info(chalk.gray('📡 Starting STDIO transport mode...'))
-        const mcpServer = new FastMCPStdioServer({
-          debug: options.debug
-        })
-        await mcpServer.start()
-        
-        // Keep process running
-        await new Promise(() => {}) // Never resolves, keeps process running
-      } else if (options.transport === 'http') {
-        const port = parseInt(options.port)
-        logger.info(`📡 Starting HTTP transport mode on ${options.host}:${port}...`)
-        
-        const mcpHttpServer = new FastMCPHttpServer({
-          debug: options.debug,
-          port: port,
-          host: options.host,
-          cors: options.cors
-        })
-        
-        await mcpHttpServer.start()
-        logger.info(chalk.green(`✅ HTTP MCP Server started on ${options.host}:${port}`))
-      } else {
-        throw new Error(`Unsupported transport type: ${options.transport}. Supported types: stdio, http`)
-      }
+      // Use MCPServerManager for unified server management
+      await MCPServerManager.launch({
+        transport: options.transport as 'stdio' | 'http',
+        port: parseInt(options.port),
+        host: options.host,
+        cors: options.cors,
+        debug: options.debug
+      })
     } catch (error) {
       logger.error(`❌ MCP Server startup failed: ${(error as Error).message}`)
       process.exit(1)

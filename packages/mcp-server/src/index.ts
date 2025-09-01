@@ -10,5 +10,9 @@ export { FastMCPStdioServer } from './server/FastMCPStdioServer'
 // Export MCP output adapter
 export { MCPOutputAdapter } from './MCPOutputAdapter'
 
+// Export MCPServerManager for unified server management
+export { MCPServerManager } from './MCPServerManager'
+export type { MCPServerOptions } from './MCPServerManager'
+
 // Export definitions
 export * as definitions from './definitions/index'

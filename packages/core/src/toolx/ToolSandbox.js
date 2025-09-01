@@ -582,6 +582,8 @@ class ToolSandbox {
       // 30秒超时
       const timeout = setTimeout(() => {
         logger.error(`[ToolSandbox] pnpm install timeout after 30s`);
+        logger.error(`[ToolSandbox] Collected stdout: ${stdout}`);
+        logger.error(`[ToolSandbox] Collected stderr: ${stderr}`);
         pnpm.kill('SIGTERM');
         reject(new Error('pnpm install timeout'));
       }, 30000);
@@ -602,7 +604,25 @@ class ToolSandbox {
         logger.info(`[ToolSandbox] Setting ELECTRON_RUN_AS_NODE=1 for this subprocess only`);
       }
       
-      const pnpm = spawn(nodeExecutable, [pnpmBinPath, 'install'], {
+      // Add CI=1 to environment to enable non-interactive mode
+      spawnEnv.CI = '1';
+      
+      // Use comprehensive non-interactive flags:
+      // --config.confirmModulesPurge=false: Auto-confirm module purge
+      // --prefer-offline: Use cached packages when possible
+      // --ignore-scripts: Don't run install scripts that might prompt
+      // --reporter=append-only: Simple output without interactive elements
+      // Note: Not using --frozen-lockfile as it prevents lockfile creation/update
+      const pnpmArgs = [
+        pnpmBinPath, 
+        'install',
+        '--config.confirmModulesPurge=false',
+        '--prefer-offline',
+        '--ignore-scripts',
+        '--reporter=append-only'
+      ];
+      
+      const pnpm = spawn(nodeExecutable, pnpmArgs, {
         cwd: this.directoryManager.getToolboxPath(),  // 使用 toolbox 路径安装依赖
         env: spawnEnv,  // 使用定制的环境变量
         stdio: 'pipe'
@@ -612,20 +632,28 @@ class ToolSandbox {
       let stderr = '';
       
       pnpm.stdout.on('data', (data) => {
-        stdout += data.toString();
+        const output = data.toString();
+        stdout += output;
+        logger.debug(`[ToolSandbox] pnpm stdout: ${output}`);
       });
       
       pnpm.stderr.on('data', (data) => {
-        stderr += data.toString();
+        const error = data.toString();
+        stderr += error;
+        logger.warn(`[ToolSandbox] pnpm stderr: ${error}`);
       });
       
       pnpm.on('close', (code) => {
+        clearTimeout(timeout);
         logger.info(`[ToolSandbox] pnpm process finished with code: ${code}`);
+        
         if (code === 0) {
           logger.info(`[ToolSandbox] pnpm install completed successfully`);
           resolve({ stdout, stderr });
         } else {
-          logger.error(`[ToolSandbox] pnpm install failed with code ${code}: ${stderr}`);
+          logger.error(`[ToolSandbox] pnpm install failed with code ${code}`);
+          logger.error(`[ToolSandbox] stdout: ${stdout}`);
+          logger.error(`[ToolSandbox] stderr: ${stderr}`);
           reject(new Error(`pnpm install failed with code ${code}: ${stderr}`));
         }
       });
