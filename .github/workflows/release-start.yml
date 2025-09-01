@@ -60,24 +60,17 @@ jobs:
             VERSION="${{ github.event.inputs.custom_version }}"
             echo "Using custom version: $VERSION"
             
-            # Update all packages to custom version
-            node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json')); p.version='$VERSION'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n');"
+            # Update all workspace packages to custom version (skip root)
             pnpm recursive exec -- node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json')); p.version='$VERSION'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n');" || true
           else
             # Use changesets to calculate version
             pnpm changeset version
             
-            # Get the new version from any updated package (since root package.json is not managed by changesets)
+            # Get the new version from any updated package
             VERSION=$(find apps packages -name "package.json" | head -1 | xargs cat | jq -r '.version')
             
-            # Sync root package.json version to match workspace packages
-            node -e "
-              const fs = require('fs');
-              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-              pkg.version = '$VERSION';
-              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-              console.log('✅ Root package.json updated to version', '$VERSION');
-            "
+            # Root package.json doesn't need version since it's private and not published
+            echo "✅ Package versions updated to $VERSION"
           fi
           
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
