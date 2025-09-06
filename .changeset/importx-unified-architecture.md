@@ -1,5 +1,5 @@
 ---
-"@promptx/core": major
+"@promptx/core": minor
 "@promptx/desktop": minor  
 ---
 
@@ -46,34 +46,36 @@
 - 维护性提升：统一架构易于理解和扩展
 - Electron 兼容：解决特殊环境问题
 
-## 🔧 Breaking Changes
+## 🔄 内部优化 (向下兼容)
 
-### ToolSandbox API 变更
-- 所有工具现在使用 `importx()` 而非 `require()` 或 `loadModule()`
-- ES Module 支持通过 importx 自动处理
-- 删除了 ESModuleRequireSupport 类
+### ToolSandbox 内部重构
+- 内部统一使用 `importx()` 进行模块导入，外部API保持不变
+- 自动处理 CommonJS/ES Module 兼容性
+- 删除了内部复杂的 ESModuleRequireSupport 类
 
-### 工具开发更新
-- 新工具必须使用 `importx()` 进行模块导入
-- 现有工具建议迁移到新的导入方式
-- luban 角色知识库已更新相应要求
+### 工具开发建议
+- 新工具推荐使用 `importx()` 进行模块导入
+- 现有工具继续工作，无需强制迁移
+- `require()` 和 `loadModule()` 仍然支持
 
-## 🛠️ 迁移指南
+## 🛠️ 使用指南
 
-### 对于工具开发者
+### 推荐的导入方式
 ```javascript
-// 旧方式 (已废弃)
-const axios = require('axios');
-const chalk = await loadModule('chalk');
-
-// 新方式 (推荐)  
+// 推荐方式 (统一、简单)
 const axios = await importx('axios');
 const chalk = await importx('chalk');
+const fs = await importx('fs');
+
+// 仍然支持的方式
+const axios = require('axios');  // 对于 CommonJS
+const chalk = await loadModule('chalk');  // 对于 ES Module
 ```
 
 ### 对于框架使用者
-- ToolSandbox 创建方式改为异步：`await ToolSandbox.create(toolRef)`
-- 保持向下兼容，现有代码无需修改
+- 现有 ToolSandbox API 完全兼容
+- 内部性能和稳定性自动提升
+- 无需代码修改
 
 ## 🎯 影响范围
 
