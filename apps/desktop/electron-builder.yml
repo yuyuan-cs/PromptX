@@ -30,18 +30,17 @@ mac:
   icon: assets/icons/icon.icns
   hardenedRuntime: true
   gatekeeperAssess: false
-  identity: null
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.plist
+  notarize: true
   target:
     - target: dmg
-      arch: [x64, arm64, universal]
-    - target: zip
-      arch: [universal]
+      arch: [x64, arm64]
 
 win:
   icon: assets/icons/icon.png
   target:
     - nsis
-    - portable
 
 portable:
   artifactName: promptx-desktop-${version}-${os}-${arch}-portable.${ext}
@@ -50,8 +49,6 @@ linux:
   icon: assets/icons
   category: Development
   target:
-    - AppImage
-    - deb
     - rpm
 
 nsis:
