@@ -56,31 +56,32 @@ class ElectronPnpmWorker {
       logger.debug(`[ElectronPnpmWorker] Working directory: ${workingDir}`);
       logger.debug(`[ElectronPnpmWorker] Dependencies: [${depsList}]`);
       
+      // 构建环境变量，过滤掉 undefined 值
+      const envVars = {};
+      
+      // 保留必要的系统环境变量（只添加存在的）
+      if (process.env.PATH) envVars.PATH = process.env.PATH;
+      if (process.env.HOME) envVars.HOME = process.env.HOME;
+      if (process.env.USER) envVars.USER = process.env.USER;
+      if (process.env.USERPROFILE) envVars.USERPROFILE = process.env.USERPROFILE;
+      if (process.env.APPDATA) envVars.APPDATA = process.env.APPDATA;
+      if (process.env.LOCALAPPDATA) envVars.LOCALAPPDATA = process.env.LOCALAPPDATA;
+      if (process.env.PNPM_HOME) envVars.PNPM_HOME = process.env.PNPM_HOME;
+      
+      // 设置固定的环境变量
+      envVars.NODE_ENV = 'production';
+      envVars.CI = '1';
+      envVars.npm_config_yes = 'true';
+      envVars.npm_config_audit = 'false';
+      
+      logger.debug(`[ElectronPnpmWorker] Environment variables:`, Object.keys(envVars));
+      
       // 直接用 utilityProcess fork pnpm！
       // utilityProcess.fork(modulePath, args, options)
       const worker = utilityProcess.fork(pnpmBinaryPath, pnpmArgs, {
         cwd: workingDir,
         stdio: 'pipe',  // 需要捕获输出
-        env: {
-          // 保留必要的系统环境变量
-          PATH: process.env.PATH,
-          HOME: process.env.HOME,
-          USER: process.env.USER,
-          USERPROFILE: process.env.USERPROFILE,
-          APPDATA: process.env.APPDATA,
-          LOCALAPPDATA: process.env.LOCALAPPDATA,
-          
-          // 设置Node.js和pnpm相关环境
-          NODE_ENV: 'production',
-          CI: '1',
-          
-          // 设置pnpm配置
-          PNPM_HOME: process.env.PNPM_HOME,
-          
-          // 确保非交互模式
-          npm_config_yes: 'true',
-          npm_config_audit: 'false'
-        }
+        env: envVars
       });
       
       return new Promise((resolve, reject) => {
