@@ -51,6 +51,43 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           CSC_IDENTITY_AUTO_DISCOVERY: true
 
+      - name: Notarize macOS DMG
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: apps/desktop
+        run: |
+          # Check if Apple credentials are available
+          if [[ -z "${{ secrets.APPLE_ID }}" ]] || \
+             [[ -z "${{ secrets.APPLE_ID_PASSWORD }}" ]] || \
+             [[ -z "${{ secrets.APPLE_TEAM_ID }}" ]]; then
+            echo "⚠️ Skipping notarization: Missing Apple credentials"
+            echo "To enable notarization, please set APPLE_ID, APPLE_ID_PASSWORD, and APPLE_TEAM_ID secrets"
+            exit 0
+          fi
+          
+          echo "📝 Starting notarization process..."
+          
+          # Notarize each DMG file
+          for dmg in release/*.dmg; do
+            if [ -f "$dmg" ]; then
+              echo "Notarizing $(basename $dmg)..."
+              
+              # Submit for notarization and wait for completion
+              xcrun notarytool submit "$dmg" \
+                --apple-id "${{ secrets.APPLE_ID }}" \
+                --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+                --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+                --wait \
+                --timeout 1200
+              
+              # Staple the notarization ticket to the DMG
+              xcrun stapler staple "$dmg"
+              
+              echo "✅ Successfully notarized $(basename $dmg)"
+            fi
+          done
+          
+          echo "✅ Notarization process completed"
+
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
