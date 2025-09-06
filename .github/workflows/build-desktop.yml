@@ -21,6 +21,11 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
         
+      - name: Configure git for HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://".insteadOf "ssh://"
+        
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         
@@ -47,6 +52,11 @@ jobs:
           
       - name: Install pnpm
         run: npm install -g pnpm
+        
+      - name: Configure git for HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://".insteadOf "ssh://"
         
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
