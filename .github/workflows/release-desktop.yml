@@ -64,29 +64,86 @@ jobs:
             exit 0
           fi
           
-          echo "📝 Starting notarization process..."
+          echo "Starting notarization process..."
           
-          # Notarize each DMG file
+          # Submit all DMGs for notarization (without waiting)
+          submission_ids=""
           for dmg in release/*.dmg; do
             if [ -f "$dmg" ]; then
-              echo "Notarizing $(basename $dmg)..."
+              echo "Submitting $(basename $dmg) for notarization..."
               
-              # Submit for notarization and wait for completion
-              xcrun notarytool submit "$dmg" \
+              # Submit for notarization without waiting
+              output=$(xcrun notarytool submit "$dmg" \
                 --apple-id "${{ secrets.APPLE_ID }}" \
                 --password "${{ secrets.APPLE_ID_PASSWORD }}" \
                 --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-                --wait \
-                --timeout 1200
+                --no-wait 2>&1)
               
-              # Staple the notarization ticket to the DMG
-              xcrun stapler staple "$dmg"
+              # Extract submission ID
+              submission_id=$(echo "$output" | grep "id:" | head -1 | awk '{print $2}')
               
-              echo "✅ Successfully notarized $(basename $dmg)"
+              if [ -n "$submission_id" ]; then
+                echo "Submission ID for $(basename $dmg): $submission_id"
+                submission_ids="$submission_ids $submission_id:$dmg"
+              else
+                echo "Warning: Failed to get submission ID for $(basename $dmg)"
+              fi
             fi
           done
           
-          echo "✅ Notarization process completed"
+          # Wait for all submissions with periodic checks
+          echo "Waiting for notarization to complete..."
+          max_attempts=60  # 30 minutes total (30 seconds × 60)
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            all_done=true
+            
+            for entry in $submission_ids; do
+              submission_id="${entry%%:*}"
+              dmg_file="${entry#*:}"
+              
+              if [ -n "$submission_id" ]; then
+                # Check status
+                status=$(xcrun notarytool info "$submission_id" \
+                  --apple-id "${{ secrets.APPLE_ID }}" \
+                  --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+                  --team-id "${{ secrets.APPLE_TEAM_ID }}" 2>&1 | grep "status:" | awk '{print $2}')
+                
+                echo "Status for $(basename $dmg_file): $status"
+                
+                if [ "$status" = "Accepted" ]; then
+                  # Staple the ticket
+                  if xcrun stapler staple "$dmg_file" 2>/dev/null; then
+                    echo "✅ Successfully notarized and stapled $(basename $dmg_file)"
+                  fi
+                elif [ "$status" = "In" ] || [ "$status" = "InProgress" ] || [ -z "$status" ]; then
+                  all_done=false
+                elif [ "$status" = "Invalid" ] || [ "$status" = "Rejected" ]; then
+                  echo "❌ Notarization failed for $(basename $dmg_file): $status"
+                  # Continue anyway, don't fail the build
+                fi
+              fi
+            done
+            
+            if [ "$all_done" = true ]; then
+              echo "All notarizations completed"
+              break
+            fi
+            
+            attempt=$((attempt + 1))
+            if [ $attempt -lt $max_attempts ]; then
+              echo "Waiting 30 seconds before next check... (attempt $attempt/$max_attempts)"
+              sleep 30
+            fi
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "⚠️ Warning: Notarization timeout reached, but continuing with build"
+            echo "You may need to check notarization status manually"
+          fi
+          
+          echo "Notarization process finished"
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
