@@ -1,0 +1,228 @@
+name: Notarize macOS Apps
+
+on:
+  workflow_run:
+    workflows: ["Build Desktop Apps"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:  # 允许手动触发
+    inputs:
+      tag:
+        description: 'Release tag to notarize (e.g., v1.14.0-beta)'
+        required: true
+        type: string
+
+jobs:
+  notarize:
+    name: Notarize macOS DMG
+    runs-on: macos-latest
+    # 只在构建成功或手动触发时运行
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    permissions:
+      contents: write  # 需要写权限来更新 Release
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get release tag
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手动触发，使用输入的 tag
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            # 自动触发，获取最新的 tag
+            latest_tag=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+            echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Check Apple credentials
+        id: check_credentials
+        run: |
+          if [[ -z "${{ secrets.APPLE_ID }}" ]] || \
+             [[ -z "${{ secrets.APPLE_ID_PASSWORD }}" ]] || \
+             [[ -z "${{ secrets.APPLE_TEAM_ID }}" ]]; then
+            echo "Missing Apple credentials, skipping notarization"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Apple credentials found"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Download DMG files from Release
+        if: steps.check_credentials.outputs.skip != 'true'
+        run: |
+          echo "Downloading DMG files from release ${{ steps.get_tag.outputs.tag }}..."
+          mkdir -p downloads
+          
+          # 下载所有 DMG 文件
+          gh release download "${{ steps.get_tag.outputs.tag }}" \
+            --pattern "*.dmg" \
+            --dir downloads
+          
+          # 列出下载的文件
+          echo "Downloaded files:"
+          ls -la downloads/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Submit for notarization
+        if: steps.check_credentials.outputs.skip != 'true'
+        id: submit
+        run: |
+          cd downloads
+          submission_info=""
+          
+          for dmg in *.dmg; do
+            if [ -f "$dmg" ]; then
+              echo "Submitting $dmg for notarization..."
+              
+              # 提交公证
+              output=$(xcrun notarytool submit "$dmg" \
+                --apple-id "${{ secrets.APPLE_ID }}" \
+                --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+                --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+                --no-wait 2>&1)
+              
+              # 提取 submission ID
+              submission_id=$(echo "$output" | grep "id:" | head -1 | awk '{print $2}')
+              
+              if [ -n "$submission_id" ]; then
+                echo "Submission ID for $dmg: $submission_id"
+                submission_info="${submission_info}${submission_id}:${dmg} "
+                
+                # 保存 submission ID 到文件
+                echo "${submission_id}:${dmg}" >> submissions.txt
+              else
+                echo "Warning: Failed to get submission ID for $dmg"
+                echo "$output"
+              fi
+            fi
+          done
+          
+          # 保存所有 submission 信息供后续步骤使用
+          echo "submissions=$submission_info" >> $GITHUB_OUTPUT
+      
+      - name: Wait for notarization
+        if: steps.check_credentials.outputs.skip != 'true'
+        run: |
+          cd downloads
+          
+          if [ ! -f submissions.txt ]; then
+            echo "No submissions to wait for"
+            exit 0
+          fi
+          
+          echo "Waiting for notarization to complete..."
+          max_wait_time=3600  # 60 分钟
+          check_interval=60    # 每分钟检查一次
+          elapsed=0
+          
+          while [ $elapsed -lt $max_wait_time ]; do
+            all_done=true
+            
+            while IFS=':' read -r submission_id dmg_file; do
+              if [ -z "$submission_id" ]; then
+                continue
+              fi
+              
+              # 检查状态
+              status=$(xcrun notarytool info "$submission_id" \
+                --apple-id "${{ secrets.APPLE_ID }}" \
+                --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+                --team-id "${{ secrets.APPLE_TEAM_ID }}" 2>&1 | \
+                grep "status:" | awk '{print $2}')
+              
+              echo "[$dmg_file] Status: $status"
+              
+              if [ "$status" = "Accepted" ]; then
+                # Staple the ticket
+                echo "Stapling ticket to $dmg_file..."
+                if xcrun stapler staple "$dmg_file"; then
+                  echo "✅ Successfully stapled $dmg_file"
+                  # 标记为已完成
+                  touch "${dmg_file}.notarized"
+                else
+                  echo "Warning: Failed to staple $dmg_file"
+                fi
+              elif [ "$status" = "In" ] || [ "$status" = "InProgress" ] || [ -z "$status" ]; then
+                all_done=false
+              elif [ "$status" = "Invalid" ] || [ "$status" = "Rejected" ]; then
+                echo "❌ Notarization failed for $dmg_file"
+                # 获取错误日志
+                xcrun notarytool log "$submission_id" \
+                  --apple-id "${{ secrets.APPLE_ID }}" \
+                  --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+                  --team-id "${{ secrets.APPLE_TEAM_ID }}"
+              fi
+            done < submissions.txt
+            
+            if [ "$all_done" = true ]; then
+              echo "All notarizations completed"
+              break
+            fi
+            
+            echo "Waiting $check_interval seconds before next check..."
+            sleep $check_interval
+            elapsed=$((elapsed + check_interval))
+          done
+          
+          if [ $elapsed -ge $max_wait_time ]; then
+            echo "Warning: Notarization timeout reached after $max_wait_time seconds"
+            echo "Some files may not be notarized"
+          fi
+      
+      - name: Upload notarized DMGs back to Release
+        if: steps.check_credentials.outputs.skip != 'true'
+        run: |
+          cd downloads
+          
+          # 计数成功公证的文件
+          notarized_count=0
+          total_count=0
+          
+          for dmg in *.dmg; do
+            if [ -f "$dmg" ]; then
+              total_count=$((total_count + 1))
+              if [ -f "${dmg}.notarized" ]; then
+                notarized_count=$((notarized_count + 1))
+                echo "Uploading notarized $dmg to release..."
+                
+                # 使用 --clobber 覆盖现有文件
+                gh release upload "${{ steps.get_tag.outputs.tag }}" \
+                  "$dmg" \
+                  --clobber
+                
+                echo "✅ Updated $dmg in release"
+              else
+                echo "⚠️ Skipping $dmg (not notarized)"
+              fi
+            fi
+          done
+          
+          echo "Summary: $notarized_count/$total_count files notarized and updated"
+          
+          # 创建状态文件
+          echo "Notarization completed at $(date)" > notarization-status.txt
+          echo "Notarized: $notarized_count/$total_count files" >> notarization-status.txt
+          
+          # 上传状态文件
+          gh release upload "${{ steps.get_tag.outputs.tag }}" \
+            notarization-status.txt \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Post notification comment
+        if: steps.check_credentials.outputs.skip != 'true' && github.event_name == 'workflow_run'
+        run: |
+          # 在对应的 workflow run 上添加评论
+          gh run comment ${{ github.event.workflow_run.id }} \
+            --body "✅ macOS notarization completed for release ${{ steps.get_tag.outputs.tag }}. DMG files have been updated in the release."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true  # 评论失败不影响整体流程
