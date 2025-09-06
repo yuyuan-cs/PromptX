@@ -43,9 +43,9 @@ jobs:
       - name: Build macOS app
         working-directory: apps/desktop
         run: |
-          echo "Building all macOS versions..."
+          echo "Building macOS versions..."
           pnpm build
-          npx electron-builder --mac --x64 --arm64 --universal
+          npx electron-builder --mac --x64 --arm64
         env:
           CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -57,7 +57,6 @@ jobs:
           name: macos-build
           path: |
             apps/desktop/release/*.dmg
-            apps/desktop/release/*.zip
             apps/desktop/release/latest-mac.yml
           if-no-files-found: warn
 
@@ -101,8 +100,6 @@ jobs:
           name: windows-build
           path: |
             apps/desktop/release/*setup*.exe
-            apps/desktop/release/*portable*.exe
-            apps/desktop/release/*.msi
             apps/desktop/release/latest.yml
           if-no-files-found: warn
 
@@ -145,10 +142,7 @@ jobs:
         with:
           name: linux-build
           path: |
-            apps/desktop/release/*.AppImage
-            apps/desktop/release/*.deb
             apps/desktop/release/*.rpm
-            apps/desktop/release/*.snap
             apps/desktop/release/latest-linux.yml
           if-no-files-found: warn
 
@@ -167,13 +161,9 @@ jobs:
         with:
           files: |
             macos-build/*.dmg
-            macos-build/*.zip
             macos-build/latest-mac.yml
             windows-build/*setup*.exe
-            windows-build/*portable*.exe
             windows-build/latest.yml
-            linux-build/*.AppImage
-            linux-build/*.deb
             linux-build/*.rpm
             linux-build/latest-linux.yml
         env:
