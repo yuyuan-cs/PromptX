@@ -18,9 +18,9 @@ class CognitionManager {
    */
   async ensureInitialized() {
     if (!this.resourceManager.initialized) {
-      logger.info('⚙️ [CognitionManager] ResourceManager未初始化，正在初始化...');
+      logger.info(' [CognitionManager] ResourceManager未初始化，正在初始化...');
       await this.resourceManager.initializeWithNewArchitecture();
-      logger.info('⚙️ [CognitionManager] ResourceManager初始化完成');
+      logger.info(' [CognitionManager] ResourceManager初始化完成');
     }
     
     // 获取 user 协议
@@ -60,7 +60,7 @@ class CognitionManager {
     
     // 确保目录存在
     await fs.ensureDir(cognitionDir);
-    logger.debug(`📁 [CognitionManager] 认知目录已创建: ${cognitionDir}`);
+    logger.debug(` [CognitionManager] 认知目录已创建: ${cognitionDir}`);
     
     // 配置认知实例
     const config = {
@@ -73,7 +73,7 @@ class CognitionManager {
     const cognition = new Cognition(config);
     this.cognitions.set(role, cognition);
     
-    logger.info(`✅ [CognitionManager] 认知实例创建完成: ${role}`);
+    logger.info(` [CognitionManager] 认知实例创建完成: ${role}`);
     return cognition;
   }
 

@@ -40,7 +40,7 @@ program
   .option('--debug', 'Enable debug mode', false)
   .action(async (options) => {
     try {
-      logger.info(chalk.cyan(`🚀 PromptX MCP Server v${packageJson.version}`))
+      logger.info(chalk.cyan(`PromptX MCP Server v${packageJson.version}`))
       
       // Use MCPServerManager for unified server management
       await MCPServerManager.launch({
@@ -67,14 +67,14 @@ program.addHelpText('after', `
 
 ${chalk.cyan('PromptX MCP Server - Bridge AI applications to PromptX')}
 
-${chalk.cyan('🚀 Quick Start:')}
+${chalk.cyan('Quick Start:')}
   ${chalk.gray('# STDIO mode (default, suitable for most AI applications)')}
   npx @promptx/mcp-server
 
   ${chalk.gray('# HTTP mode (suitable for web applications and remote connections)')}
   npx @promptx/mcp-server --transport http --port 5203
 
-${chalk.cyan('📋 AI Application Configuration:')}
+${chalk.cyan('AI Application Configuration:')}
   ${chalk.gray('# Claude Desktop configuration example')}
   {
     "mcpServers": {

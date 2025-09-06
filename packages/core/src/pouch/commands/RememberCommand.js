@@ -40,11 +40,11 @@ class RememberCommand extends BasePouchCommand {
 
     try {
       logger.info('🧠 [RememberCommand] 开始批量记忆保存流程')
-      logger.info(`📝 [RememberCommand] 批量保存 ${engrams.length} 个Engram`)
+      logger.info(` [RememberCommand] 批量保存 ${engrams.length} 个Engram`)
       
       // 使用 CognitionManager 批量保存记忆
       await this.cognitionManager.remember(role, engrams)
-      logger.info('✅ [RememberCommand] 批量记忆保存完成')
+      logger.info(' [RememberCommand] 批量记忆保存完成')
       
       // 获取更新后的认知网络
       const mind = await this.cognitionManager.prime(role)
@@ -68,8 +68,8 @@ class RememberCommand extends BasePouchCommand {
       this.registerLayer(roleLayer)
       
     } catch (error) {
-      logger.error(`❌ [RememberCommand] 记忆保存失败: ${error.message}`)
-      logger.debug(`🐛 [RememberCommand] 错误堆栈: ${error.stack}`)
+      logger.error(` [RememberCommand] 记忆保存失败: ${error.message}`)
+      logger.debug(` [RememberCommand] 错误堆栈: ${error.stack}`)
       
       // 错误情况：只创建角色层显示错误
       const roleLayer = new RoleLayer()

@@ -114,7 +114,7 @@ class ProjectDiscovery {
         })
       }
 
-      logger.info(`[ProjectDiscovery] ✅ 项目扫描完成，发现 ${resources.length} 个资源`)
+      logger.info(`[ProjectDiscovery]  项目扫描完成，发现 ${resources.length} 个资源`)
       return resources
       
     } catch (error) {
@@ -318,7 +318,7 @@ class ProjectDiscovery {
       // 保存注册表
       await registryData.save()
       
-      logger.info(`[ProjectDiscovery] ✅ 项目注册表生成完成，发现 ${registryData.size} 个资源`)
+      logger.info(`[ProjectDiscovery]  项目注册表生成完成，发现 ${registryData.size} 个资源`)
       return registryData
       
     } catch (error) {
@@ -340,13 +340,13 @@ class ProjectDiscovery {
         const registryData = await RegistryData.fromFile('project', registryPath)
         
         if (registryData.size > 0) {
-          logger.info(`[ProjectDiscovery] 📋 从注册表加载 ${registryData.size} 个资源`)
+          logger.info(`[ProjectDiscovery]  从注册表加载 ${registryData.size} 个资源`)
           return registryData
         }
       }
       
       // 动态生成注册表
-      logger.info(`[ProjectDiscovery] 📋 项目注册表无效，重新生成`)
+      logger.info(`[ProjectDiscovery]  项目注册表无效，重新生成`)
       return await this.generateRegistry()
       
     } catch (error) {

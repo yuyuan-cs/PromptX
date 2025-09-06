@@ -151,7 +151,7 @@ class WelcomeCommand extends BasePouchCommand {
       if (await fs.pathExists(userRegistryPath)) {
         const registry = await fs.readJson(userRegistryPath)
         const tools = registry.resources?.filter(r => r.protocol === 'tool').map(r => r.id) || []
-        logger.info(`[WelcomeCommand] 📋 用户注册表中的工具: ${tools.join(', ') || '无'}`)
+        logger.info(`[WelcomeCommand] 用户注册表中的工具: ${tools.join(', ') || '无'}`)
       }
       
       // 2. 刷新 ResourceManager，重新加载所有资源
@@ -160,7 +160,7 @@ class WelcomeCommand extends BasePouchCommand {
       
       // 🔍 Knuth调试：验证ResourceManager加载结果
       const loadedTools = this.resourceManager.registryData.getResourcesByProtocol('tool')
-      logger.info(`[WelcomeCommand] 📦 ResourceManager加载的工具: ${loadedTools.map(t => t.id).join(', ') || '无'}`)
+      logger.info(`[WelcomeCommand] ResourceManager加载的工具: ${loadedTools.map(t => t.id).join(', ') || '无'}`)
       
     } catch (error) {
       logger.warn('[WelcomeCommand] 资源刷新失败:', error.message)

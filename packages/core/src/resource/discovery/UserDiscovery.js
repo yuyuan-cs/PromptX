@@ -114,7 +114,7 @@ class UserDiscovery extends BaseDiscovery {
         })
       }
 
-      logger.info(`[UserDiscovery] ✅ User 扫描完成，发现 ${resources.length} 个资源`)
+      logger.info(`[UserDiscovery] User 扫描完成，发现 ${resources.length} 个资源`)
       return resources
       
     } catch (error) {
@@ -225,7 +225,7 @@ class UserDiscovery extends BaseDiscovery {
         })
         
         registryData.addResource(resourceData)
-        logger.info(`[UserDiscovery] ✅ 成功添加${protocol}资源: ${resourceId} at ${relativePath}`)
+        logger.info(`[UserDiscovery] 成功添加${protocol}资源: ${resourceId} at ${relativePath}`)
       }
     }
   }
@@ -323,7 +323,7 @@ class UserDiscovery extends BaseDiscovery {
       // 保存注册表
       await registryData.save()
       
-      logger.info(`[UserDiscovery] ✅ User 注册表生成完成，发现 ${registryData.size} 个资源`)
+      logger.info(`[UserDiscovery] User 注册表生成完成，发现 ${registryData.size} 个资源`)
       return registryData
       
     } catch (error) {
@@ -345,13 +345,13 @@ class UserDiscovery extends BaseDiscovery {
         const registryData = await RegistryData.fromFile('user', registryPath)
         
         if (registryData.size > 0) {
-          logger.info(`[UserDiscovery] 📋 从注册表加载 ${registryData.size} 个资源`)
+          logger.info(`[UserDiscovery] 从注册表加载 ${registryData.size} 个资源`)
           return registryData
         }
       }
       
       // 动态生成注册表
-      logger.info(`[UserDiscovery] 📋 User 注册表无效，重新生成`)
+      logger.info(`[UserDiscovery] User 注册表无效，重新生成`)
       return await this.generateRegistry()
       
     } catch (error) {

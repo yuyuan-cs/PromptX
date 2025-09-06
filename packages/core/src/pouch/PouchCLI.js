@@ -165,7 +165,7 @@ class PouchCLI {
    * 运行交互式CLI
    */
   async runInteractive () {
-    logger.info('🎯 欢迎使用 PromptX 锦囊系统！')
+    logger.info(' 欢迎使用 PromptX 锦囊系统！')
     logger.info('输入 "help" 查看帮助，"exit" 退出\n')
 
     const readline = require('readline')

@@ -113,14 +113,14 @@ export class FastMCPStdioServer {
     }: any = options;
 
     // 打印服务器配置信息
-    logger.info(`🚀 Starting FastMCP Stdio Server:
-    📝 Name: ${this.name}
-    🔢 Version: ${this.version}
-    📋 Description: ${this.description}
-    🐛 Debug: ${debug}
-    📥 Input Stream: ${!!inputStream}
-    📤 Output Stream: ${!!outputStream}
-     Error Stream: ${!!errorStream}`);
+    logger.info(`Starting FastMCP Stdio Server:
+    Name: ${this.name}
+    Version: ${this.version}
+    Description: ${this.description}
+    Debug: ${debug}
+    Input Stream: ${!!inputStream}
+    Output Stream: ${!!outputStream}
+    Error Stream: ${!!errorStream}`);
 
     // 保存流引用
     this.streams.input = inputStream;
@@ -175,7 +175,7 @@ export class FastMCPStdioServer {
       
       // 始终输出启动信息到 info 级别
       logger.info('FastMCP Stdio Server started');
-      logger.info(`📊 Tools: ${this.tools.size} registered`);
+      logger.info(`Tools: ${this.tools.size} registered`);
 
       // 设置信号处理
       this.setupSignalHandlers();
@@ -207,7 +207,7 @@ export class FastMCPStdioServer {
       this.status.running = false;
       
       // 始终输出停止信息到 info 级别
-      logger.info('🛑 FastMCP Stdio Server stopped');
+      logger.info('FastMCP Stdio Server stopped');
     } catch (error) {
       logger.error('Error stopping server:', error);
       throw error;
@@ -663,7 +663,7 @@ export class FastMCPStdioServer {
   setupSignalHandlers() {
     const shutdown = async (signal) => {
       if (this.config.debug) {
-        logger.info(`\n🛑 Received ${signal}, shutting down...`);
+        logger.info(`\n Received ${signal}, shutting down...`);
       }
       await this.stop();
       process.exit(0);

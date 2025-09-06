@@ -60,11 +60,11 @@ class ProjectManager {
     })
     
     if (!this.currentProject.initialized) {
-      logger.error(`[ProjectManager DEBUG] ❌ 项目未初始化，将抛出错误`)
+      logger.error(`[ProjectManager DEBUG]  项目未初始化，将抛出错误`)
       throw new Error('项目未初始化，请先调用 init 命令')
     }
     
-    logger.debug(`[ProjectManager DEBUG] ✅ 返回项目路径: ${this.currentProject.workingDirectory}`)
+    logger.debug(`[ProjectManager DEBUG]  返回项目路径: ${this.currentProject.workingDirectory}`)
     return this.currentProject.workingDirectory
   }
 
@@ -78,11 +78,11 @@ class ProjectManager {
     logger.debug(`[ProjectManager DEBUG] currentProject状态:`, JSON.stringify(this.currentProject, null, 2))
     
     if (!this.currentProject.initialized) {
-      logger.error(`[ProjectManager DEBUG] ❌ 项目未初始化，将抛出错误`)
+      logger.error(`[ProjectManager DEBUG]  项目未初始化，将抛出错误`)
       throw new Error('项目未初始化，请先调用 init 命令')
     }
     
-    logger.debug(`[ProjectManager DEBUG] ✅ 返回项目信息`)
+    logger.debug(`[ProjectManager DEBUG]  返回项目信息`)
     return { ...this.currentProject }
   }
 
@@ -487,7 +487,7 @@ ${projectList}
     
     const serverEnv = getGlobalServerEnvironment()
     if (!serverEnv.isInitialized()) {
-      logger.error(`[ProjectManager DEBUG] ❌ ServerEnvironment未初始化`)
+      logger.error(`[ProjectManager DEBUG]  ServerEnvironment未初始化`)
       throw new Error('ServerEnvironment not initialized')
     }
     

@@ -203,8 +203,8 @@ export class FastMCPHttpServer {
       this.status.endpoint = this.config.endpoint;
       
       logger.info(`MCP HTTP Server started on http://${this.config.host}:${this.config.port}${this.config.endpoint}`);
-      logger.info(`📊 Mode: ${this.config.stateless ? 'Stateless' : 'Stateful'} (Schema)`);
-      logger.info(`🔧 Tools: ${this.tools.size} registered`);
+      logger.info(`Mode: ${this.config.stateless ? 'Stateless' : 'Stateful'} (Schema)`);
+      logger.info(`Tools: ${this.tools.size} registered`);
       
       if (this.config.debug) {
         logger.debug('Debug mode enabled');
@@ -621,7 +621,7 @@ export class FastMCPHttpServer {
    */
   setupSignalHandlers() {
     const shutdown = async (signal) => {
-      logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`);
+      logger.info(`\n Received ${signal}, shutting down gracefully...`);
       await this.stop();
       process.exit(0);
     };

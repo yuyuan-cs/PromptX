@@ -61,7 +61,7 @@ export class MCPServerManager {
    * Start STDIO transport server
    */
   private async startStdioServer(): Promise<void> {
-    logger.info(chalk.gray('📡 Starting STDIO transport mode...'))
+    logger.info(chalk.gray('Starting STDIO transport mode...'))
     
     this.server = new FastMCPStdioServer({
       debug: this.options.debug
@@ -69,7 +69,7 @@ export class MCPServerManager {
     
     await this.server.start()
     logger.info(chalk.green('STDIO MCP Server started successfully'))
-    logger.info(chalk.gray('📝 Ready to receive messages via standard I/O'))
+    logger.info(chalk.gray('Ready to receive messages via standard I/O'))
   }
 
   /**
@@ -83,7 +83,7 @@ export class MCPServerManager {
       stateless = false 
     } = this.options
     
-    logger.info(chalk.cyan(`📡 Starting HTTP transport mode on ${host}:${port}...`))
+    logger.info(chalk.cyan(`Starting HTTP transport mode on ${host}:${port}...`))
     
     this.server = new FastMCPHttpServer({
       debug: this.options.debug,
@@ -98,8 +98,8 @@ export class MCPServerManager {
     // Display server information
     logger.info(chalk.green(`MCP HTTP Server started on http://${host}:${port}/mcp`))
     logger.info('')
-    logger.info(chalk.gray(`📊 Mode: ${stateless ? 'Stateless' : 'Stateful (Schema)'}`))
-    logger.info(chalk.gray(`🔧 Tools: ${this.server.tools?.size || 0} registered`))
+    logger.info(chalk.gray(`Mode: ${stateless ? 'Stateless' : 'Stateful (Schema)'}`))
+    logger.info(chalk.gray(`Tools: ${this.server.tools?.size || 0} registered`))
     logger.info(chalk.gray(`HTTP MCP Server started on ${host}:${port}`))
     logger.info('')
   }

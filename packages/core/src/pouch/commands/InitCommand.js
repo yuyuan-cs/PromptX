@@ -84,7 +84,7 @@ class InitCommand extends BasePouchCommand {
     // 这将设置 ProjectManager.currentProject 状态，确保后续操作有正确的项目上下文
     const projectConfig = await ProjectManager.registerCurrentProject(projectPath, ideType)
     
-    logger.debug(`[InitCommand] 🎯 项目状态已设置: ${projectConfig.projectPath} -> ${projectConfig.mcpId} (${ideType}) [${projectConfig.transport}]`)
+    logger.debug(`[InitCommand]  项目状态已设置: ${projectConfig.projectPath} -> ${projectConfig.mcpId} (${ideType}) [${projectConfig.transport}]`)
     logger.debug(`[InitCommand] IDE类型: ${userIdeType ? `用户指定(${ideType})` : `自动检测(${detectedIdeType})`}`)
 
     // 现在项目状态已设置，可以安全初始化依赖组件

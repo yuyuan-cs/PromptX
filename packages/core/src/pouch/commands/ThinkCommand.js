@@ -49,12 +49,12 @@ class ThinkCommand extends BasePouchCommand {
       // 使用 CognitionManager 进行思考
       const prompt = await this.cognitionManager.think(role, thought)
 
-      logger.info('✅ [ThinkCommand] 思考指导生成完成')
+      logger.info(' [ThinkCommand] 思考指导生成完成')
       return this.formatThinkResponse(thought, prompt, role)
       
     } catch (error) {
-      logger.error(`❌ [ThinkCommand] 思考失败: ${error.message}`)
-      logger.error(`🐛 [ThinkCommand] 错误堆栈:\n${error.stack}`)
+      logger.error(` [ThinkCommand] 思考失败: ${error.message}`)
+      logger.error(` [ThinkCommand] 错误堆栈:\n${error.stack}`)
       
       return `❌ 思考失败：${error.message}
 
@@ -96,7 +96,7 @@ ${error.stack}
           throw new Error('thought必须是对象格式')
         }
       } catch (error) {
-        logger.error(`❌ [ThinkCommand] 解析thought参数失败: ${error.message}`)
+        logger.error(` [ThinkCommand] 解析thought参数失败: ${error.message}`)
         thought = null
       }
     }

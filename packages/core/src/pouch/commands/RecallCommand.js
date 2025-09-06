@@ -42,7 +42,7 @@ class RecallCommand extends BasePouchCommand {
     }
 
     logger.info('🧠 [RecallCommand] 开始记忆检索流程 (基于认知体系)')
-    logger.info(`🔍 [RecallCommand] 角色: ${role}, 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
+    logger.info(` [RecallCommand] 角色: ${role}, 查询内容: ${query ? `"${query}"` : '全部记忆'}`)
 
     try {
       let mind = null
@@ -75,7 +75,7 @@ class RecallCommand extends BasePouchCommand {
       }
       
       const nodeCount = mind ? mind.activatedCues.size : 0
-      logger.info(`✅ [RecallCommand] 认知检索完成 - 激活 ${nodeCount} 个节点`)
+      logger.info(` [RecallCommand] 认知检索完成 - 激活 ${nodeCount} 个节点`)
 
       // 设置上下文
       this.context.roleId = role
@@ -100,8 +100,8 @@ class RecallCommand extends BasePouchCommand {
       this.registerLayer(roleLayer)
 
     } catch (error) {
-      logger.error(`❌ [RecallCommand] 记忆检索失败: ${error.message}`)
-      logger.debug(`🐛 [RecallCommand] 错误堆栈: ${error.stack}`)
+      logger.error(` [RecallCommand] 记忆检索失败: ${error.message}`)
+      logger.debug(` [RecallCommand] 错误堆栈: ${error.stack}`)
       
       // 错误情况：只创建角色层显示错误
       const roleLayer = new RoleLayer()

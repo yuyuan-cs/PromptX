@@ -371,11 +371,11 @@ class FilePatternDiscovery extends BaseDiscovery {
         await registryData.save()
       }
       
-      logger.info(`[${this.source}] ✅ 注册表生成完成，共发现 ${registryData.size} 个资源`)
+      logger.info(`[${this.source}]  注册表生成完成，共发现 ${registryData.size} 个资源`)
       return registryData
       
     } catch (error) {
-      logger.error(`[${this.source}] ❌ 注册表生成失败: ${error.message}`)
+      logger.error(`[${this.source}]  注册表生成失败: ${error.message}`)
       throw error
     }
   }

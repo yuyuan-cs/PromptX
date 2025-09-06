@@ -182,7 +182,7 @@ program
   .option('--debug', '启用调试模式', false)
   .action(async (options) => {
     try {
-      logger.info(chalk.cyan(`🚀 Starting MCP Server via PromptX CLI...`))
+      logger.info(chalk.cyan(`Starting MCP Server via PromptX CLI...`))
       
       // Use MCPServerManager for unified server management
       await MCPServerManager.launch({
