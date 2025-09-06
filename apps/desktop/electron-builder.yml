@@ -25,6 +25,8 @@ files:
   - "!**/*.{md,MD,markdown,txt}"
   - "node_modules/@promptx/resource/dist/resources/**/*"
 
+afterSign: build/notarize.js
+
 mac:
   category: public.app-category.developer-tools
   icon: assets/icons/icon.icns
@@ -32,7 +34,6 @@ mac:
   gatekeeperAssess: false
   entitlements: assets/entitlements.mac.plist
   entitlementsInherit: assets/entitlements.mac.plist
-  notarize: true
   target:
     - target: dmg
       arch: [x64, arm64]
