@@ -62,7 +62,7 @@ jobs:
         run: pnpm install --frozen-lockfile
         
       - name: Import Code-Signing Certificates
-        uses: Apple-Actions/import-codesign-certs@v1
+        uses: Apple-Actions/import-codesign-certs@v2
         with:
           p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
           p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -72,6 +72,8 @@ jobs:
           cd apps/desktop
           pnpm package:mac
         env:
+          CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
           CSC_IDENTITY_AUTO_DISCOVERY: true
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
