@@ -34,8 +34,7 @@ jobs:
         with:
           name: windows-build
           path: |
-            apps/desktop/release/*.exe
-            apps/desktop/release/*.zip
+            apps/desktop/release/*-setup.exe
             
   build-mac:
     runs-on: macos-latest
@@ -52,15 +51,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         
-      - name: Build macOS
+      - name: Import Code-Signing Certificates
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          
+      - name: Build and Sign macOS
         run: |
           cd apps/desktop
           pnpm package:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: true
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mac-build
+          name: mac-build-signed
           path: |
             apps/desktop/release/*.dmg
-            apps/desktop/release/*.zip
