@@ -45,10 +45,5 @@ export default defineConfig({
     console.log('Copying ESM wrapper...')
     fs.copyFileSync('./src/index.esm.js', './dist/index.mjs')
     console.log('ESM wrapper copied to dist/index.mjs')
-    
-    // 复制 PnpmWrapper 文件（需要独立存在）
-    console.log('Copying PnpmWrapper.js...')
-    fs.copyFileSync('./src/toolx/PnpmWrapper.js', './dist/PnpmWrapper.js')
-    console.log('PnpmWrapper.js copied to dist/')
   }
 })
