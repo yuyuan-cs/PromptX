@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["Build Desktop Apps"]
     types: [completed]
-    branches: [main]
+    # 移除 branches 限制，因为 tag 触发的构建不属于任何 branch
   workflow_dispatch:  # 允许手动触发
     inputs:
       tag:
