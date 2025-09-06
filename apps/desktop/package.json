@@ -27,7 +27,8 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "typecheck": "tsc --noEmit",
     "package": "pnpm build && electron-builder",
-    "package:mac": "pnpm build && electron-builder --mac",
+    "package:mac": "pnpm build && electron-builder --config electron-builder-dev.yml",
+    "package:mac:skip": "electron-builder --config electron-builder-dev.yml",
     "package:win": "pnpm build && electron-builder --win",
     "package:linux": "pnpm build && electron-builder --linux",
     "dist": "pnpm package:mac"
