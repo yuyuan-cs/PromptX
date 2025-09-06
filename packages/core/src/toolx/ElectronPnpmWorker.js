@@ -47,13 +47,41 @@ class ElectronPnpmWorker {
       
       logger.debug(`[ElectronPnpmWorker] utilityProcess.fork is available`);
       
-      // 获取worker脚本路径
-      const workerPath = path.join(__dirname, 'electron-pnpm-worker-script.js');
+      // 获取 pnpm 路径和参数
+      const pnpmBinaryPath = PnpmUtils.getPnpmBinaryPath();
+      const pnpmArgs = PnpmUtils.getOptimizedPnpmArgs();
+      const depsList = PnpmUtils.buildDependenciesList(dependencies);
       
-      logger.debug(`[ElectronPnpmWorker] Creating utilityProcess worker: ${workerPath}`);
+      logger.debug(`[ElectronPnpmWorker] Running pnpm directly: ${pnpmBinaryPath}`);
+      logger.debug(`[ElectronPnpmWorker] Working directory: ${workingDir}`);
+      logger.debug(`[ElectronPnpmWorker] Dependencies: [${depsList}]`);
       
-      // 创建utilityProcess
-      const worker = utilityProcess.fork(workerPath);
+      // 直接用 utilityProcess fork pnpm！
+      // utilityProcess.fork(modulePath, args, options)
+      const worker = utilityProcess.fork(pnpmBinaryPath, pnpmArgs, {
+        cwd: workingDir,
+        stdio: 'pipe',  // 需要捕获输出
+        env: {
+          // 保留必要的系统环境变量
+          PATH: process.env.PATH,
+          HOME: process.env.HOME,
+          USER: process.env.USER,
+          USERPROFILE: process.env.USERPROFILE,
+          APPDATA: process.env.APPDATA,
+          LOCALAPPDATA: process.env.LOCALAPPDATA,
+          
+          // 设置Node.js和pnpm相关环境
+          NODE_ENV: 'production',
+          CI: '1',
+          
+          // 设置pnpm配置
+          PNPM_HOME: process.env.PNPM_HOME,
+          
+          // 确保非交互模式
+          npm_config_yes: 'true',
+          npm_config_audit: 'false'
+        }
+      });
       
       return new Promise((resolve, reject) => {
         let workerTimeout;
@@ -76,95 +104,50 @@ class ElectronPnpmWorker {
           reject(new Error(`pnpm installation timeout after ${elapsed}s`));
         }, timeout);
         
-        // 监听worker消息 - utilityProcess 使用不同的事件名
-        worker.on('message', (message) => {
-          const { type, data, error: errorMsg, details } = message;
-          
-          logger.debug(`[ElectronPnpmWorker] Received message: ${type}`);
-          
-          switch (type) {
-            case 'log':
-              logger.debug(`[ElectronPnpmWorker] ${data}`);
-              break;
-              
-            case 'success':
-              if (isResolved) return;
-              isResolved = true;
-              
-              clearTimeout(workerTimeout);
-              logger.info(`[ElectronPnpmWorker] ${data.message}`);
-              
-              try {
-                worker.kill();
-              } catch (killError) {
-                logger.warn(`[ElectronPnpmWorker] Error killing worker: ${killError.message}`);
-              }
-              
-              resolve({
-                stdout: data.stdout || '',
-                stderr: data.stderr || '',
-                elapsed: data.elapsed
-              });
-              break;
-              
-            case 'error':
-              if (isResolved) return;
-              isResolved = true;
-              
-              clearTimeout(workerTimeout);
-              logger.error(`[ElectronPnpmWorker] Worker error: ${errorMsg}`);
-              
-              if (details) {
-                logger.error(`[ElectronPnpmWorker] Error details:`, details);
-              }
-              
-              try {
-                worker.kill();
-              } catch (killError) {
-                logger.warn(`[ElectronPnpmWorker] Error killing worker: ${killError.message}`);
-              }
-              
-              reject(new Error(errorMsg));
-              break;
-              
-            default:
-              logger.warn(`[ElectronPnpmWorker] Unknown message type: ${type}`);
+        let stdout = '';
+        let stderr = '';
+        
+        // 监听标准输出
+        worker.stdout?.on('data', (data) => {
+          const output = data.toString();
+          stdout += output;
+          // 只记录重要输出
+          if (output.includes('Progress:') || output.includes('Done') || output.includes('error')) {
+            logger.debug(`[ElectronPnpmWorker] stdout: ${output.trim()}`);
           }
+        });
+        
+        // 监听标准错误
+        worker.stderr?.on('data', (data) => {
+          const error = data.toString();
+          stderr += error;
+          logger.debug(`[ElectronPnpmWorker] stderr: ${error.trim()}`);
         });
         
         // 监听worker进程事件
         worker.on('spawn', () => {
-          logger.debug(`[ElectronPnpmWorker] Worker process spawned successfully`);
-          
-          // 准备安装参数
-          const installOptions = {
-            workingDir,
-            dependencies,
-            pnpmBinaryPath: PnpmUtils.getPnpmBinaryPath(),
-            pnpmArgs: PnpmUtils.getOptimizedPnpmArgs(),
-            depsList: PnpmUtils.buildDependenciesList(dependencies)
-          };
-          
-          // 发送安装命令到worker
-          worker.postMessage({
-            command: 'install',
-            options: installOptions
-          });
+          logger.debug(`[ElectronPnpmWorker] pnpm process spawned successfully`);
         });
         
         worker.on('exit', (code) => {
           if (isResolved) return;
+          isResolved = true;
           
           clearTimeout(workerTimeout);
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
           
-          if (code !== 0) {
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            logger.error(`[ElectronPnpmWorker] Worker process exited with code ${code} after ${elapsed}s`);
-            
-            if (!isResolved) {
-              isResolved = true;
-              reject(new Error(`Worker process exited with code ${code}`));
-            }
+          if (code === 0) {
+            // pnpm 成功完成
+            logger.info(`[ElectronPnpmWorker] pnpm completed successfully in ${elapsed}s`);
+            resolve({
+              stdout: stdout || '',
+              stderr: stderr || '',
+              elapsed: elapsed
+            });
+          } else {
+            // pnpm 失败
+            logger.error(`[ElectronPnpmWorker] pnpm exited with code ${code} after ${elapsed}s`);
+            reject(new Error(`pnpm exited with code ${code}: ${stderr}`));
           }
         });
         
@@ -173,8 +156,8 @@ class ElectronPnpmWorker {
           isResolved = true;
           
           clearTimeout(workerTimeout);
-          logger.error(`[ElectronPnpmWorker] Worker process error: ${error.message}`);
-          reject(new Error(`Worker process error: ${error.message}`));
+          logger.error(`[ElectronPnpmWorker] pnpm process error: ${error.message}`);
+          reject(new Error(`pnpm process error: ${error.message}`));
         });
       });
       
