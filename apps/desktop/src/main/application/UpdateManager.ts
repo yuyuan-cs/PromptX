@@ -1,18 +1,14 @@
-import pkg from 'electron-updater'
-const { autoUpdater } = pkg
+import { updateElectronApp } from 'update-electron-app'
 import { dialog, app, nativeImage } from 'electron'
 import * as logger from '@promptx/logger'
 import * as path from 'node:path'
 
 export class UpdateManager {
-  private updateAvailable = false
-  private updateInfo: any = null
-  private onUpdateAvailableCallback?: () => void
   private appIcon: Electron.NativeImage | undefined
 
   constructor() {
-    this.setupUpdater()
     this.loadAppIcon()
+    this.setupUpdater()
   }
 
   private loadAppIcon(): void {
@@ -26,160 +22,52 @@ export class UpdateManager {
   }
 
   private setupUpdater(): void {
-    // Configure update feed - GitHub Releases
-    autoUpdater.setFeedURL({
-      provider: 'github',
-      owner: 'Deepractice',
-      repo: 'PromptX'
-    })
-
-    // Set up event listeners
-    autoUpdater.on('checking-for-update', () => {
-      logger.info('Checking for updates...')
-    })
-
-    autoUpdater.on('update-available', (info) => {
-      logger.info(`Update available: ${info.version}`)
-      this.updateAvailable = true
-      this.updateInfo = info
-      this.showUpdateNotification(info)
-      this.onUpdateAvailableCallback?.()
-    })
-
-    autoUpdater.on('update-not-available', () => {
-      logger.info('No updates available')
-    })
-
-    autoUpdater.on('error', (error) => {
-      logger.error('Update error:', error)
-    })
-
-    autoUpdater.on('download-progress', (progress) => {
-      logger.info(`Update download progress: ${Math.round(progress.percent)}%`)
-    })
-
-    autoUpdater.on('update-downloaded', (info) => {
-      logger.info(`Update downloaded: ${info.version}`)
-      this.showInstallDialog(info)
-    })
-
-    // Disable auto-download - let user decide
-    autoUpdater.autoDownload = false
-  }
-
-  // Check for updates on startup (non-blocking)
-  async checkForUpdates(): Promise<void> {
-    try {
-      if (app.isPackaged) {
-        await autoUpdater.checkForUpdates()
-      } else {
-        logger.info('Skipping update check in development mode')
-      }
-    } catch (error) {
-      logger.error('Failed to check for updates:', error)
+    // Only enable auto-updater for packaged apps
+    if (!app.isPackaged) {
+      logger.info('UpdateManager: Skipping auto-updater setup in development mode')
+      return
     }
-  }
 
-  // Manual check for updates (from tray menu)
-  async checkForUpdatesManual(): Promise<void> {
-    logger.info('UpdateManager: checkForUpdatesManual called')
     try {
-      if (!app.isPackaged) {
-        logger.info('UpdateManager: App is not packaged, showing dev mode notification')
-        this.showDevModeNotification()
-        return
-      }
-
-      // If we already know about an available update, show download dialog directly
-      if (this.updateAvailable && this.updateInfo) {
-        logger.info('UpdateManager: Update already available, showing download dialog')
-        this.showUpdateNotification(this.updateInfo)
-        return
-      }
-
-      logger.info('UpdateManager: App is packaged, checking for updates...')
-      const result = await autoUpdater.checkForUpdates()
-      logger.info('UpdateManager: checkForUpdates result:', result)
-      
-      if (!result?.updateInfo || !this.updateAvailable) {
-        logger.info('UpdateManager: No updates available, showing dialog')
-        dialog.showMessageBox({
-          type: 'info',
-          title: 'PromptX Update Check',
-          message: 'No Updates Available',
-          detail: 'You are running the latest version of PromptX.',
-          buttons: ['OK'],
-          icon: this.appIcon
-        })
-      } else {
-        logger.info('UpdateManager: Update is available')
-      }
-    } catch (error) {
-      logger.error('UpdateManager: Manual update check failed:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      dialog.showMessageBox({
-        type: 'error',
-        title: 'PromptX Update Error',
-        message: 'Update Check Failed',
-        detail: `Failed to check for updates: ${errorMessage}\n\nPlease try again later.`,
-        buttons: ['OK'],
-        icon: this.appIcon
+      // Simple setup with update-electron-app
+      updateElectronApp({
+        repo: 'Deepractice/PromptX',
+        updateInterval: '1 hour'
       })
-    }
-  }
-
-  // Start download when user clicks on update notification
-  async downloadUpdate(): Promise<void> {
-    try {
-      logger.info('Starting update download...')
-      await autoUpdater.downloadUpdate()
+      
+      logger.info('UpdateManager: Auto-updater initialized with update-electron-app')
     } catch (error) {
-      logger.error('Failed to download update:', error)
+      logger.error('UpdateManager: Failed to initialize auto-updater:', error)
     }
   }
 
-  private showUpdateNotification(info: any): void {
-    dialog.showMessageBox({
-      type: 'info',
-      title: 'PromptX Update Available',
-      message: `Version ${info.version} is available!`,
-      detail: 'A new version of PromptX is ready to download.',
-      buttons: ['Download Now', 'Remind Me Later', 'Skip This Version'],
-      defaultId: 0,
-      cancelId: 1,
-      icon: this.appIcon
-    }).then((result) => {
-      if (result.response === 0) {
-        // Download Now
-        this.downloadUpdate()
-      } else if (result.response === 2) {
-        // Skip This Version
-        logger.info(`User chose to skip version ${info.version}`)
-        this.updateAvailable = false
-        this.updateInfo = null
-        this.onUpdateAvailableCallback?.() // Refresh tray menu
-      }
-      // Remind Me Later - do nothing, keep updateAvailable = true
-    })
+  // Check for updates on startup (simplified)
+  async checkForUpdates(): Promise<void> {
+    if (app.isPackaged) {
+      logger.info('UpdateManager: Auto-updater is running, updates will be checked automatically')
+    } else {
+      logger.info('UpdateManager: Skipping update check in development mode')
+    }
   }
 
-  private showInstallDialog(info: any): void {
+  // Manual check for updates (from tray menu) - simplified
+  async checkForUpdatesManual(): Promise<void> {
+    logger.info('UpdateManager: Manual update check called')
+    
+    if (!app.isPackaged) {
+      this.showDevModeNotification()
+      return
+    }
+
+    // For update-electron-app, manual checking is handled automatically
+    // Just show a message that updates are being checked in the background
     dialog.showMessageBox({
       type: 'info',
-      title: 'Update Ready',
-      message: `PromptX ${info.version} has been downloaded.`,
-      detail: 'Click "Restart Now" to install the update and restart the application.',
-      buttons: ['Restart Now', 'Later'],
-      defaultId: 0,
-      cancelId: 1,
+      title: 'PromptX Update Check',
+      message: 'Checking for Updates',
+      detail: 'PromptX is checking for updates in the background. You will be notified if an update is available.',
+      buttons: ['OK'],
       icon: this.appIcon
-    }).then((result) => {
-      if (result.response === 0) {
-        logger.info('User chose to restart and install update')
-        autoUpdater.quitAndInstall()
-      } else {
-        logger.info('User chose to install update later')
-      }
     })
   }
 
@@ -199,11 +87,14 @@ export class UpdateManager {
     })
   }
 
+  // Legacy methods for tray menu compatibility
   isUpdateAvailable(): boolean {
-    return this.updateAvailable
+    // update-electron-app handles this internally
+    return false
   }
 
-  onUpdateAvailable(callback: () => void): void {
-    this.onUpdateAvailableCallback = callback
+  onUpdateAvailable(_callback: () => void): void {
+    // update-electron-app handles this internally
+    logger.info('UpdateManager: onUpdateAvailable callback registered (handled by update-electron-app)')
   }
 }

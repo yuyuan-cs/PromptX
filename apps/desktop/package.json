@@ -36,7 +36,7 @@
   "dependencies": {
     "@promptx/core": "workspace:*",
     "@promptx/mcp-server": "workspace:*",
-    "electron-updater": "^6.6.2"
+    "update-electron-app": "^3.1.1"
   },
   "devDependencies": {
     "electron": "28.3.3",

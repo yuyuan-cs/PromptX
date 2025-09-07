@@ -32,12 +32,16 @@ mac:
   gatekeeperAssess: false
   entitlements: assets/entitlements.mac.plist
   entitlementsInherit: assets/entitlements.mac.plist
+  artifactName: promptx-desktop-${version}-mac-${arch}.${ext}
   target:
     - target: dmg
+      arch: [x64, arm64]
+    - target: zip
       arch: [x64, arm64]
 
 win:
   icon: assets/icons/icon.png
+  artifactName: promptx-desktop-${version}-win32-${arch}.${ext}
   target:
     - nsis
 
@@ -56,7 +60,7 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: ${productName}
-  artifactName: promptx-desktop-${version}-${os}-${arch}-setup.${ext}
+  artifactName: promptx-desktop-${version}-win32-${arch}-setup.${ext}
 
 dmg:
   contents:
@@ -68,7 +72,8 @@ dmg:
       path: /Applications
 
 publish:
-  provider: generic
-  url: https://github.com/Deepractice/PromptX/releases/download/
+  provider: github
+  owner: Deepractice
+  repo: PromptX
 
 npmRebuild: false

@@ -57,6 +57,7 @@ jobs:
           name: macos-build
           path: |
             apps/desktop/release/*.dmg
+            apps/desktop/release/*.zip
             apps/desktop/release/latest-mac.yml
           if-no-files-found: warn
 
@@ -161,6 +162,7 @@ jobs:
         with:
           files: |
             macos-build/*.dmg
+            macos-build/*.zip
             macos-build/latest-mac.yml
             windows-build/*setup*.exe
             windows-build/latest.yml
