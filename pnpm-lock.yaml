@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@pnpm/logger':
+        specifier: 1001.0.0
+        version: 1001.0.0
+      '@pnpm/worker':
+        specifier: ^1000.1.11
+        version: 1000.1.11(@pnpm/logger@1001.0.0)(@types/node@24.3.0)
     devDependencies:
       '@changesets/changelog-github':
         specifier: ^0.5.1

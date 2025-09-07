@@ -34,7 +34,9 @@
   },
   "dependencies": {
     "@pnpm/core": "^1010.0.2",
+    "@pnpm/logger": "^1001.0.0",
     "@pnpm/store-connection-manager": "^1002.0.11",
+    "@pnpm/worker": "^1000.1.11",
     "@promptx/logger": "workspace:*",
     "@promptx/resource": "workspace:*",
     "env-paths": "2.2.1",
