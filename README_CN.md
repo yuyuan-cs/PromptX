@@ -76,8 +76,8 @@ AI：   以专业产品经理身份，提供深度产品策略建议
    {
      "mcpServers": {
        "promptx": {
-         "type": "http",
-         "url": "http://localhost:5203/mcp"
+         "type": "streamable-http",
+         "url": "http://127.0.0.1:5203/mcp"
        }
      }
    }

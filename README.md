@@ -76,8 +76,8 @@ AI:   Provides in-depth product strategy advice as a professional product manage
    {
      "mcpServers": {
        "promptx": {
-         "type": "http",
-         "url": "http://localhost:5203/mcp"
+         "type": "streamable-http",
+         "url": "http://127.0.0.1:5203/mcp"
        }
      }
    }
