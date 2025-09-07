@@ -74,7 +74,5 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@pnpm/logger": "1001.0.0",
-    "@pnpm/worker": "^1000.1.11"
   }
 }

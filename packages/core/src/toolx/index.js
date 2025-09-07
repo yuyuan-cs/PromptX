@@ -6,7 +6,7 @@
 // ToolSandbox 框架内部使用常规模块导入
 
 // 异步模块加载
-let ToolSandbox, ToolValidator, ToolUtils, PnpmInstaller, ToolInterface;
+let ToolSandbox, ToolValidator, ToolUtils, PackageInstaller, ToolInterface;
 
 async function initializeModules() {
   if (!ToolSandbox) {
@@ -14,7 +14,7 @@ async function initializeModules() {
     ToolSandbox = require('./ToolSandbox');
     ToolValidator = require('./ToolValidator');
     ToolUtils = require('./ToolUtils');
-    PnpmInstaller = require('./PnpmInstaller');
+    PackageInstaller = require('./PackageInstaller');
     ToolInterface = require('./ToolInterface');
   }
 }
@@ -124,7 +124,7 @@ module.exports = {
   get ToolSandbox() { return ToolSandbox; },
   get ToolValidator() { return ToolValidator; },
   get ToolUtils() { return ToolUtils; },
-  get PnpmInstaller() { return PnpmInstaller; },
+  get PackageInstaller() { return PackageInstaller; },
   
   // 动态获取接口规范
   get TOOL_INTERFACE() { return ToolInterface?.TOOL_INTERFACE; },

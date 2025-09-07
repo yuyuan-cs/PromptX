@@ -433,13 +433,13 @@ class ToolSandbox {
    * 安装依赖
    */
   async installDependencies() {
-    const PnpmInstaller = require('./PnpmInstaller');
+    const PackageInstaller = require('./PackageInstaller');
     
     // 创建package.json
-    await PnpmInstaller.createPackageJson(this.sandboxPath, this.toolId, this.dependencies);
+    await PackageInstaller.createPackageJson(this.sandboxPath, this.toolId, this.dependencies);
     
     // 安装依赖
-    await PnpmInstaller.install({
+    await PackageInstaller.install({
       workingDir: this.sandboxPath,
       dependencies: this.dependencies,
       timeout: this.options.timeout
@@ -452,7 +452,8 @@ class ToolSandbox {
   async checkNodeModulesExists() {
     try {
       const nodeModulesPath = require('path').join(this.sandboxPath, 'node_modules');
-      await this.fs.promises.access(nodeModulesPath);
+      const fs = require('fs').promises;
+      await fs.access(nodeModulesPath);
       return true;
     } catch (error) {
       return false;
