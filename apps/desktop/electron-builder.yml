@@ -72,3 +72,6 @@ dmg:
       path: /Applications
 
 npmRebuild: false
+
+# 完全禁用自动发布
+publish: null
