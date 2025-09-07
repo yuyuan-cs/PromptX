@@ -74,4 +74,4 @@ dmg:
 npmRebuild: false
 
 # 生成更新元数据文件
-generateUpdaterInfoForAllChannels: true
+generateUpdatesFilesForAllChannels: true
