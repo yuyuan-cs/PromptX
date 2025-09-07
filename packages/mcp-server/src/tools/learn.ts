@@ -1,4 +1,14 @@
-export default {
+import type { ToolWithHandler } from '~/interfaces/MCPServer.js';
+import { MCPOutputAdapter } from '~/utils/MCPOutputAdapter.js';
+
+const outputAdapter = new MCPOutputAdapter();
+
+/**
+ * Learn 工具 - 专业资源学习器
+ * 
+ * PromptX资源管理体系的统一学习入口
+ */
+export const learnTool: ToolWithHandler = {
   name: 'learn',
   description: `🧠 [专业资源学习器] PromptX资源管理体系的统一学习入口
 通过标准化协议体系加载各类专业资源，是AI获取专业能力和理解工具使用的核心通道。
@@ -62,5 +72,23 @@ export default {
       }
     },
     required: ['resource']
+  },
+  handler: async (args: { resource: string }) => {
+    // 动态导入 @promptx/core
+    const core = await import('@promptx/core');
+    const coreExports = core.default || core;
+    
+    // 获取 cli 对象
+    const cli = (coreExports as any).cli || (coreExports as any).pouch?.cli;
+    
+    if (!cli || !cli.execute) {
+      throw new Error('CLI not available in @promptx/core');
+    }
+    
+    // 执行 learn 命令
+    const result = await cli.execute('learn', [args.resource]);
+    
+    // 使用 OutputAdapter 格式化输出
+    return outputAdapter.convertToMCPFormat(result);
   }
 };

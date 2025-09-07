@@ -1,4 +1,14 @@
-export default {
+import type { ToolWithHandler } from '~/interfaces/MCPServer.js';
+import { MCPOutputAdapter } from '~/utils/MCPOutputAdapter.js';
+
+const outputAdapter = new MCPOutputAdapter();
+
+/**
+ * Action 工具 - 意识初始化，激活特定角色视角
+ * 
+ * 你的意识聚焦到特定角色视角的核心工具
+ */
+export const actionTool: ToolWithHandler = {
   name: 'action',
   description: `🧠 [Consciousness Prime] 意识初始化 - 你的意识聚焦到特定角色视角
 
@@ -76,5 +86,23 @@ Prime(现在) → Experience → Engram → Activate → Integration
       }
     },
     required: ['role']
+  },
+  handler: async (args: { role: string }) => {
+    // 动态导入 @promptx/core
+    const core = await import('@promptx/core');
+    const coreExports = core.default || core;
+    
+    // 获取 cli 对象
+    const cli = (coreExports as any).cli || (coreExports as any).pouch?.cli;
+    
+    if (!cli || !cli.execute) {
+      throw new Error('CLI not available in @promptx/core');
+    }
+    
+    // 执行 action 命令
+    const result = await cli.execute('action', [args.role]);
+    
+    // 使用 OutputAdapter 格式化输出
+    return outputAdapter.convertToMCPFormat(result);
   }
 };

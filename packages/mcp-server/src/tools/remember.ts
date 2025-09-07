@@ -1,4 +1,9 @@
-export default {
+import type { ToolWithHandler } from '~/interfaces/MCPServer.js';
+import { MCPOutputAdapter } from '~/utils/MCPOutputAdapter.js';
+
+const outputAdapter = new MCPOutputAdapter();
+
+export const rememberTool: ToolWithHandler = {
   name: 'remember',
   description: `🧠 [Consciousness Engram] 意识印刻 - 你的理解自然结晶为记忆痕迹
 
@@ -124,5 +129,17 @@ Prime → Experience → Engram(现在) → Activate → Integration
       }
     },
     required: ['role', 'engrams']
+  },
+  handler: async (args: { role: string; engrams: string[] }) => {
+    const core = await import('@promptx/core');
+    const coreExports = core.default || core;
+    const cli = (coreExports as any).cli || (coreExports as any).pouch?.cli;
+    
+    if (!cli || !cli.execute) {
+      throw new Error('CLI not available in @promptx/core');
+    }
+    
+    const result = await cli.execute('remember', [args]);
+    return outputAdapter.convertToMCPFormat(result);
   }
 };

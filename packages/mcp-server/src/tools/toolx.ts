@@ -1,4 +1,9 @@
-export default {
+import type { ToolWithHandler } from '~/interfaces/MCPServer.js';
+import { MCPOutputAdapter } from '~/utils/MCPOutputAdapter.js';
+
+const outputAdapter = new MCPOutputAdapter();
+
+export const toolxTool: ToolWithHandler = {
   name: 'toolx',
   description: `🔧 [ToolX执行器] 执行PromptX工具体系(ToolX)中的JavaScript功能
 基于PromptX工具生态系统，提供安全可控的工具执行环境。
@@ -67,5 +72,21 @@ export default {
       }
     },
     required: ['tool_resource', 'parameters']
+  },
+  handler: async (args: { tool_resource: string; parameters: any; rebuild?: boolean; timeout?: number }) => {
+    const core = await import('@promptx/core');
+    const coreExports = core.default || core;
+    const cli = (coreExports as any).cli || (coreExports as any).pouch?.cli;
+    
+    if (!cli || !cli.execute) {
+      throw new Error('CLI not available in @promptx/core');
+    }
+    
+    const cliArgs = [args.tool_resource, JSON.stringify(args.parameters)];
+    if (args.rebuild) cliArgs.push('--rebuild');
+    if (args.timeout) cliArgs.push('--timeout', args.timeout.toString());
+    
+    const result = await cli.execute('toolx', cliArgs);
+    return outputAdapter.convertToMCPFormat(result);
   }
 };

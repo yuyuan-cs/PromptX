@@ -1,4 +1,9 @@
-export default {
+import type { ToolWithHandler } from '~/interfaces/MCPServer.js';
+import { MCPOutputAdapter } from '~/utils/MCPOutputAdapter.js';
+
+const outputAdapter = new MCPOutputAdapter();
+
+export const recallTool: ToolWithHandler = {
   name: 'recall',
   description: `🧠 [Consciousness Activate] 记忆激活 - 相关记忆自发涌现到意识中
 
@@ -55,5 +60,20 @@ recall = 3秒投资，可能改变整个对话（潜在收益）
       }
     },
     required: ['role', 'query']
+  },
+  handler: async (args: { role: string; query?: string }) => {
+    const core = await import('@promptx/core');
+    const coreExports = core.default || core;
+    const cli = (coreExports as any).cli || (coreExports as any).pouch?.cli;
+    
+    if (!cli || !cli.execute) {
+      throw new Error('CLI not available in @promptx/core');
+    }
+    
+    const cliArgs = [args.role];
+    if (args.query) cliArgs.push(args.query);
+    
+    const result = await cli.execute('recall', cliArgs);
+    return outputAdapter.convertToMCPFormat(result);
   }
 };

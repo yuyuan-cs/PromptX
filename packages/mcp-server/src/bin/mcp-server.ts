@@ -14,8 +14,8 @@ import chalk from 'chalk'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { MCPServerManager } from '../index.js'
 import logger from '@promptx/logger'
+import { PromptXMCPServer } from '../servers/PromptXMCPServer.js'
 
 // Get package.json
 const __filename = fileURLToPath(import.meta.url)
@@ -42,16 +42,21 @@ program
     try {
       logger.info(chalk.cyan(`PromptX MCP Server v${packageJson.version}`))
       
-      // Use MCPServerManager for unified server management
-      await MCPServerManager.launch({
+      // 使用 PromptXMCPServer 统一启动
+      await PromptXMCPServer.launch({
         transport: options.transport as 'stdio' | 'http',
+        version: packageJson.version,
         port: parseInt(options.port),
         host: options.host,
-        cors: options.cors,
+        corsEnabled: options.cors,
         debug: options.debug
       })
+      
     } catch (error) {
       logger.error(`MCP Server startup failed: ${(error as Error).message}`)
+      if (options.debug && (error as Error).stack) {
+        logger.error((error as Error).stack)
+      }
       process.exit(1)
     }
   })
@@ -65,17 +70,17 @@ program.configureHelp({
 // 添加示例说明
 program.addHelpText('after', `
 
-${chalk.cyan('PromptX MCP Server - Bridge AI applications to PromptX')}
-
-${chalk.cyan('Quick Start:')}
-  ${chalk.gray('# STDIO mode (default, suitable for most AI applications)')}
+${chalk.cyan('Examples:')}
+  ${chalk.gray('# STDIO mode (default, for AI applications)')}
   npx @promptx/mcp-server
 
-  ${chalk.gray('# HTTP mode (suitable for web applications and remote connections)')}
+  ${chalk.gray('# HTTP mode (for web applications)')}
   npx @promptx/mcp-server --transport http --port 5203
 
-${chalk.cyan('AI Application Configuration:')}
-  ${chalk.gray('# Claude Desktop configuration example')}
+  ${chalk.gray('# HTTP mode with CORS')}
+  npx @promptx/mcp-server --transport http --port 5203 --cors
+
+${chalk.cyan('Claude Desktop Configuration:')}
   {
     "mcpServers": {
       "promptx": {

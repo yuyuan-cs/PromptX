@@ -2,7 +2,11 @@
  * MCP输出适配器
  * 负责将PromptX CLI的富文本输出转换为MCP标准JSON格式
  */
-import pkg from '../package.json'
+import pkg from '../../package.json'
+import type { ToolHandler } from '~/interfaces/MCPServer.js'
+
+// 提取 ToolHandler 的返回类型
+type ToolResponse = Awaited<ReturnType<ToolHandler>>
 
 export class MCPOutputAdapter {
   private version: string = '1.0.0'
@@ -35,7 +39,7 @@ export class MCPOutputAdapter {
   /**
    * 将CLI输出转换为MCP标准格式
    */
-  convertToMCPFormat(input: any): object {
+  convertToMCPFormat(input: any): ToolResponse {
     try {
       const text = this.normalizeInput(input)
       const sanitizedText = this.sanitizeText(text)
@@ -124,7 +128,7 @@ export class MCPOutputAdapter {
   /**
    * 处理错误，返回MCP格式的错误响应
    */
-  private handleError(error: any): object {
+  private handleError(error: any): ToolResponse {
     const errorMessage = error?.message || 'Unknown error occurred'
     const errorStack = error?.stack || ''
     
