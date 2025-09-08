@@ -14,7 +14,8 @@
   </p>
 
   <p>
-    <a href="README_CN.md">中文</a> | 
+    <a href="README.zh-Hans.md">简体中文</a> | 
+    <a href="README.zh-Hant.md">繁體中文</a> | 
     <strong><a href="README.md">English</a></strong> | 
     <a href="https://github.com/Deepractice/PromptX/issues">Issues</a>
   </p>
@@ -69,7 +70,7 @@ AI:   Provides in-depth product strategy advice as a professional product manage
 ### 🎯 Method 1: PromptX Client (Recommended)
 **For all users - One-click launch, zero configuration**
 
-1. **[Download Client](https://github.com/Deepractice/PromptX/releases)** - Supports Windows, Mac, Linux
+1. **[Download Client](https://github.com/Deepractice/PromptX/releases/latest)** - Supports Windows, Mac, Linux
 2. **Start HTTP Service** - Open client, automatically runs MCP server
 3. **Configure AI Application** - Add the following configuration to your Claude/Cursor or other AI tools:
    ```json
@@ -102,6 +103,15 @@ AI:   Provides in-depth product strategy advice as a professional product manage
   }
 }
 ```
+
+### 🐳 Method 3: Docker (Production Ready)
+**Deploy PromptX with Docker for production environments:**
+
+```bash
+docker run -d -p 5203:5203 -v ~/.promptx:/root/.promptx deepracticexs/promptx:latest
+```
+
+📚 **[Full Docker Documentation →](./docker/README.md)**
 
 ---
 

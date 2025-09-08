@@ -14,7 +14,8 @@
   </p>
 
   <p>
-    <strong><a href="README_CN.md">中文</a></strong> | 
+    <strong><a href="README.zh-Hans.md">简体中文</a></strong> | 
+    <a href="README.zh-Hant.md">繁體中文</a> | 
     <a href="README.md">English</a> | 
     <a href="https://github.com/Deepractice/PromptX/issues">Issues</a>
   </p>
@@ -69,7 +70,7 @@ AI：   以专业产品经理身份，提供深度产品策略建议
 ### 🎯 方式一：PromptX 客户端（推荐）
 **适合所有用户 - 一键启动，零配置**
 
-1. **[下载客户端](https://github.com/Deepractice/PromptX/releases)** - 支持 Windows、Mac、Linux
+1. **[下载客户端](https://github.com/Deepractice/PromptX/releases/latest)** - 支持 Windows、Mac、Linux
 2. **启动HTTP服务** - 打开客户端，自动运行MCP服务器
 3. **配置AI应用** - 将以下配置添加到你的Claude/Cursor等AI工具：
    ```json
@@ -100,6 +101,15 @@ AI：   以专业产品经理身份，提供深度产品策略建议
   }
 }
 ```
+
+### 🐳 方式三：Docker（生产就绪）
+**使用Docker部署PromptX到生产环境：**
+
+```bash
+docker run -d -p 5203:5203 -v ~/.promptx:/root/.promptx deepracticexs/promptx:latest
+```
+
+📚 **[完整Docker文档 →](./docker/README.md)**
 
 ---
 
