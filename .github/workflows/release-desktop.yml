@@ -165,6 +165,7 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          name: Release ${{ github.ref_name }}
           files: |
             macos-build/*.dmg
             macos-build/*.zip
