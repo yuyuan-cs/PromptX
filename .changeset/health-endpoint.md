@@ -1,5 +1,5 @@
 ---
-"@promptx/mcp-server": minor
+"@promptx/mcp-server": patch
 ---
 
 feat: 添加 /health 健康检查端点
