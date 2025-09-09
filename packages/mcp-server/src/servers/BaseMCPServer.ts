@@ -17,8 +17,7 @@ import type {
   ToolWithHandler,
   HealthCheckResult,
   ServerMetrics,
-  SessionContext,
-  ErrorRecoveryStrategy
+  SessionContext
 } from '~/interfaces/MCPServer.js';
 import { 
   MCPError, 
@@ -27,7 +26,6 @@ import {
   ErrorHelper,
   ErrorSeverity 
 } from '~/errors/MCPError.js';
-import { ExponentialBackoffStrategy } from '~/errors/ErrorRecoveryStrategies.js';
 import { globalErrorCollector } from '~/errors/ErrorCollector.js';
 
 /**
@@ -68,21 +66,12 @@ export abstract class BaseMCPServer implements MCPServer {
     uptime: 0
   };
   
-  // 错误恢复
-  protected errorRecoveryStrategy?: ErrorRecoveryStrategy;
+  // 最后错误（用于诊断）
   protected lastError?: Error;
-  protected retryCount = 0;
   
   constructor(options: MCPServerOptions) {
     this.options = options;
     this.logger = options.logger || logger;
-    
-    // 初始化错误恢复策略
-    this.errorRecoveryStrategy = new ExponentialBackoffStrategy({
-      baseDelay: 1000,
-      maxDelay: 30000,
-      maxRetries: 3
-    });
     
     // 设置错误阈值
     this.setupErrorThresholds();
@@ -285,41 +274,7 @@ export abstract class BaseMCPServer implements MCPServer {
     }
   }
   
-  async recover(): Promise<void> {
-    if (this.state !== 'ERROR') {
-      throw new Error('Can only recover from ERROR state');
-    }
-    
-    if (this.state === 'FATAL_ERROR') {
-      throw new Error('Cannot recover from fatal error');
-    }
-    
-    this.logger.info('Attempting to recover from error...');
-    
-    if (this.errorRecoveryStrategy && this.lastError) {
-      if (!this.errorRecoveryStrategy.isRecoverable(this.lastError)) {
-        this.setState('FATAL_ERROR');
-        throw new Error('Error is not recoverable');
-      }
-      
-      const delay = this.errorRecoveryStrategy.getRetryDelay(++this.retryCount);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
-      try {
-        await this.errorRecoveryStrategy.recover(this.lastError, this);
-        this.setState('RUNNING');
-        this.retryCount = 0;
-        this.logger.info('Successfully recovered from error');
-      } catch (error) {
-        this.logger.error('Recovery failed', error);
-        throw error;
-      }
-    } else {
-      // 默认恢复策略：重启
-      await this.stop();
-      await this.start();
-    }
-  }
+  // 删除recover方法 - 错误就是错误，不要自动恢复
   
   isRunning(): boolean {
     return this.state === 'RUNNING';
@@ -387,65 +342,22 @@ export abstract class BaseMCPServer implements MCPServer {
     }
     
     const startTime = Date.now();
-    this.activeRequests++;
-    this.metrics.requestCount++;
     
-    this.logger.info(`[TOOL_EXEC_START] Tool: ${name}, Request #${this.metrics.requestCount}, Active: ${this.activeRequests}`);
+    this.logger.info(`[TOOL_EXEC_START] Tool: ${name}`);
     this.logger.debug(`[TOOL_ARGS] ${name}:`, args);
     
     try {
       const result = await tool.handler(args);
       
-      // 更新响应时间指标
       const responseTime = Date.now() - startTime;
-      this.updateAvgResponseTime(responseTime);
-      
       this.logger.info(`[TOOL_EXEC_SUCCESS] Tool: ${name}, Time: ${responseTime}ms`);
       this.logger.debug(`[TOOL_RESULT] ${name}:`, result);
       
       return result;
     } catch (error: any) {
-      this.metrics.errorCount++;
-      
-      // 包装为MCPError
-      const mcpError = new ToolExecutionError(
-        name,
-        error.message || 'Unknown error',
-        {
-          cause: error,
-          context: { args, startTime }
-        }
-      );
-      
-      // 收集错误
-      globalErrorCollector.collect(mcpError);
-      
-      // 尝试恢复
-      if (this.errorRecoveryStrategy && mcpError.shouldRetry()) {
-        this.logger.info(`[TOOL_EXEC_RETRY] Attempting recovery for tool: ${name}`);
-        
-        try {
-          await this.errorRecoveryStrategy.recover(mcpError, {
-            resetTool: async (toolName: string) => {
-              // 工具重置逻辑（如果需要）
-              this.logger.debug(`[TOOL_RESET] Resetting tool: ${toolName}`);
-            }
-          });
-          
-          // 重试执行
-          globalErrorCollector.recordRecoveryAttempt(true);
-          return await this.executeTool(name, args);
-        } catch (recoveryError) {
-          globalErrorCollector.recordRecoveryAttempt(false);
-          this.logger.error(`[TOOL_EXEC_RECOVERY_FAILED] Tool: ${name}`, recoveryError);
-        }
-      }
-      
-      this.logger.error(`[TOOL_EXEC_ERROR] Tool: ${name}`, mcpError);
-      throw mcpError;
-    } finally {
-      this.activeRequests--;
-      this.logger.debug(`[TOOL_EXEC_END] Active requests: ${this.activeRequests}`);
+      // 直接失败，不重试，不计数，简单明了
+      this.logger.error(`[TOOL_EXEC_ERROR] Tool: ${name}`, error);
+      throw error;
     }
   }
   
