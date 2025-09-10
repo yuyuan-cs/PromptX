@@ -11,6 +11,8 @@ import {
 import type { Resource } from '@modelcontextprotocol/sdk/types.js';
 import { BaseMCPServer } from '~/servers/BaseMCPServer.js';
 import type { MCPServerOptions } from '~/interfaces/MCPServer.js';
+import { WorkerpoolAdapter } from '~/workers/index.js';
+import type { ToolWorkerPool } from '~/interfaces/ToolWorkerPool.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
@@ -30,6 +32,7 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
   private port: number;
   private host: string;
   private corsEnabled: boolean;
+  private workerPool: ToolWorkerPool;
   
   // 支持多个并发连接
   private transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
@@ -43,6 +46,13 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
     this.port = options.port || 8080;
     this.host = options.host || '127.0.0.1';  // 使用 IPv4 避免 IPv6 问题
     this.corsEnabled = options.corsEnabled || false;
+    
+    // 初始化 worker pool
+    this.workerPool = new WorkerpoolAdapter({
+      minWorkers: 2,
+      maxWorkers: 4,
+      workerTimeout: 30000
+    });
   }
   
   /**
@@ -50,6 +60,10 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
    */
   protected async connectTransport(): Promise<void> {
     this.logger.info('Starting HTTP server...');
+    
+    // 初始化 worker pool
+    await this.workerPool.initialize();
+    this.logger.info('Worker pool initialized');
     
     // 创建Express应用
     this.app = express();
@@ -141,6 +155,31 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
     }
     
     this.logger.info(`Establishing SSE stream for session ${sessionId}`);
+    
+    // 设置 SSE 必需的响应头
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // 禁用 Nginx 缓冲
+    
+    // 启动心跳机制 - 每 20 秒发送一次
+    const heartbeatInterval = setInterval(() => {
+      try {
+        // SSE 心跳格式：注释行
+        res.write(':heartbeat\n\n');
+        this.logger.info(`Sent SSE heartbeat for session ${sessionId}`);
+      } catch (error) {
+        this.logger.error(`Failed to send heartbeat for session ${sessionId}: ${error}`);
+        clearInterval(heartbeatInterval);
+      }
+    }, 20000); // 20 秒间隔
+    
+    // 监听连接关闭事件
+    req.on('close', () => {
+      this.logger.info(`SSE connection closed for session ${sessionId}`);
+      clearInterval(heartbeatInterval);
+    });
+    
     const transport = this.transports[sessionId];
     await transport.handleRequest(req, res);
     await this.streamMessages(transport);
@@ -187,12 +226,12 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
             this.sendNotification(transport, message);
           }
         } catch (error) {
-          this.logger.error('Error sending message:', error);
+          this.logger.error(`Error sending message: ${error}`);
           clearInterval(interval);
         }
       }, 1000);
     } catch (error) {
-      this.logger.error('Error sending message:', error);
+      this.logger.error(`Error sending message: ${error}`);
     }
   }
   
@@ -265,7 +304,7 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
       });
       
     } catch (error) {
-      this.logger.error('Error handling MCP request:', error);
+      this.logger.error(`Error handling MCP request: ${error}`);
       res.status(500).json({
         jsonrpc: '2.0',
         error: {
@@ -329,6 +368,10 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
       this.httpServer = undefined;
     }
     
+    // 终止 worker pool
+    await this.workerPool.terminate();
+    this.logger.info('Worker pool terminated');
+    
     this.app = undefined;
   }
   
@@ -371,8 +414,56 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
         throw new Error(`Unsupported resource protocol: ${uri.protocol}`);
       }
     } catch (error: any) {
-      this.logger.error(`Failed to read resource: ${resource.uri}`, error);
+      this.logger.error(`Failed to read resource: ${resource.uri} - ${error}`);
       throw new Error(`Failed to read resource: ${error.message}`);
+    }
+  }
+  
+  /**
+   * 重写 executeTool 方法，使用 WorkerPool 执行所有工具
+   */
+  async executeTool(name: string, args: any): Promise<any> {
+    if (!this.isRunning()) {
+      this.logger.warn(`Attempted to execute tool '${name}' while server is not running`);
+      throw new Error('Server is not running');
+    }
+    
+    const tool = this.tools.get(name);
+    if (!tool) {
+      this.logger.error(`Tool not found: ${name}. Available tools: ${Array.from(this.tools.keys()).join(', ')}`);
+      throw new Error(`Tool not found: ${name}`);
+    }
+    
+    const startTime = Date.now();
+    
+    this.logger.info(`[TOOL_EXEC_START] Tool: ${name} (via WorkerPool)`);
+    this.logger.debug(`[TOOL_ARGS] ${name}: ${JSON.stringify(args)}`);
+    
+    try {
+      // 所有工具都通过 WorkerPool 执行
+      const result = await this.workerPool.execute(tool, args);
+      
+      const responseTime = Date.now() - startTime;
+      this.logger.info(`[TOOL_EXEC_SUCCESS] Tool: ${name}, Time: ${responseTime}ms`);
+      
+      // 更新指标
+      this.metrics.requestCount++;
+      this.metrics.avgResponseTime = 
+        (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) / 
+        this.metrics.requestCount;
+      
+      return result;
+      
+    } catch (error: any) {
+      const responseTime = Date.now() - startTime;
+      this.logger.error(`[TOOL_EXEC_ERROR] Tool: ${name}, Time: ${responseTime}ms, Error: ${error.message}`);
+      
+      // 更新错误计数
+      this.metrics.errorCount++;
+      this.lastError = error;
+      
+      // 重新抛出错误
+      throw error;
     }
   }
 }
