@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["Publish Release"]
     types: [completed]
-    branches: [main]
+    # 移除branches过滤，因为Publish Release是由tag触发的，不属于任何分支
   
   workflow_dispatch:
     inputs:

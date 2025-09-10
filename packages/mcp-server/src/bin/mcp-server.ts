@@ -20,7 +20,8 @@ import { PromptXMCPServer } from '../servers/PromptXMCPServer.js'
 // Get package.json
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const packageJson = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8'))
+// 修复路径：编译后在dist目录，所以只需要../package.json
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'))
 
 // 创建主程序
 const program = new Command()

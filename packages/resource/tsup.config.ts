@@ -30,13 +30,11 @@ export default defineConfig({
         console.warn(' Resources directory not found')
       }
       
-      // 复制注册表到 dist
-      console.log('📋 Copying registry to dist...')
-      if (existsSync('registry.json')) {
-        copyFileSync('registry.json', 'dist/registry.json')
-        console.log('✓ Registry copied successfully')
+      // registry.json 已经直接生成到 dist 目录，无需复制
+      if (existsSync('dist/registry.json')) {
+        console.log('✓ Registry generated successfully in dist/')
       } else {
-        console.warn(' Registry file not found')
+        console.warn('⚠ Registry file not found in dist/')
       }
       
       console.log('Build complete with resources')
