@@ -80,6 +80,7 @@ temp/
 # PromptX local development directories
 .promptx/
 .serena/
+.claude/
 
 /.idea/
 /.vscode/
