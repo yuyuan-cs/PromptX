@@ -217,10 +217,40 @@ class ToolSandbox {
       // 1. 确保沙箱目录存在
       await this.directoryManager.ensureDirectories();
 
-      // 2. 如果有依赖，安装它们
+      // 2. 如果有依赖，智能处理它们
       if (Object.keys(this.dependencies).length > 0) {
-        this.logger.debug(`[ToolSandbox] Installing dependencies: ${JSON.stringify(this.dependencies)}`);
-        await this.installDependencies();
+        // 使用PreinstalledDependenciesManager分析依赖
+        try {
+          const { analyzeToolDependencies } = require('@promptx/resource');
+          const analysis = analyzeToolDependencies(this.dependencies);
+          
+          this.logger.info(
+            `[ToolSandbox] Dependency analysis: ` +
+            `${Object.keys(analysis.preinstalled).length} preinstalled, ` +
+            `${Object.keys(analysis.required).length} need installation`
+          );
+          
+          // 记录预装依赖的来源
+          for (const [dep, source] of Object.entries(analysis.sources)) {
+            this.logger.debug(`[ToolSandbox] Using preinstalled: ${dep} from ${source}`);
+          }
+          
+          // 只安装真正需要的依赖
+          if (Object.keys(analysis.required).length > 0) {
+            this.logger.debug(`[ToolSandbox] Installing required dependencies: ${JSON.stringify(analysis.required)}`);
+            // 临时替换dependencies，只安装需要的
+            const originalDeps = this.dependencies;
+            this.dependencies = analysis.required;
+            await this.installDependencies();
+            this.dependencies = originalDeps; // 恢复原始依赖列表
+          } else {
+            this.logger.info('[ToolSandbox] All dependencies are preinstalled, skipping installation!');
+          }
+        } catch (error) {
+          // 如果依赖分析失败，降级到原始行为
+          this.logger.warn(`[ToolSandbox] Dependency analysis failed, falling back to full install: ${error.message}`);
+          await this.installDependencies();
+        }
       } else {
         this.logger.debug('[ToolSandbox] No dependencies to install');
       }
@@ -309,15 +339,25 @@ class ToolSandbox {
       this.sandboxContext = this.vm.createContext(this.createBasicSandboxEnvironment());
     }
 
-    // 统一的模块加载函数 - 使用importx
+    // 统一的模块加载函数 - 使用importx，支持预装包和沙箱包的双重解析
     this.sandboxContext.importx = async (moduleName) => {
       try {
         this.logger.debug(`[ToolSandbox] Loading module: ${moduleName}`);
         
-        // 获取importx实例并加载模块
-        const importFn = await getImportx();
+        // 先尝试从预装包获取
+        const { getPreinstalledDependenciesManager } = require('@promptx/resource');
+        const preinstalledManager = getPreinstalledDependenciesManager();
         
-        // 使用工具沙箱的package.json作为模块解析基础
+        // 使用新的 getPreinstalledModule 方法直接获取模块
+        const preinstalledModule = await preinstalledManager.getPreinstalledModule(moduleName);
+        if (preinstalledModule) {
+          this.logger.debug(`[ToolSandbox] Using preinstalled module: ${moduleName}`);
+          return preinstalledModule;
+        }
+        
+        // 如果不是预装的包，使用 importx 从沙箱加载
+        this.logger.debug(`[ToolSandbox] Loading user-installed module: ${moduleName}`);
+        const importFn = await getImportx();
         const path = require('path');
         const { pathToFileURL } = require('url');
         const toolPackageJson = path.join(this.sandboxPath, 'package.json');
