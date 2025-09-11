@@ -45,7 +45,7 @@ jobs:
         run: |
           echo "Building macOS versions..."
           pnpm build
-          npx electron-builder --mac --x64 --arm64
+          npx electron-builder --mac --x64 --arm64 --publish never
         env:
           CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -94,7 +94,7 @@ jobs:
         working-directory: apps/desktop
         run: |
           pnpm build
-          npx electron-builder --win
+          npx electron-builder --win --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -139,7 +139,7 @@ jobs:
         working-directory: apps/desktop
         run: |
           pnpm build
-          npx electron-builder --linux
+          npx electron-builder --linux --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
