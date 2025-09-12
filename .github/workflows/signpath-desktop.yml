@@ -55,22 +55,21 @@ jobs:
       
       - name: Download Windows installer from Release
         if: steps.check_credentials.outputs.skip != 'true'
+        id: download
         run: |
           echo "Downloading Windows installer from release ${{ steps.get_tag.outputs.tag }}..."
-          mkdir -p downloads
           
-          # 下载 Windows 安装程序
+          # 直接下载到当前目录
           gh release download "${{ steps.get_tag.outputs.tag }}" \
-            --pattern "*-win32-*-setup.exe" \
-            --dir downloads
+            --pattern "*-win32-*-setup.exe"
           
           # 列出下载的文件
           echo "Downloaded files:"
-          ls -la downloads/
+          ls -la *.exe
           
           # 获取文件名
-          exe_file=$(ls downloads/*.exe | head -1)
-          echo "exe_file=$(basename $exe_file)" >> $GITHUB_OUTPUT
+          exe_file=$(ls *.exe | head -1)
+          echo "exe_file=$exe_file" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
@@ -80,7 +79,8 @@ jobs:
         id: upload-artifact
         with:
           name: windows-installer-unsigned
-          path: downloads/*.exe
+          path: "*.exe"
+          if-no-files-found: error
       
       - name: Sign with SignPath
         if: steps.check_credentials.outputs.skip != 'true'
@@ -98,7 +98,9 @@ jobs:
       - name: Upload signed installer back to Release
         if: steps.check_credentials.outputs.skip != 'true'
         run: |
-          cd signed
+          if [ -d "signed" ]; then
+            cd signed
+          fi
           
           # 计数签名的文件
           signed_count=0
