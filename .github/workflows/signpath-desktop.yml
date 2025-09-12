@@ -1,0 +1,129 @@
+name: Sign Windows Apps with SignPath
+
+on:
+  workflow_run:
+    workflows: ["Build Desktop Apps"]
+    types: [completed]
+  workflow_dispatch:  # 允许手动触发
+    inputs:
+      tag:
+        description: 'Release tag to sign (e.g., v1.17.3)'
+        required: true
+        type: string
+
+jobs:
+  sign-windows:
+    name: Sign Windows Executable
+    runs-on: ubuntu-latest
+    # 只在构建成功或手动触发时运行
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    permissions:
+      contents: write  # 需要写权限来更新 Release
+      id-token: write  # SignPath OIDC 认证需要
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get release tag
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手动触发，使用输入的 tag
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            # 自动触发，获取最新的 tag
+            latest_tag=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+            echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Check SignPath credentials
+        id: check_credentials
+        run: |
+          if [[ -z "${{ secrets.SIGNPATH_ORGANIZATION_ID }}" ]] || \
+             [[ -z "${{ secrets.SIGNPATH_PROJECT_SLUG }}" ]] || \
+             [[ -z "${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}" ]]; then
+            echo "Missing SignPath credentials, skipping signing"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "SignPath credentials found"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Download Windows installer from Release
+        if: steps.check_credentials.outputs.skip != 'true'
+        run: |
+          echo "Downloading Windows installer from release ${{ steps.get_tag.outputs.tag }}..."
+          mkdir -p downloads
+          
+          # 下载 Windows 安装程序
+          gh release download "${{ steps.get_tag.outputs.tag }}" \
+            --pattern "*-win32-*-setup.exe" \
+            --dir downloads
+          
+          # 列出下载的文件
+          echo "Downloaded files:"
+          ls -la downloads/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Sign with SignPath
+        if: steps.check_credentials.outputs.skip != 'true'
+        uses: signpath/submit-signing-request@v0.4
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
+          github-artifact-path: downloads/*-setup.exe
+          wait-for-completion: true
+          output-artifact-directory: signed
+      
+      - name: Upload signed installer back to Release
+        if: steps.check_credentials.outputs.skip != 'true'
+        run: |
+          cd signed
+          
+          # 计数签名的文件
+          signed_count=0
+          
+          for exe in *.exe; do
+            if [ -f "$exe" ]; then
+              signed_count=$((signed_count + 1))
+              echo "Uploading signed $exe to release..."
+              
+              # 使用 --clobber 覆盖现有文件
+              gh release upload "${{ steps.get_tag.outputs.tag }}" \
+                "$exe" \
+                --clobber
+              
+              echo "✅ Updated $exe in release"
+            fi
+          done
+          
+          echo "Summary: $signed_count files signed and updated"
+          
+          # 创建状态文件
+          echo "Windows signing completed at $(date)" > signing-status.txt
+          echo "Signed: $signed_count files" >> signing-status.txt
+          
+          # 上传状态文件
+          gh release upload "${{ steps.get_tag.outputs.tag }}" \
+            signing-status.txt \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Post notification comment
+        if: steps.check_credentials.outputs.skip != 'true' && github.event_name == 'workflow_run'
+        run: |
+          # 在对应的 workflow run 上添加评论
+          gh run comment ${{ github.event.workflow_run.id }} \
+            --body "✅ Windows code signing completed for release ${{ steps.get_tag.outputs.tag }}. Setup file has been signed and updated in the release."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true  # 评论失败不影响整体流程
