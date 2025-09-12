@@ -67,8 +67,20 @@ jobs:
           # 列出下载的文件
           echo "Downloaded files:"
           ls -la downloads/
+          
+          # 获取文件名
+          exe_file=$(ls downloads/*.exe | head -1)
+          echo "exe_file=$(basename $exe_file)" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload installer as artifact
+        if: steps.check_credentials.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        id: upload-artifact
+        with:
+          name: windows-installer-unsigned
+          path: downloads/*.exe
       
       - name: Sign with SignPath
         if: steps.check_credentials.outputs.skip != 'true'
@@ -79,7 +91,7 @@ jobs:
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
           signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
           artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
-          github-artifact-path: downloads/*-setup.exe
+          github-artifact-id: ${{ steps.upload-artifact.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: signed
       
