@@ -70,16 +70,20 @@ jobs:
           # 获取文件名
           exe_file=$(ls *.exe | head -1)
           echo "exe_file=$exe_file" >> $GITHUB_OUTPUT
+          
+          # 创建 ZIP 文件供 SignPath 使用
+          zip windows-installer.zip *.exe
+          echo "Created windows-installer.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Upload installer as artifact
+      - name: Upload installer as artifact for SignPath
         if: steps.check_credentials.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         id: upload-artifact
         with:
           name: windows-installer-unsigned
-          path: "*.exe"
+          path: windows-installer.zip
           if-no-files-found: error
       
       - name: Sign with SignPath
