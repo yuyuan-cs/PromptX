@@ -1,17 +1,13 @@
-// importx is ESM-only package, needs dynamic import
-let importx = null;
-const getImportx = async () => {
-  if (!importx) {
-    const { import: importFn } = await import('importx');
-    importx = importFn;
-  }
-  return importx;
-};
+// Note: Module loading is now handled by ToolModuleImport class
+// The importx package is dynamically loaded inside ToolModuleImport when needed
 
-// Removed global parentURL, changed to dynamically generate when calling importx
-
-// Directly import manager classes
-const SandboxErrorManager = require('./SandboxErrorManager');
+// Directly import error classes
+const { 
+  ToolError,
+  VALIDATION_ERRORS,
+  SYSTEM_ERRORS,
+  DEVELOPMENT_ERRORS
+} = require('./errors');
 const ToolDirectoryManager = require('./ToolDirectoryManager'); 
 const SandboxIsolationManager = require('./SandboxIsolationManager');
 
@@ -37,7 +33,6 @@ class ToolSandbox {
     this.sandboxPath = null;             // Sandbox directory path (kept for compatibility)
     this.sandboxContext = null;          // VM sandbox context
     this.isolationManager = null;        // Sandbox isolation manager
-    this.errorManager = null;            // Smart error manager
     
     // Asynchronously loaded modules
     this.fs = null;
@@ -73,15 +68,18 @@ class ToolSandbox {
       this.logger = require('@promptx/logger');
       
       // 管理器类已在顶部静态导入
-      
-      this.errorManager = new SandboxErrorManager();
       const promptxPath = require('path').join(require('os').homedir(), '.promptx');
       this.isolationManager = new SandboxIsolationManager(promptxPath);
       
       this.isInitialized = true;
       this.logger.debug('[ToolSandbox] Initialized with importx');
     } catch (error) {
-      throw new Error(`Failed to initialize ToolSandbox: ${error.message}`);
+      // 初始化失败是系统错误
+      throw new ToolError(
+        `Failed to initialize ToolSandbox: ${error.message}`,
+        SYSTEM_ERRORS.SANDBOX_INIT_FAILED.code,
+        { originalError: error.message }
+      );
     }
   }
 
@@ -149,8 +147,9 @@ class ToolSandbox {
       return this.getAnalysisResult();
     }
 
+    // ResourceManager 应该在创建时就设置好，这里只是 assert
     if (!this.resourceManager) {
-      throw new Error('ResourceManager not set. Call setResourceManager() first.');
+      throw new Error('[BUG] ResourceManager should be set during initialization');
     }
 
     try {
@@ -162,7 +161,11 @@ class ToolSandbox {
       const resourceResult = await this.resourceManager.loadResource(this.toolReference);
       
       if (!resourceResult.success) {
-        throw new Error(`Failed to load tool: ${resourceResult.error?.message || 'Unknown error'}`);
+        throw new ToolError(
+          `Failed to load tool: ${resourceResult.error?.message || 'Unknown error'}`,
+          SYSTEM_ERRORS.TOOL_NOT_FOUND.code,
+          { toolId: this.toolId }
+        );
       }
       
       this.toolContent = resourceResult.content;
@@ -188,10 +191,11 @@ class ToolSandbox {
       return this.getAnalysisResult();
 
     } catch (error) {
-      const enhancedError = this.errorManager.analyzeError(error, {
+      const enhancedError = ToolError.from(error, {
         phase: 'analyze',
         toolReference: this.toolReference,
-        toolId: this.toolId
+        toolId: this.toolId,
+        dependencies: this.dependencies
       });
       this.logger.error(`[ToolSandbox] Analysis failed: ${enhancedError.message}`);
       throw enhancedError;
@@ -209,9 +213,8 @@ class ToolSandbox {
       return { success: true, message: 'Dependencies already prepared' };
     }
 
-    if (!this.isAnalyzed) {
-      throw new Error('Tool must be analyzed before preparing dependencies. Call analyze() first.');
-    }
+    // 框架应该保证调用顺序，这里只是 assert
+    console.assert(this.isAnalyzed, '[BUG] Tool should be analyzed before preparing dependencies');
 
     try {
       // 1. 确保沙箱目录存在
@@ -264,7 +267,7 @@ class ToolSandbox {
       return { success: true, message: 'Dependencies prepared successfully' };
 
     } catch (error) {
-      const enhancedError = this.errorManager.analyzeError(error, {
+      const enhancedError = ToolError.from(error, {
         phase: 'prepareDependencies',
         toolId: this.toolId,
         dependencies: this.dependencies,
@@ -276,22 +279,312 @@ class ToolSandbox {
   }
 
   /**
+   * 配置环境变量
+   * @param {Object} params - 配置参数
+   * @returns {Promise<Object>} 配置结果
+   */
+  async configureEnvironment(params = {}) {
+    await this.ensureInitialized();
+    
+    // 框架应该保证调用顺序，这里只是 assert
+    console.assert(this.isAnalyzed, '[BUG] Tool should be analyzed before configuring');
+    
+    // 创建 ToolAPI 实例来管理环境变量
+    const ToolAPI = require('./api/ToolAPI');
+    const api = new ToolAPI(this.toolId, this.sandboxPath, this.resourceManager);
+    const env = api.environment;
+    
+    try {
+      // 如果params为空，返回当前配置和元信息
+      if (!params || Object.keys(params).length === 0) {
+        this.logger.debug(`[ToolSandbox] Getting current environment configuration for ${this.toolId}`);
+        
+        // 获取工具声明的环境变量
+        let declaredVars = [];
+        if (this.toolInstance && typeof this.toolInstance.getMetadata === 'function') {
+          const metadata = this.toolInstance.getMetadata();
+          declaredVars = metadata.envVars || [];
+        }
+        
+        // 获取当前配置的环境变量
+        const currentVars = await env.getAll();
+        
+        // 构建状态信息
+        const status = {};
+        for (const varDef of declaredVars) {
+          const value = currentVars[varDef.name];
+          status[varDef.name] = {
+            required: varDef.required || false,
+            configured: value !== undefined,
+            value: value ? '***' : undefined, // 脱敏显示
+            description: varDef.description,
+            default: varDef.default
+          };
+        }
+        
+        // 检查是否有未声明但已配置的变量
+        for (const key of Object.keys(currentVars)) {
+          if (!status[key]) {
+            status[key] = {
+              required: false,
+              configured: true,
+              value: '***',
+              description: 'User defined variable',
+              undeclared: true
+            };
+          }
+        }
+        
+        return {
+          action: 'get',
+          toolId: this.toolId,
+          envPath: env.envPath,
+          variables: status,
+          summary: {
+            total: Object.keys(status).length,
+            configured: Object.values(status).filter(v => v.configured).length,
+            required: Object.values(status).filter(v => v.required).length,
+            missing: Object.values(status).filter(v => v.required && !v.configured).length
+          }
+        };
+      }
+      
+      // 特殊操作
+      if (params._action === 'clear') {
+        this.logger.info(`[ToolSandbox] Clearing all environment variables for ${this.toolId}`);
+        await env.clear();
+        return {
+          action: 'clear',
+          success: true,
+          message: 'All environment variables cleared'
+        };
+      }
+      
+      if (params._action === 'delete' && params._keys) {
+        this.logger.info(`[ToolSandbox] Deleting environment variables for ${this.toolId}`);
+        const deleted = [];
+        for (const key of params._keys) {
+          if (await env.delete(key)) {
+            deleted.push(key);
+          }
+        }
+        return {
+          action: 'delete',
+          success: true,
+          deleted: deleted
+        };
+      }
+      
+      // 设置环境变量
+      this.logger.info(`[ToolSandbox] Setting environment variables for ${this.toolId}`);
+      const configured = [];
+      for (const [key, value] of Object.entries(params)) {
+        if (!key.startsWith('_')) { // 忽略以_开头的特殊参数
+          await env.set(key, value);
+          configured.push(key);
+        }
+      }
+      
+      return {
+        action: 'set',
+        success: true,
+        configured: configured,
+        envPath: env.envPath,
+        message: `Configured ${configured.length} environment variable(s)`
+      };
+      
+    } catch (error) {
+      const enhancedError = ToolError.from(error, {
+        phase: 'configure',
+        toolId: this.toolId,
+        params: params,
+        metadata: this.metadata
+      });
+      this.logger.error(`[ToolSandbox] Configuration failed: ${enhancedError.message}`);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * 查询工具日志
+   * @param {Object} params - 查询参数
+   * @returns {Promise<Object>} 查询结果
+   */
+  async queryLogs(params = {}) {
+    await this.ensureInitialized();
+    
+    // 框架应该保证调用顺序，这里只是 assert
+    console.assert(this.isAnalyzed, '[BUG] Tool should be analyzed before querying logs');
+    
+    const ToolLoggerQuery = require('./ToolLoggerQuery');
+    const logQuery = new ToolLoggerQuery(this.toolId, this.sandboxPath);
+    
+    try {
+      const { action = 'tail', ...options } = params;
+      
+      switch (action) {
+        case 'tail': {
+          // 获取最近的日志
+          const lines = options.lines || 50;
+          return {
+            success: true,
+            action: 'tail',
+            logs: await logQuery.tail(lines),
+            count: lines
+          };
+        }
+          
+        case 'search':
+          // 搜索日志
+          if (!options.keyword) {
+            throw new ToolError(
+              'Search action requires keyword parameter',
+              VALIDATION_ERRORS.MISSING_REQUIRED_PARAM.code,
+              { param: 'keyword' }
+            );
+          }
+          return {
+            success: true,
+            action: 'search',
+            keyword: options.keyword,
+            logs: await logQuery.search(options.keyword, options),
+            options
+          };
+          
+        case 'errors': {
+          // 获取错误日志
+          const limit = options.limit || 50;
+          return {
+            success: true,
+            action: 'errors',
+            logs: await logQuery.getErrors(limit),
+            limit
+          };
+        }
+          
+        case 'stats':
+          // 获取统计信息
+          return {
+            success: true,
+            action: 'stats',
+            stats: await logQuery.getStats()
+          };
+          
+        case 'timeRange':
+          // 按时间范围查询
+          if (!options.startTime || !options.endTime) {
+            throw new ToolError(
+              'Time range action requires startTime and endTime parameters',
+              VALIDATION_ERRORS.MISSING_REQUIRED_PARAM.code,
+              { params: ['startTime', 'endTime'] }
+            );
+          }
+          return {
+            success: true,
+            action: 'timeRange',
+            startTime: options.startTime,
+            endTime: options.endTime,
+            logs: await logQuery.getByTimeRange(options.startTime, options.endTime)
+          };
+          
+        case 'clear': {
+          // 清空日志
+          const cleared = await logQuery.clear();
+          return {
+            success: cleared,
+            action: 'clear',
+            message: cleared ? 'Logs cleared successfully' : 'Failed to clear logs'
+          };
+        }
+          
+        default:
+          throw new ToolError(
+            `Unknown log query action: ${action}`,
+            VALIDATION_ERRORS.INVALID_PARAM_VALUE?.code || 'INVALID_PARAM',
+            { param: 'action', value: action }
+          );
+      }
+      
+    } catch (error) {
+      const enhancedError = ToolError.from(error, {
+        phase: 'queryLogs',
+        toolId: this.toolId,
+        params: params
+      });
+      this.logger.error(`[ToolSandbox] Log query failed: ${enhancedError.message}`);
+      throw enhancedError;
+    }
+  }
+
+  /**
    * 执行工具
    */
   async execute(params = {}) {
     await this.ensureInitialized();
     
-    if (!this.isPrepared) {
-      throw new Error('Dependencies must be prepared before execution. Call prepareDependencies() first.');
-    }
+    // 框架应该保证调用顺序，这里只是 assert
+    console.assert(this.isPrepared, '[BUG] Dependencies should be prepared before execution');
+
+    // 在try块外声明，以便catch块能访问
+    let businessErrors = [];
+    let exported = null;
 
     try {
-      // 参数验证
-      if (typeof this.toolInstance.validate === 'function') {
-        const validation = this.toolInstance.validate(params);
-        if (validation && !validation.valid) {
-          throw new Error(`Parameter validation failed: ${validation.errors?.join(', ')}`);
+      // 环境变量自动检查（排除配置类操作）
+      const configActions = ['configure', 'config', 'setup', 'init', 'check', 'info'];
+      const isConfigAction = params.action && configActions.includes(params.action.toLowerCase());
+      
+      if (!isConfigAction && typeof this.toolInstance.getMetadata === 'function') {
+        const metadata = this.toolInstance.getMetadata();
+        if (metadata.envVars && Array.isArray(metadata.envVars)) {
+          this.logger.debug(`[ToolSandbox] Checking environment variables for ${this.toolId}`);
+          // 使用已创建的 ToolAPI 实例
+          const ToolAPI = require('./api/ToolAPI');
+          const api = new ToolAPI(this.toolId, this.sandboxPath, this.resourceManager);
+          const env = api.environment;
+          
+          for (const varDef of metadata.envVars) {
+            if (varDef.required) {
+              const value = await env.get(varDef.name);
+              if (!value) {
+                this.logger.warn(`[ToolSandbox] Missing required environment variable: ${varDef.name}`);
+                // 返回格式符合 ToolCommand 的预期
+                return {
+                  success: false,
+                  error: {
+                    code: 'MISSING_ENV_VAR',
+                    message: `缺少必需的环境变量: ${varDef.name}`,
+                    details: {
+                      missing: varDef.name,
+                      description: varDef.description || `请配置 ${varDef.name}`,
+                      instruction: `请使用 action: "configure" 配置环境变量，或直接编辑 ${env.envPath} 文件`,
+                      envPath: env.envPath
+                    }
+                  }
+                };
+              }
+            }
+          }
+          this.logger.debug(`[ToolSandbox] All required environment variables are configured`);
         }
+      }
+      
+      // 使用 ToolValidator 进行参数验证
+      const ToolValidator = require('./ToolValidator');
+      const validation = ToolValidator.defaultValidate(this.toolInstance, params);
+      if (!validation.valid) {
+        this.logger.error(`[ToolSandbox] 参数验证失败:`, validation.errors);
+        
+        // 直接抛出简化的 ToolError
+        throw new ToolError(
+          validation.errors.join('; '),
+          VALIDATION_ERRORS.SCHEMA_VALIDATION_FAILED?.code || 'VALIDATION_ERROR',
+          { 
+            validation: validation.details,
+            params: params,
+            toolId: this.toolId 
+          }
+        );
       }
 
       // 执行工具
@@ -303,7 +596,22 @@ class ToolSandbox {
       const context = this.vm.createContext(this.sandboxContext);
       
       script.runInContext(context);
-      const exported = context.module.exports;
+      exported = context.module.exports;
+      
+      // 创建并注入统一的 ToolAPI 实例 - 这是唯一的注入点
+      const ToolAPI = require('./api/ToolAPI');
+      const toolAPI = new ToolAPI(this.toolId, this.sandboxPath, this.resourceManager);
+      exported.api = toolAPI;
+      
+      // 获取工具的BusinessErrors定义
+      try {
+        if (typeof exported.getBusinessErrors === 'function') {
+          businessErrors = exported.getBusinessErrors() || [];
+          this.logger.debug(`[ToolSandbox] Got ${businessErrors.length} business errors from tool`);
+        }
+      } catch (e) {
+        this.logger.warn(`[ToolSandbox] Failed to get business errors:`, e.message);
+      }
       
       // 执行工具的execute方法
       const result = await exported.execute(params);
@@ -314,14 +622,22 @@ class ToolSandbox {
       return result;
 
     } catch (error) {
-      const enhancedError = this.errorManager.analyzeError(error, {
+      // 如果已经是 ToolError，直接抛出
+      if (error instanceof ToolError) {
+        throw error;
+      }
+      
+      // 使用增强的ToolError.from，传入完整context
+      this.logger.error(`[ToolSandbox] Execution failed:`, error.message);
+      throw ToolError.from(error, {
         phase: 'execute',
         toolId: this.toolId,
         params: params,
-        sandboxPath: this.sandboxPath
+        businessErrors: businessErrors,  // 关键：传入BusinessErrors
+        schema: this.schema,
+        metadata: this.metadata,
+        environment: this.environment
       });
-      this.logger.error(`[ToolSandbox] Execution failed: ${enhancedError.message}`);
-      throw enhancedError;
     }
   }
 
@@ -354,38 +670,24 @@ class ToolSandbox {
       this.logger.info('[ToolSandbox] Injected FormData polyfill to global');
     }
 
-    // 统一的模块加载函数 - 使用importx，支持预装包和沙箱包的双重解析
+    // 简化的模块加载函数 - 提供基础的importx功能作为后备
+    // 主要的模块加载应该通过 api.importx() 进行
     this.sandboxContext.importx = async (moduleName) => {
+      this.logger.warn(`[ToolSandbox] Direct importx usage detected. Consider using api.importx() instead.`);
+      
+      // 创建临时的 ToolModuleImport 实例
+      const ToolModuleImport = require('./api/ToolModuleImport');
+      const moduleImporter = new ToolModuleImport(this.toolId, this.sandboxPath);
+      
       try {
-        this.logger.debug(`[ToolSandbox] Loading module: ${moduleName}`);
-        
-        // 先尝试从预装包获取
-        const { getPreinstalledDependenciesManager } = require('@promptx/resource');
-        const preinstalledManager = getPreinstalledDependenciesManager();
-        
-        // 使用新的 getPreinstalledModule 方法直接获取模块
-        const preinstalledModule = await preinstalledManager.getPreinstalledModule(moduleName);
-        if (preinstalledModule) {
-          this.logger.debug(`[ToolSandbox] Using preinstalled module: ${moduleName}`);
-          return preinstalledModule;
-        }
-        
-        // 如果不是预装的包，使用 importx 从沙箱加载
-        this.logger.debug(`[ToolSandbox] Loading user-installed module: ${moduleName}`);
-        const importFn = await getImportx();
-        const path = require('path');
-        const { pathToFileURL } = require('url');
-        const toolPackageJson = path.join(this.sandboxPath, 'package.json');
-        const toolParentURL = pathToFileURL(toolPackageJson).href;
-        
-        return await importFn(moduleName, {
-          parentURL: toolParentURL,
-          cache: true,
-          loader: 'auto'
-        });
+        return await moduleImporter.import(moduleName);
       } catch (error) {
         this.logger.error(`[ToolSandbox] Failed to load module ${moduleName}: ${error.message}`);
-        throw new Error(`Cannot load module '${moduleName}': ${error.message}`);
+        throw new ToolError(
+          `Cannot load module '${moduleName}': ${error.message}`,
+          DEVELOPMENT_ERRORS.UNDECLARED_DEPENDENCY.code,
+          { module: moduleName, originalError: error.message }
+        );
       }
     };
     
@@ -417,7 +719,11 @@ class ToolSandbox {
     if (toolReference.startsWith('@tool://')) {
       return toolReference.substring(8); // 移除 '@tool://' 前缀
     }
-    throw new Error(`Invalid tool reference format: ${toolReference}`);
+    throw new ToolError(
+      `Invalid tool reference format: ${toolReference}`,
+      VALIDATION_ERRORS.INVALID_PARAM_FORMAT?.code || 'INVALID_PARAM',
+      { toolReference }
+    );
   }
 
   /**
@@ -467,7 +773,11 @@ class ToolSandbox {
       // 返回导出的模块
       return context.module.exports;
     } catch (error) {
-      throw new Error(`Failed to parse tool content: ${error.message}`);
+      throw new ToolError(
+        `Failed to parse tool content: ${error.message}`,
+        DEVELOPMENT_ERRORS.TOOL_SYNTAX_ERROR.code,
+        { originalError: error.message }
+      );
     }
   }
 
