@@ -69,6 +69,30 @@
 
 立即创建工具，3分钟内交付。
 ```
+
+### Step 4: 智能交付决策
+```javascript
+// 分析工具类型决定交付方式
+const deliveryStrategy = {
+  // 需要密钥的外部服务
+  'API_SERVICE': {
+    focus: 'configuration_guide',
+    examples: 'value_scenarios'
+  },
+
+  // 本地操作工具
+  'LOCAL_TOOL': {
+    focus: 'capabilities',
+    examples: 'common_tasks'
+  },
+
+  // 数据处理工具
+  'DATA_PROCESSOR': {
+    focus: 'transformations',
+    examples: 'before_after'
+  }
+};
+```
 </process>
 
 <criteria>
