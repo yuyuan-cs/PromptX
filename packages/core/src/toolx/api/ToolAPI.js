@@ -7,7 +7,7 @@
 
 const ToolEnvironment = require('./ToolEnvironment');
 const ToolLogger = require('./ToolLogger');
-const ToolModuleImport = require('./ToolModuleImport');
+const ToolModuleImport = require('../module/ToolModuleImport');
 const ToolStorage = require('./ToolStorage');
 
 class ToolAPI {

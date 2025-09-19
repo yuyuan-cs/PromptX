@@ -676,7 +676,7 @@ class ToolSandbox {
       this.logger.warn(`[ToolSandbox] Direct importx usage detected. Consider using api.importx() instead.`);
       
       // 创建临时的 ToolModuleImport 实例
-      const ToolModuleImport = require('./api/ToolModuleImport');
+      const ToolModuleImport = require('./module/ToolModuleImport');
       const moduleImporter = new ToolModuleImport(this.toolId, this.sandboxPath);
       
       try {
