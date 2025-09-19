@@ -99,15 +99,22 @@ module.exports = {
           content: { type: 'string', description: '文件内容' },
           head: { type: 'number', description: '读取前N行' },
           tail: { type: 'number', description: '读取后N行' },
-          edits: { 
-            type: 'array', 
-            description: '编辑操作列表',
+          edits: {
+            type: 'array',
+            description: '编辑操作列表，每个元素为对象: {oldText: "要替换的文本", newText: "新文本"}',
             items: {
               type: 'object',
               properties: {
-                oldText: { type: 'string' },
-                newText: { type: 'string' }
-              }
+                oldText: {
+                  type: 'string',
+                  description: '要替换的原始文本（必须完全匹配）'
+                },
+                newText: {
+                  type: 'string',
+                  description: '替换后的新文本'
+                }
+              },
+              required: ['oldText', 'newText']
             }
           },
           dryRun: { type: 'boolean', description: '仅预览不执行' },

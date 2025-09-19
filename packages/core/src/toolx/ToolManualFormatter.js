@@ -168,23 +168,77 @@ class ToolManualFormatter {
     if (!params.properties || Object.keys(params.properties).length === 0) {
       return '\n## 📝 参数定义\n\n无需参数'
     }
-    
+
     const lines = ['\n## 📝 参数定义']
     lines.push('\n| 参数 | 类型 | 必需 | 描述 | 默认值 |')
     lines.push('|------|------|------|------|--------|')
-    
-    const required = params.required || []
-    
-    for (const [key, prop] of Object.entries(params.properties)) {
+
+    // 递归渲染所有参数
+    const rows = this.collectParameterRows(params, '')
+    lines.push(...rows)
+
+    return lines.join('\n')
+  }
+
+  /**
+   * 递归收集参数行（包括嵌套结构）
+   */
+  collectParameterRows(schema, prefix = '', parentRequired = []) {
+    const rows = []
+
+    if (!schema.properties) return rows
+
+    const required = schema.required || parentRequired || []
+
+    for (const [key, prop] of Object.entries(schema.properties)) {
       const isRequired = required.includes(key) ? '✅' : '❌'
       const type = this.formatType(prop)
       const desc = prop.description || '-'
       const defaultVal = prop.default !== undefined ? `\`${JSON.stringify(prop.default)}\`` : '-'
-      
-      lines.push(`| ${key} | ${type} | ${isRequired} | ${desc} | ${defaultVal} |`)
+
+      // 添加当前参数行
+      rows.push(`| ${prefix}${key} | ${type} | ${isRequired} | ${desc} | ${defaultVal} |`)
+
+      // 处理嵌套结构
+      // 1. 如果是数组类型且包含对象
+      if (prop.type === 'array' && prop.items?.type === 'object' && prop.items.properties) {
+        const nestedPrefix = prefix ? prefix.replace(/└─ |├─ /, '│  ') + '└─ ' : '├─ '
+        const nestedRows = this.collectParameterRows(prop.items, nestedPrefix, prop.items.required)
+        rows.push(...nestedRows)
+      }
+
+      // 2. 如果是对象类型
+      else if (prop.type === 'object' && prop.properties) {
+        const nestedPrefix = prefix ? prefix.replace(/└─ |├─ /, '│  ') + '└─ ' : '├─ '
+        const nestedRows = this.collectParameterRows(prop, nestedPrefix, prop.required)
+        rows.push(...nestedRows)
+      }
     }
-    
-    return lines.join('\n')
+
+    // 优化树形符号：将最后一个 ├─ 改为 └─
+    if (prefix && rows.length > 0) {
+      // 找到当前层级的最后一个直接子参数
+      let lastDirectChildIndex = -1
+      const currentIndent = prefix.length
+
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const row = rows[i]
+        const match = row.match(/^[|]\s*([│├└─\s]+)/)
+        if (match) {
+          const indent = match[1].replace(/[├└─]/g, '').length
+          if (indent === currentIndent) {
+            lastDirectChildIndex = i
+            break
+          }
+        }
+      }
+
+      if (lastDirectChildIndex >= 0) {
+        rows[lastDirectChildIndex] = rows[lastDirectChildIndex].replace('├─', '└─')
+      }
+    }
+
+    return rows
   }
 
   /**
@@ -318,16 +372,16 @@ class ToolManualFormatter {
    */
   generateExampleParams(paramSchema) {
     const example = {}
-    
+
     if (!paramSchema.properties) return example
-    
+
     for (const [key, prop] of Object.entries(paramSchema.properties)) {
       // 优先使用默认值
       if (prop.default !== undefined) {
         example[key] = prop.default
         continue
       }
-      
+
       // 根据类型生成示例值
       switch (prop.type) {
         case 'string':
@@ -341,16 +395,26 @@ class ToolManualFormatter {
           example[key] = false
           break
         case 'array':
-          example[key] = []
+          // 如果数组包含对象结构，生成示例对象
+          if (prop.items?.type === 'object' && prop.items.properties) {
+            example[key] = [this.generateExampleParams(prop.items)]
+          } else {
+            example[key] = []
+          }
           break
         case 'object':
-          example[key] = {}
+          // 递归生成嵌套对象的示例
+          if (prop.properties) {
+            example[key] = this.generateExampleParams(prop)
+          } else {
+            example[key] = {}
+          }
           break
         default:
           example[key] = null
       }
     }
-    
+
     return example
   }
 
