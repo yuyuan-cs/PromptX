@@ -115,60 +115,65 @@ docker run -d -p 5203:5203 -v ~/.promptx:/root/.promptx deepracticexs/promptx:la
 
 ---
 
-## 🎨 **Nuwa Creation Workshop - Making Everyone an AI Role Designer**
+## 🎨 **Nuwa & Luban - PromptX's Creation Twins**
 
+### 🎭 **Nuwa - AI Role Designer**
 <div align="center">
-  <img src="assets/logo/nuwa-logo-backgroud.jpg" alt="Nuwa Creation Workshop" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
+  <img src="assets/logo/nuwa-logo-backgroud.jpg" alt="Nuwa" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
 </div>
 
-#### **💫 Revolutionary Meta-Prompt Technology - From Idea to Reality in Just 2 Minutes**
-
-Have you ever wondered: What if I could customize a professional AI assistant for specific work scenarios? **Nuwa makes this idea reality through meta-prompt technology.**
-
-> *"Nuwa is not an ordinary role template, but a thinking meta-prompt engine - understanding your needs, generating professional prompts, creating real AI experts."*
-
-#### **🎯 Meta-Prompt Core Principles**
-
-- **🧠 Requirement Analysis**: Nuwa's meta-prompts deeply understand your scenario needs and professional requirements
-- **📝 Prompt Generation**: Automatically builds complete prompt architecture conforming to DPML standards
-- **🎭 Role Materialization**: Transforms abstract needs into concrete executable AI expert roles
-- **⚡ Instant Deployment**: Generated prompts immediately convert to activatable PromptX roles
-- **🔄 Continuous Optimization**: Meta-prompts continuously evolve based on usage feedback
-
-#### **✨ Usage Scenario Examples**
+**One sentence, one expert. Natural language creates professional AI roles.**
 
 <div align="center">
 
-| 🎯 **User Need** | ⚡ **Nuwa Generates** | 🚀 **Ready to Use** |
+| 💭 **You Say** | 🎭 **Nuwa Creates** | ✨ **Result** |
 |---|---|---|
-| 👩‍💼 "I need an AI assistant who understands Xiaohongshu marketing" | Xiaohongshu Marketing Expert Role | `Activate Xiaohongshu Marketing Expert` |
-| 👨‍💻 "I want a Python async programming expert" | Python Async Programming Mentor Role | `Activate Python Async Programming Mentor` |
-| 🎨 "Give me a UI/UX design consultant" | UI/UX Design Expert Role | `Activate UI/UX Design Expert` |
-| 📊 "Need a data analyst assistant" | Data Analysis Expert Role | `Activate Data Analysis Expert` |
+| "I need someone who understands both code and product" | Technical Product Manager role with dual expertise | AI instantly becomes TPM with engineering + product skills |
+| "Create a Python expert who teaches like a patient mentor" | Python Mentor role with teaching methodology | AI transforms into educational programming guide |
+| "I want an AI that writes like Hemingway" | Literary Writing Expert with style analysis | AI adopts concise, powerful writing style |
 
 </div>
 
-#### **🎪 4 Steps to Create Your Dedicated AI Assistant**
+### 🔧 **Luban - Tool Integration Master**
+<div align="center">
+  <img src="assets/logo/luban-enchance.png" alt="Luban" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
+</div>
 
+**Any API, any platform. 3 minutes from credential to working tool.**
+
+<div align="center">
+
+| 💭 **You Say** | 🔧 **Luban Builds** | ✨ **Result** |
+|---|---|---|
+| "Connect to our Slack workspace" + webhook URL | Slack notification tool with channel targeting | AI can post to any Slack channel |
+| "Let AI query our PostgreSQL" + connection string | Database tool with safe read-only queries | AI executes SQL and analyzes data |
+| "Integrate with OpenAI API" + API key | AI platform tool with model selection | AI chains multiple AI services |
+
+</div>
+
+### 🚀 **Why This Changes Everything**
+
+**Traditional AI:** You learn prompts → You guide AI → You verify results → You fix mistakes
+
+**With Nuwa & Luban:** You describe needs → AI becomes expert → AI uses tools → Work gets done
+
+---
+
+<div align="center">
+
+```mermaid
+graph LR
+    A["Your Need"] --> B["Nuwa: Create Role"]
+    A --> C["Luban: Build Tool"]
+    B --> D["AI with Expertise"]
+    C --> E["AI with Capabilities"]
+    D --> F["Professional Work"]
+    E --> F
 ```
-User: "I want Nuwa to help me create a Xiaohongshu marketing expert"
-Nuwa: Immediately understands the need, asks about specific scenarios and requirements
 
-User: "Mainly help me write Xiaohongshu copy, analyze trends, develop promotion strategies"  
-Nuwa: Creates complete Xiaohongshu marketing expert role within 2 minutes
+**The magic: Nuwa gives AI knowledge, Luban gives AI power.**
 
-User: "Activate Xiaohongshu marketing expert"
-AI:   Instantly transforms into professional Xiaohongshu marketing expert, providing professional advice
-```
-
-#### **🌟 Meta-Prompt Technology Breakthrough**
-
-Nuwa represents a major breakthrough in prompt engineering - **From static templates to dynamic generation**:
-
-- **🎯 Intelligent Understanding**: Meta-prompts have comprehension abilities - not just text matching, but semantic analysis
-- **📝 Dynamic Generation**: Real-time prompt construction based on needs, each role is tailor-made
-- **🧠 Structured Output**: Ensures generated roles conform to DPML standards, guaranteeing professional quality
-- **🔄 Self-Evolution**: Meta-prompts continuously optimize generation strategies through usage feedback
+</div>
 
 ---
 
