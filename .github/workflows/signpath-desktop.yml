@@ -95,36 +95,93 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: signed
       
+      - name: Generate latest.yml for signed installer
+        if: steps.check_credentials.outputs.skip != 'true'
+        id: generate_metadata
+        run: |
+          if [ -d "signed" ]; then
+            cd signed
+          fi
+
+          # 获取签名后的文件
+          signed_exe=$(ls *.exe | head -1)
+          if [ -z "$signed_exe" ]; then
+            echo "No signed exe found"
+            exit 1
+          fi
+
+          echo "Generating latest.yml for $signed_exe..."
+
+          # 计算 SHA512
+          sha512_hash=$(sha512sum "$signed_exe" | awk '{print $1}' | xxd -r -p | base64)
+
+          # 获取文件大小
+          file_size=$(stat -f%z "$signed_exe" 2>/dev/null || stat -c%s "$signed_exe" 2>/dev/null)
+
+          # 从文件名提取版本号 (格式: promptx-desktop-1.18.0-win32-x64-setup.exe)
+          version=$(echo "$signed_exe" | sed -E 's/promptx-desktop-([0-9.]+)-.*/\1/')
+
+          # 获取发布日期
+          release_date=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+
+          # 创建 latest.yml
+          cat > latest.yml << EOF
+version: $version
+files:
+  - url: $signed_exe
+    sha512: $sha512_hash
+    size: $file_size
+path: $signed_exe
+sha512: $sha512_hash
+releaseDate: '$release_date'
+EOF
+
+          echo "Generated latest.yml:"
+          cat latest.yml
+
+          # 保存路径供后续使用
+          echo "metadata_path=$(pwd)/latest.yml" >> $GITHUB_OUTPUT
+
       - name: Upload signed installer back to Release
         if: steps.check_credentials.outputs.skip != 'true'
         run: |
           if [ -d "signed" ]; then
             cd signed
           fi
-          
+
           # 计数签名的文件
           signed_count=0
-          
+
           for exe in *.exe; do
             if [ -f "$exe" ]; then
               signed_count=$((signed_count + 1))
               echo "Uploading signed $exe to release..."
-              
+
               # 使用 --clobber 覆盖现有文件
               gh release upload "${{ steps.get_tag.outputs.tag }}" \
                 "$exe" \
                 --clobber
-              
+
               echo "✅ Updated $exe in release"
             fi
           done
-          
+
+          # 上传新生成的 latest.yml
+          if [ -f "latest.yml" ]; then
+            echo "Uploading updated latest.yml..."
+            gh release upload "${{ steps.get_tag.outputs.tag }}" \
+              "latest.yml" \
+              --clobber
+            echo "✅ Updated latest.yml with correct SHA512"
+          fi
+
           echo "Summary: $signed_count files signed and updated"
-          
+
           # 创建状态文件
           echo "Windows signing completed at $(date)" > signing-status.txt
           echo "Signed: $signed_count files" >> signing-status.txt
-          
+          echo "Metadata updated: yes" >> signing-status.txt
+
           # 上传状态文件
           gh release upload "${{ steps.get_tag.outputs.tag }}" \
             signing-status.txt \
