@@ -148,6 +148,8 @@ jobs:
         with:
           name: linux-build
           path: |
+            apps/desktop/release/*.deb
+            apps/desktop/release/*.AppImage
             apps/desktop/release/*.rpm
             apps/desktop/release/latest-linux.yml
           if-no-files-found: warn
@@ -172,6 +174,8 @@ jobs:
             macos-build/latest-mac.yml
             windows-build/*setup*.exe
             windows-build/latest.yml
+            linux-build/*.deb
+            linux-build/*.AppImage
             linux-build/*.rpm
             linux-build/latest-linux.yml
         env:

@@ -51,8 +51,16 @@ portable:
 linux:
   icon: assets/icons
   category: Development
+  maintainer: Deepractice AI <sean@deepracticex.com>
+  description: PromptX - AI Context Platform based on MCP protocol
+  synopsis: Local AI prompt management application
   target:
-    - rpm
+    - target: deb
+      arch: [x64, arm64]
+    - target: AppImage
+      arch: [x64, arm64]
+    - target: rpm
+      arch: [x64, arm64]
 
 nsis:
   oneClick: false
