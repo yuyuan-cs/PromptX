@@ -1,4 +1,4 @@
-name: Build Desktop Apps
+name: Build and Release Desktop Apps
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
       - 'v*'
 
 jobs:
+  # ============================================
+  # 第1阶段：并行构建所有平台
+  # ============================================
   build-macos:
     name: Build macOS
     runs-on: macos-latest
@@ -52,15 +55,16 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: true
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload macOS artifacts
+      - name: Upload macOS artifacts for signing
         uses: actions/upload-artifact@v4
         with:
-          name: macos-build
+          name: macos-unsigned
           path: |
             apps/desktop/release/*.dmg
             apps/desktop/release/*.zip
             apps/desktop/release/latest-mac.yml
-          if-no-files-found: warn
+          if-no-files-found: error
+          retention-days: 1
 
   build-windows:
     name: Build Windows
@@ -98,14 +102,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Windows artifacts
+      - name: Upload Windows artifacts for signing
         uses: actions/upload-artifact@v4
         with:
-          name: windows-build
+          name: windows-unsigned
           path: |
             apps/desktop/release/*setup*.exe
             apps/desktop/release/latest.yml
-          if-no-files-found: warn
+          if-no-files-found: error
+          retention-days: 1
 
   build-linux:
     name: Build Linux
@@ -143,40 +148,255 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Linux artifacts
+      - name: Upload Linux artifacts (no signing needed)
         uses: actions/upload-artifact@v4
         with:
-          name: linux-build
+          name: linux-final
           path: |
             apps/desktop/release/*.deb
             apps/desktop/release/*.AppImage
             apps/desktop/release/*.rpm
             apps/desktop/release/latest-linux.yml
-          if-no-files-found: warn
+          if-no-files-found: error
+          retention-days: 1
 
-  upload-release:
-    name: Upload to Release
-    needs: [build-macos, build-windows, build-linux]
+  # ============================================
+  # 第2阶段：签名和公证
+  # ============================================
+  sign-macos:
+    name: Notarize macOS
+    needs: build-macos
+    runs-on: macos-latest
+    if: success()
+    steps:
+      - name: Check Apple credentials
+        id: check_credentials
+        run: |
+          if [[ -z "${{ secrets.APPLE_ID }}" ]] || \
+             [[ -z "${{ secrets.APPLE_ID_PASSWORD }}" ]] || \
+             [[ -z "${{ secrets.APPLE_TEAM_ID }}" ]]; then
+            echo "Missing Apple credentials, skipping notarization"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Apple credentials found"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download macOS artifacts
+        if: steps.check_credentials.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-unsigned
+          path: macos-files
+
+      - name: Submit for notarization
+        if: steps.check_credentials.outputs.skip != 'true'
+        id: submit
+        run: |
+          cd macos-files
+          submission_info=""
+
+          for dmg in *.dmg; do
+            if [ -f "$dmg" ]; then
+              echo "Submitting $dmg for notarization..."
+
+              # 提交公证
+              output=$(xcrun notarytool submit "$dmg" \
+                --apple-id "${{ secrets.APPLE_ID }}" \
+                --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+                --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+                --wait 2>&1)
+
+              # 检查公证状态
+              if echo "$output" | grep -q "Accepted"; then
+                echo "✅ Notarization accepted for $dmg"
+                # Staple the ticket
+                xcrun stapler staple "$dmg"
+                echo "✅ Successfully stapled $dmg"
+              else
+                echo "Warning: Notarization may have failed for $dmg"
+                echo "$output"
+              fi
+            fi
+          done
+
+      - name: Upload notarized macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-final
+          path: |
+            macos-files/*.dmg
+            macos-files/*.zip
+            macos-files/latest-mac.yml
+          if-no-files-found: error
+          retention-days: 1
+
+  sign-windows:
+    name: Sign Windows with SignPath
+    needs: build-windows
     runs-on: ubuntu-latest
+    if: success()
+    permissions:
+      id-token: write
+    steps:
+      - name: Check SignPath credentials
+        id: check_credentials
+        run: |
+          if [[ -z "${{ secrets.SIGNPATH_ORGANIZATION_ID }}" ]] || \
+             [[ -z "${{ secrets.SIGNPATH_PROJECT_SLUG }}" ]] || \
+             [[ -z "${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}" ]]; then
+            echo "Missing SignPath credentials, skipping signing"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "SignPath credentials found"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-unsigned
+          path: windows-files
+
+      - name: Upload installer for SignPath
+        if: steps.check_credentials.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        id: upload-for-signing
+        with:
+          name: windows-installer-to-sign
+          path: windows-files/*setup*.exe
+          if-no-files-found: error
+
+      - name: Sign with SignPath
+        if: steps.check_credentials.outputs.skip != 'true'
+        uses: SignPath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
+          github-artifact-id: ${{ steps.upload-for-signing.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Generate latest.yml for signed installer
+        if: steps.check_credentials.outputs.skip != 'true'
+        run: |
+          cd signed
+
+          # 获取签名后的文件
+          signed_exe=$(ls *.exe | head -1)
+          if [ -z "$signed_exe" ]; then
+            echo "No signed exe found, using unsigned"
+            cd ../windows-files
+            signed_exe=$(ls *setup*.exe | head -1)
+          fi
+
+          echo "Generating latest.yml for $signed_exe..."
+
+          # 计算 SHA512
+          sha512_hash=$(sha512sum "$signed_exe" | awk '{print $1}' | xxd -r -p | base64)
+
+          # 获取文件大小
+          file_size=$(stat -c%s "$signed_exe" 2>/dev/null || stat -f%z "$signed_exe" 2>/dev/null)
+
+          # 从文件名提取版本号
+          version=$(echo "$signed_exe" | sed -E 's/promptx-desktop-([0-9.]+)-.*/\1/')
+
+          # 获取发布日期
+          release_date=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
+
+          # 创建 latest.yml
+          cat > latest.yml << EOF
+version: $version
+files:
+  - url: $signed_exe
+    sha512: $sha512_hash
+    size: $file_size
+path: $signed_exe
+sha512: $sha512_hash
+releaseDate: '$release_date'
+EOF
+
+          # 将签名的文件移回主目录
+          if [ -f "$signed_exe" ] && [ "$(pwd)" = "*/signed" ]; then
+            mv "$signed_exe" ../windows-files/
+            mv latest.yml ../windows-files/
+            cd ../windows-files
+          fi
+
+      - name: Upload signed Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-final
+          path: |
+            windows-files/*setup*.exe
+            windows-files/latest.yml
+            signed/*setup*.exe
+            signed/latest.yml
+          if-no-files-found: error
+          retention-days: 1
+
+  # ============================================
+  # 第3阶段：统一上传到 GitHub Release
+  # ============================================
+  upload-release:
+    name: Upload to GitHub Release
+    needs: [sign-macos, sign-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: success()
     permissions:
       contents: write
     steps:
-      - name: Download all artifacts
+      - name: Download all final artifacts
         uses: actions/download-artifact@v4
 
-      - name: Upload to GitHub Release
+      - name: Prepare release files
+        run: |
+          # 创建发布目录
+          mkdir -p release-files
+
+          # 移动所有文件到发布目录
+          if [ -d "macos-final" ]; then
+            mv macos-final/* release-files/ || true
+          fi
+
+          if [ -d "windows-final" ]; then
+            mv windows-final/* release-files/ || true
+          fi
+
+          if [ -d "linux-final" ]; then
+            mv linux-final/* release-files/ || true
+          fi
+
+          # 列出所有要发布的文件
+          echo "Files to release:"
+          ls -la release-files/
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
-          files: |
-            macos-build/*.dmg
-            macos-build/*.zip
-            macos-build/latest-mac.yml
-            windows-build/*setup*.exe
-            windows-build/latest.yml
-            linux-build/*.deb
-            linux-build/*.AppImage
-            linux-build/*.rpm
-            linux-build/latest-linux.yml
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+          files: release-files/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🎉 Desktop Apps Released Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Completed Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS: Built and Notarized" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows: Built and Signed" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux: Built (deb, AppImage, rpm)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Release Contents:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -lh release-files/ >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
