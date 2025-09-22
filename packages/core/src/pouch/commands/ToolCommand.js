@@ -52,7 +52,7 @@ class ToolCommand extends BasePouchCommand {
         // 解析mode和parameters
         if (args.length >= 2) {
           // 检查第二个参数是否是mode
-          const validModes = ['execute', 'manual', 'configure', 'rebuild', 'log'];
+          const validModes = ['execute', 'manual', 'configure', 'rebuild', 'log', 'dryrun'];
           if (validModes.includes(args[1])) {
             toolArgs.mode = args[1];
             // 如果有第三个参数，它是parameters
@@ -144,13 +144,49 @@ ${result.result.configured ? `📋 已配置: ${result.result.configured.join(',
 ⏱️ 执行时间: ${result.metadata.execution_time_ms}ms`
             }
           
+          case 'dryrun':
+            // dryrun模式的特殊输出
+            const dryRunResult = result.result
+            let output = `🧪 Tool Dry-Run 测试${dryRunResult.success ? '成功' : '失败'}
+
+📋 工具资源: ${result.tool_resource}
+🔬 模式: 干运行测试
+`
+            if (dryRunResult.success) {
+              output += `✅ 执行结果:
+${JSON.stringify(dryRunResult.result, null, 2)}
+`
+              // 如果有Bridge测试结果
+              if (dryRunResult.bridgeTests) {
+                const bridgeTests = dryRunResult.bridgeTests
+                output += `
+🌉 Bridge测试结果:
+- 总计: ${bridgeTests.summary.total} 个Bridge
+- 成功: ${bridgeTests.summary.success} 个
+- 失败: ${bridgeTests.summary.failed} 个
+`
+                for (const [operation, testResult] of Object.entries(bridgeTests.results)) {
+                  const status = testResult.success ? '✅' : '❌'
+                  output += `  ${status} ${operation}\n`
+                }
+              }
+            } else {
+              output += `❌ 错误信息: ${dryRunResult.message}
+📝 错误详情:
+${JSON.stringify(dryRunResult.error, null, 2)}
+`
+            }
+            output += `
+⏱️ 执行时间: ${result.metadata.execution_time_ms}ms`
+            return output
+
           case 'rebuild':
           case 'execute':
           default:
             // 检查工具内部执行状态
             const actualToolResult = result.result
             const isToolInternalSuccess = this.isToolInternalSuccess(actualToolResult)
-            
+
             if (isToolInternalSuccess) {
               return `🔧 Tool${mode === 'rebuild' ? '重建并' : ''}执行成功
 
@@ -227,21 +263,24 @@ ${JSON.stringify(actualToolResult, null, 2)}
       switch(mode) {
         case 'execute':
           return await this.executeNormalMode(tool_resource, parameters, timeout, startTime)
-        
+
         case 'manual':
           return await this.executeManualMode(tool_resource, startTime)
-        
+
         case 'configure':
           return await this.executeConfigureMode(tool_resource, parameters, startTime)
-        
+
         case 'rebuild':
           return await this.executeRebuildMode(tool_resource, parameters, timeout, startTime)
-        
+
         case 'log':
           return await this.executeLogMode(tool_resource, parameters, startTime)
-        
+
+        case 'dryrun':
+          return await this.executeDryRunMode(tool_resource, parameters, startTime)
+
         default:
-          throw new Error(`Unsupported mode: ${mode}. Supported modes: execute, manual, configure, rebuild, log`)
+          throw new Error(`Unsupported mode: ${mode}. Supported modes: execute, manual, configure, rebuild, log, dryrun`)
       }
       
     } catch (error) {
@@ -418,23 +457,84 @@ ${JSON.stringify(actualToolResult, null, 2)}
    */
   async executeLogMode(tool_resource, parameters, startTime) {
     let sandbox = null
-    
+
     try {
       // 创建沙箱（不需要执行，只需要查询日志）
       sandbox = new ToolSandbox(tool_resource)
       const resourceManager = await this.getResourceManager()
       sandbox.setResourceManager(resourceManager)
-      
+
       // 只需要分析工具以获取toolId和sandboxPath
       logger.debug(`[PromptXTool] Log模式: 分析工具以获取日志路径`)
       await sandbox.analyze()
-      
+
       // 查询日志
       logger.debug(`[PromptXTool] Log模式: 查询日志，参数:`, parameters)
       const result = await sandbox.queryLogs(parameters)
-      
+
       return this.formatSuccessResult(result, tool_resource, startTime)
-      
+
+    } finally {
+      if (sandbox) await sandbox.cleanup()
+    }
+  }
+
+  /**
+   * DryRun模式 - 干运行测试工具
+   */
+  async executeDryRunMode(tool_resource, parameters, startTime) {
+    let sandbox = null
+
+    try {
+      // 创建沙箱
+      sandbox = new ToolSandbox(tool_resource)
+      const resourceManager = await this.getResourceManager()
+      sandbox.setResourceManager(resourceManager)
+
+      // 分析工具
+      logger.debug(`[PromptXTool] DryRun模式: Phase 1 - 分析工具`)
+      await sandbox.analyze()
+
+      // 准备依赖（必须的，因为dryRun也需要加载依赖）
+      logger.debug(`[PromptXTool] DryRun模式: Phase 2 - 准备依赖`)
+      await sandbox.prepareDependencies()
+
+      // 执行dry-run测试
+      logger.debug(`[PromptXTool] DryRun模式: Phase 3 - 执行dry-run测试`)
+      const result = await sandbox.dryRun(parameters)
+
+      // dryRun的结果包含success字段，需要特殊处理
+      if (result.success) {
+        return {
+          success: true,
+          tool_resource: tool_resource,
+          mode: 'dryrun',
+          result: result,
+          metadata: {
+            executor: 'ToolSandbox',
+            execution_time_ms: Date.now() - startTime,
+            timestamp: new Date().toISOString(),
+            version: '1.0.0'
+          }
+        }
+      } else {
+        // dryRun失败时返回的格式
+        return {
+          success: false,
+          tool_resource: tool_resource,
+          mode: 'dryrun',
+          error: result.error,
+          metadata: {
+            executor: 'ToolSandbox',
+            execution_time_ms: Date.now() - startTime,
+            timestamp: new Date().toISOString()
+          }
+        }
+      }
+
+    } catch (error) {
+      // 意外错误
+      return this.formatErrorResult(error, tool_resource, startTime)
     } finally {
       if (sandbox) await sandbox.cleanup()
     }
@@ -459,7 +559,7 @@ ${JSON.stringify(actualToolResult, null, 2)}
 
     // mode参数验证
     if (args.mode) {
-      const validModes = ['execute', 'manual', 'configure', 'rebuild', 'log']
+      const validModes = ['execute', 'manual', 'configure', 'rebuild', 'log', 'dryrun']
       if (!validModes.includes(args.mode)) {
         throw new Error(`Invalid mode: ${args.mode}. Valid modes are: ${validModes.join(', ')}`)
       }

@@ -37,12 +37,17 @@ export const toolxTool: ToolWithHandler = {
 使用：{tool_resource: '@tool://tool-name', parameters: {...}}
 特点：必须按照manual中的参数格式传递parameters
 
-【4. rebuild模式】- 强制重建沙箱后执行
+【4. dryrun模式】- 干运行测试工具
+目的：测试工具逻辑而不执行真实操作
+使用：{tool_resource: '@tool://tool-name', mode: 'dryrun', parameters: {...}}
+特点：使用mock实现测试工具流程，验证Bridge配置
+
+【5. rebuild模式】- 强制重建沙箱后执行
 目的：解决依赖问题、清理缓存
 使用：{tool_resource: '@tool://tool-name', mode: 'rebuild', parameters: {...}}
 特点：删除旧沙箱，重新安装依赖，然后执行
 
-【5. log模式】- 查询工具执行日志
+【6. log模式】- 查询工具执行日志
 目的：查看工具执行历史，调试问题，分析错误
 查看最近日志：{tool_resource: '@tool://tool-name', mode: 'log', parameters: {action: 'tail', lines: 50}}
 搜索日志：{tool_resource: '@tool://tool-name', mode: 'log', parameters: {action: 'search', keyword: 'error'}}
@@ -67,6 +72,12 @@ export const toolxTool: ToolWithHandler = {
 - 如果是依赖错误 → mode: 'rebuild' 重建环境
 - 如果是环境变量缺失 → mode: 'configure' 配置
 - 如果需要调试 → mode: 'log' 查看执行日志
+
+场景4：测试新工具
+- 步骤1：mode: 'manual' → 了解工具功能
+- 步骤2：mode: 'dryrun' → 测试工具逻辑
+- 步骤3：mode: 'configure' → 配置真实凭据
+- 步骤4：mode: 'execute' → 执行真实操作
 
 核心能力:
 - 动态加载执行JavaScript工具
@@ -97,8 +108,8 @@ export const toolxTool: ToolWithHandler = {
       },
       mode: {
         type: 'string',
-        enum: ['execute', 'manual', 'configure', 'rebuild', 'log'],
-        description: '执行模式：execute(执行工具), manual(查看手册), configure(配置环境变量), rebuild(重建沙箱), log(查询日志)'
+        enum: ['execute', 'manual', 'configure', 'rebuild', 'log', 'dryrun'],
+        description: '执行模式：execute(执行工具), manual(查看手册), configure(配置环境变量), rebuild(重建沙箱), log(查询日志), dryrun(干运行测试)'
       },
       parameters: {
         type: 'object',

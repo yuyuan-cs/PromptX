@@ -86,6 +86,49 @@ const TOOL_INTERFACE = {
         retryable?: boolean  // 是否可重试
       }>`,
       notes: '工具可以定义特有的业务错误，这些错误将被系统识别并提供给AI处理'
+    },
+    {
+      name: 'getBridges',
+      signature: '() => Object<Bridge>',
+      description: '定义工具的外部依赖桥接器（可选但推荐）',
+      returns: `Object<{
+        [operation: string]: {
+          real: async (args, api) => any,  // 真实实现
+          mock: async (args, api) => any   // Mock实现
+        }
+      }>`,
+      notes: '定义外部依赖的real和mock实现，支持dry-run测试。每个操作需要提供real和/或mock实现。',
+      example: `{
+        'mysql:connect': {
+          real: async (args, api) => {
+            const mysql2 = await api.importx('mysql2/promise');
+            return await mysql2.createConnection(args);
+          },
+          mock: async (args, api) => ({
+            execute: async () => [[], []],
+            end: async () => {}
+          })
+        }
+      }`
+    },
+    {
+      name: 'getMockArgs',
+      signature: '(operation: string) => Object',
+      description: '为指定bridge操作生成mock参数（可选）',
+      parameters: {
+        operation: 'string - bridge操作名称'
+      },
+      returns: 'Object - 该操作的mock参数',
+      notes: '用于dry-run测试时生成合理的测试参数'
+    },
+    {
+      name: 'getBridgeErrors',
+      signature: '() => Object<Array<BusinessError>>',
+      description: '定义每个bridge操作的特定业务错误（可选）',
+      returns: `Object<{
+        [operation: string]: Array<BusinessError>
+      }>`,
+      notes: '为每个bridge操作定义特定的错误处理规则'
     }
   ]
 };

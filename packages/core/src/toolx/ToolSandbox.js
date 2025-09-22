@@ -517,6 +517,70 @@ class ToolSandbox {
   }
 
   /**
+   * 执行工具dry-run测试
+   * @param {Object} params - 测试参数
+   * @returns {Promise<Object>} 测试结果
+   */
+  async dryRun(params = {}) {
+    await this.ensureInitialized();
+
+    // 确保依赖已准备
+    if (!this.isPrepared) {
+      await this.prepareDependencies();
+    }
+
+    try {
+      // 在沙箱中加载工具
+      const script = new this.vm.Script(this.toolContent, { filename: `${this.toolId}.js` });
+      const context = this.vm.createContext(this.sandboxContext);
+
+      script.runInContext(context);
+      const exported = context.module.exports;
+
+      // 创建API实例并设置为dryrun模式
+      const ToolAPI = require('./api/ToolAPI');
+      const toolAPI = new ToolAPI(this.toolId, this.sandboxPath, this.resourceManager);
+      toolAPI.setToolInstance(exported);
+
+      // 设置bridge为dryrun模式
+      if (toolAPI.bridge) {
+        toolAPI.bridge.setMode('dryrun');
+      }
+
+      exported.api = toolAPI;
+
+      // 执行工具
+      const result = await exported.execute(params);
+
+      // 如果工具支持bridges，执行批量dry-run测试
+      let bridgeTestResults = null;
+      if (typeof exported.getBridges === 'function') {
+        bridgeTestResults = await toolAPI.bridge.dryRunAll();
+      }
+
+      return {
+        success: true,
+        result: result,
+        bridgeTests: bridgeTestResults,
+        message: 'Dry-run completed successfully'
+      };
+
+    } catch (error) {
+      const enhancedError = ToolError.from(error, {
+        phase: 'dryrun',
+        toolId: this.toolId,
+        params: params
+      });
+
+      return {
+        success: false,
+        error: enhancedError.toJSON(),
+        message: `Dry-run failed: ${enhancedError.message}`
+      };
+    }
+  }
+
+  /**
    * 执行工具
    */
   async execute(params = {}) {
@@ -601,6 +665,8 @@ class ToolSandbox {
       // 创建并注入统一的 ToolAPI 实例 - 这是唯一的注入点
       const ToolAPI = require('./api/ToolAPI');
       const toolAPI = new ToolAPI(this.toolId, this.sandboxPath, this.resourceManager);
+      // 设置工具实例引用，以支持Bridge功能
+      toolAPI.setToolInstance(exported);
       exported.api = toolAPI;
       
       // 获取工具的BusinessErrors定义

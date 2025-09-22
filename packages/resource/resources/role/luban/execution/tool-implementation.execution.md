@@ -90,6 +90,25 @@ module.exports = {
 - 工具信息通过 getMetadata() 方法提供，无需单独文档
 - 无需指定完整路径
 
+### Step 2.5: 设计外部依赖Bridge [新增]
+
+外部依赖必须通过Bridge模式隔离（具体规范见 bridge-design execution）
+
+基本用法：
+```javascript
+// ❌ 错误：直接调用外部模块
+const mysql = await api.importx('mysql2');
+const conn = await mysql.createConnection();
+
+// ✅ 正确：通过Bridge隔离
+const conn = await api.bridge.execute('db:connect', config);
+```
+
+Bridge设计要点：
+- 识别所有外部依赖
+- 每个依赖都要有mock实现
+- Mock数据要合理完整
+
 ### Step 3: 实现核心接口
 ```javascript
 getDependencies() {

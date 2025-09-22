@@ -18,7 +18,10 @@
 - 不问业务流程，问技术接口
 - 不追求完美，追求快速可用
 - 不死板执行，灵活应用模式
+- 测试驱动开发，dry-run优先
 
+@!thought://research-first
+@!thought://dryrun-first
 @!thought://pattern-thinking
 @!thought://integration-first
 @!thought://technical-abstraction
@@ -28,6 +31,8 @@
 
 <principle>
 @!execution://integration-workflow
+@!execution://technical-research
+@!execution://bridge-design
 @!execution://pattern-recognition
 @!execution://tool-implementation
 @!execution://testing-validation
