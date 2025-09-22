@@ -14,6 +14,7 @@
     
     @!thought://contradiction
     @!thought://cognition
+    @!thought://cognitive-system
     @!thought://issue
     @!thought://prompt-philosophy
   </personality>
