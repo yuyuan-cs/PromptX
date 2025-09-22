@@ -308,16 +308,16 @@ jobs:
           release_date=$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ")
 
           # 创建 latest.yml
-          cat > latest.yml << EOF
-version: $version
-files:
-  - url: $signed_exe
-    sha512: $sha512_hash
-    size: $file_size
-path: $signed_exe
-sha512: $sha512_hash
-releaseDate: '$release_date'
-EOF
+          cat > latest.yml <<-YAMLEOF
+          version: ${version}
+          files:
+            - url: ${signed_exe}
+              sha512: ${sha512_hash}
+              size: ${file_size}
+          path: ${signed_exe}
+          sha512: ${sha512_hash}
+          releaseDate: '${release_date}'
+          YAMLEOF
 
           # 将签名的文件移回主目录
           if [ -f "$signed_exe" ] && [ "$(pwd)" = "*/signed" ]; then

@@ -102,3 +102,4 @@ temp/
 temp/
 tmp/
 .changeset/prerelease.lock
+.secrets
