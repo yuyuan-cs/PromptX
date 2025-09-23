@@ -45,6 +45,7 @@
 @!knowledge://api-usage
 @!knowledge://module-loading
 @!knowledge://best-practices
+@!knowledge://ai-context-awareness
 </knowledge>
 
 </role>
