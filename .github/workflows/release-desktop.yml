@@ -278,6 +278,7 @@ jobs:
           artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
           github-artifact-id: ${{ steps.upload-for-signing.outputs.artifact-id }}
           wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 86400  # 24 hours
           output-artifact-directory: signed
 
       - name: Generate latest.yml for signed installer
