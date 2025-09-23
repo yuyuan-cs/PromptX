@@ -8,7 +8,7 @@
   <!-- Badges -->
   <p>
     <a href=" "><img src="https://img.shields.io/github/stars/Deepractice/PromptX?style=social" alt="Stars"/></a>
-    <img src="https://img.shields.io/badge/views-70.9k-0e75b6" alt="瀏覽量"/>
+    <img src="https://komarev.com/ghpvc/?username=PromptX&label=views&color=0e75b6&style=flat&abbreviated=true" alt="瀏覽量"/>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/Deepractice/PromptX?color=blue" alt="License"/></a>
   </p>
 
