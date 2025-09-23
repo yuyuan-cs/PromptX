@@ -177,25 +177,33 @@ graph LR
 
 <div align="center">
 
-**由 [Deepractice 深度實踐](https://github.com/Deepractice) 出品**
-
-*讓AI成為你的專業夥伴*
-
----
-
-🌐 [官網](https://deepractice.ai) | 🔧 [GitHub](https://github.com/Deepractice) | 📚 [文檔中心](https://docs.deepractice.ai) | 💬 [論壇](https://x.deepractice.ai) | 🚀 [中轉站服務](https://router.deepractice.ai)
-
----
-
-## 🔏 **程式碼簽章**
-
-Windows 桌面應用程式程式碼簽章由 [SignPath.io](https://signpath.io) 提供，憑證由 [SignPath Foundation](https://signpath.org) 簽發。
-
 ---
 
 ## ⭐ **Star成長趨勢**
 
+<div align="center">
+
 [![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
+
+</div>
+
+---
+
+## 🏢 **關於我們**
+
+<div align="center">
+
+**由 [Deepractice 深度實踐](https://github.com/Deepractice) 出品**
+
+*讓AI成為你的專業夥伴*
+
+🌐 [官網](https://deepractice.ai) | 🔧 [GitHub](https://github.com/Deepractice) | 📚 [文檔中心](https://docs.deepractice.ai) | 💬 [論壇](https://x.deepractice.ai) | 🚀 [中轉站服務](https://router.deepractice.ai)
+
+### 程式碼簽章
+
+Windows 桌面應用程式程式碼簽章由 [SignPath.io](https://signpath.io) 提供，憑證由 [SignPath Foundation](https://signpath.org) 簽發。
+
+</div>
 
 ---
 

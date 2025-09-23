@@ -177,26 +177,28 @@ graph LR
 
 ---
 
+## ⭐ **Star Growth Trend**
+
+<div align="center">
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
+
+</div>
+
+---
+
+## 🏢 **About**
+
 <div align="center">
 
 **Proudly brought to you by [Deepractice](https://github.com/Deepractice)**
 
 *Making AI your professional partner*
 
----
-
 🌐 [Official Site](https://deepractice.ai) | 🔧 [GitHub](https://github.com/Deepractice) | 📚 [Documentation](https://docs.deepractice.ai) | 💬 [Forum](https://x.deepractice.ai) | 🎮 [Discord](https://discord.gg/U9qQCNB4bE) | 🚀 [Gateway Service](https://router.deepractice.ai)
 
----
-
-## 🔏 **Code Signing**
+### Code Signing
 
 Windows desktop application code signing is provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
-
----
-
-## ⭐ **Star Growth Trend**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
 
 </div>

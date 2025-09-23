@@ -184,27 +184,31 @@ graph LR
 
 ---
 
+## ⭐ **Star增长趋势**
+
+<div align="center">
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
+
+</div>
+
+---
+
+## 🏢 **关于我们**
+
 <div align="center">
 
 **由 [Deepractice 深度实践](https://github.com/Deepractice) 出品**
 
 *让AI成为你的专业伙伴*
 
----
-
 🌐 [官网](https://deepractice.ai) | 🔧 [GitHub](https://github.com/Deepractice) | 📚 [文档中心](https://docs.deepractice.ai) | 💬 [论坛](https://x.deepractice.ai) | 🚀 [中转站服务](https://router.deepractice.ai)
 
----
-
-## 🔏 **代码签名**
+### 代码签名
 
 Windows 桌面应用程序代码签名由 [SignPath.io](https://signpath.io) 提供，证书由 [SignPath Foundation](https://signpath.org) 签发。
 
----
-
-## ⭐ **Star增长趋势**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
+</div>
 
 ---
 
