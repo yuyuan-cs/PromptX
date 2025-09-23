@@ -189,6 +189,12 @@ graph LR
 
 ---
 
+## 🔏 **Code Signing**
+
+Windows desktop application code signing is provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+---
+
 ## ⭐ **Star Growth Trend**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)

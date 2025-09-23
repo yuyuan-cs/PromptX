@@ -187,6 +187,12 @@ graph LR
 
 ---
 
+## 🔏 **程式碼簽章**
+
+Windows 桌面應用程式程式碼簽章由 [SignPath.io](https://signpath.io) 提供，憑證由 [SignPath Foundation](https://signpath.org) 簽發。
+
+---
+
 ## ⭐ **Star成長趨勢**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)

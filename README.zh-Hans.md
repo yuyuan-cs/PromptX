@@ -196,6 +196,12 @@ graph LR
 
 ---
 
+## 🔏 **代码签名**
+
+Windows 桌面应用程序代码签名由 [SignPath.io](https://signpath.io) 提供，证书由 [SignPath Foundation](https://signpath.org) 签发。
+
+---
+
 ## ⭐ **Star增长趋势**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Deepractice/PromptX&type=Date)](https://star-history.com/#Deepractice/PromptX&Date)
