@@ -9,9 +9,14 @@
 
 <p>
     <a href=" "><img src="https://img.shields.io/github/stars/Deepractice/PromptX?style=social" alt="Stars"/></a>
-    <a href="https://www.npmjs.com/package/@promptx/cli"><img src="https://img.shields.io/npm/v/@promptx/cli?color=orange&logo=npm" alt="npm version"/></a>
+    <img src="https://komarev.com/ghpvc/?username=PromptX&label=views&color=0e75b6&style=flat" alt="浏览量"/>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/Deepractice/PromptX?color=blue" alt="License"/></a>
-    <img src="https://komarev.com/ghpvc/?username=PromptX&label=Repository%20views&color=0e75b6&style=flat" alt="Repository Views"/>
+  </p>
+
+  <p>
+    <a href="https://www.npmjs.com/package/@promptx/cli"><img src="https://img.shields.io/npm/v/@promptx/cli?color=orange&logo=npm" alt="npm version"/></a>
+    <a href="https://github.com/Deepractice/PromptX/releases"><img src="https://img.shields.io/github/v/release/Deepractice/PromptX?color=green&logo=github" alt="最新版本"/></a>
+    <a href="https://hub.docker.com/r/deepracticexs/promptx"><img src="https://img.shields.io/docker/v/deepracticexs/promptx/latest?color=0db7ed&logo=docker&logoColor=white&label=docker" alt="Docker"/></a>
   </p>
 
 <p>
