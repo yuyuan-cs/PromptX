@@ -327,15 +327,30 @@ jobs:
             cd ../windows-files
           fi
 
+      - name: Prepare final Windows artifacts
+        if: steps.check_credentials.outputs.skip != 'true'
+        run: |
+          mkdir -p windows-final-files
+
+          # 复制签名后的文件
+          if [ -d "signed" ] && [ -n "$(ls -A signed/*.exe 2>/dev/null)" ]; then
+            echo "Using signed files"
+            cp signed/*.exe windows-final-files/
+            cp signed/latest.yml windows-final-files/ || true
+          else
+            echo "Using original files (signing might have been skipped)"
+            cp windows-files/*setup*.exe windows-final-files/
+            cp windows-files/latest.yml windows-final-files/ || true
+          fi
+
+          echo "Final Windows files:"
+          ls -la windows-final-files/
+
       - name: Upload signed Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-final
-          path: |
-            windows-files/*setup*.exe
-            windows-files/latest.yml
-            signed/*setup*.exe
-            signed/latest.yml
+          path: windows-final-files/*
           if-no-files-found: error
           retention-days: 1
 
