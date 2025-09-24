@@ -79,7 +79,7 @@ dmg:
       type: link
       path: /Applications
 
-npmRebuild: false
+npmRebuild: true
 
 # 生成更新元数据文件
 generateUpdatesFilesForAllChannels: true
