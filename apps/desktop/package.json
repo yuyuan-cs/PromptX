@@ -43,7 +43,7 @@
     "electron-updater": "^6.6.2"
   },
   "devDependencies": {
-    "electron": "28.3.3",
+    "electron": "32.2.7",
     "electron-builder": "^26.0.12",
     "electron-icon-builder": "^2.0.1",
     "electron-vite": "^2.0.0"
