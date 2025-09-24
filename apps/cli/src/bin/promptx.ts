@@ -25,16 +25,9 @@ const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 
 // Import from @promptx/core ESM
 import core from '@promptx/core'
 const { utils, pouch } = core
-const { ServerEnvironment, ProjectManager } = utils
+const { ProjectManager } = utils
 const { cli } = pouch
-const { getGlobalServerEnvironment } = ServerEnvironment
 const { getGlobalProjectManager } = ProjectManager
-const serverEnv = getGlobalServerEnvironment()
-if (!serverEnv.isInitialized()) {
-  // CLI mode uses special transport identifier
-  serverEnv.initialize({ transport: 'cli' })
-  logger.debug('CLI mode: ServerEnvironment initialized')
-}
 
 // Automatically restore recent project configuration for CLI mode
 async function restoreProjectForCLI() {
@@ -52,8 +45,7 @@ async function restoreProjectForCLI() {
       ProjectManager.setCurrentProject(
         cliInstance.projectPath,
         cliInstance.mcpId,
-        cliInstance.ideType,
-        cliInstance.transport
+        cliInstance.ideType
       )
       logger.debug(`CLI mode: Project configuration restored - ${cliInstance.projectPath}`)
     }
@@ -101,12 +93,12 @@ program
 
 // Five core pouch commands
 program
-  .command('init [workspacePath]')
-  .description('init pouch - initialize work environment, communicate system basic promises')
+  .command('project [workspacePath]')
+  .description('project pouch - manage project configuration and environment')
   .action(async (workspacePath, options) => {
     // If workspacePath is provided, pass it as workingDirectory parameter
     const args = workspacePath ? { workingDirectory: workspacePath } : {}
-    await cli.execute('init', [args])
+    await cli.execute('project', [args])
   })
 
 program

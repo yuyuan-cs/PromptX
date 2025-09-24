@@ -1,22 +1,22 @@
 const BasePouchCommand = require('../BasePouchCommand')
-const InitArea = require('../areas/init/InitArea')
+const ProjectArea = require('../areas/project/ProjectArea')
 const StateArea = require('../areas/common/StateArea')
 const { getGlobalResourceManager } = require('../../resource')
 const { COMMANDS, PACKAGE_NAMES } = require('~/constants')
 const RegistryData = require('../../resource/RegistryData')
 const ProjectDiscovery = require('../../resource/discovery/ProjectDiscovery')
-const ProjectManager = require('~/utils/ProjectManager')
-const { getGlobalProjectManager } = require('~/utils/ProjectManager')
+const ProjectManager = require('~/project/ProjectManager')
+const { getGlobalProjectManager } = require('~/project/ProjectManager')
 const logger = require('@promptx/logger')
 const path = require('path')
 const fs = require('fs-extra')
 
 /**
- * 初始化命令
- * 负责准备工作环境和传达系统协议
+ * 项目管理命令
+ * 负责项目配置、环境准备和状态管理
  * 使用Area架构组装输出
  */
-class InitCommand extends BasePouchCommand {
+class ProjectCommand extends BasePouchCommand {
   constructor () {
     super()
     // 延迟初始化：这些组件可能依赖项目状态，在 getContent 中按需初始化
@@ -46,8 +46,8 @@ class InitCommand extends BasePouchCommand {
     
     if (!workingDirectory) {
       // 没有提供项目路径时，全局模式
-      const initArea = new InitArea({ isProjectMode: false })
-      this.registerArea(initArea)
+      const projectArea = new ProjectArea({ isProjectMode: false })
+      this.registerArea(projectArea)
       
       const stateArea = new StateArea('global_mode')
       this.registerArea(stateArea)
@@ -84,7 +84,7 @@ class InitCommand extends BasePouchCommand {
     // 这将设置 ProjectManager.currentProject 状态，确保后续操作有正确的项目上下文
     const projectConfig = await ProjectManager.registerCurrentProject(projectPath, ideType)
     
-    logger.debug(`[InitCommand]  项目状态已设置: ${projectConfig.projectPath} -> ${projectConfig.mcpId} (${ideType}) [${projectConfig.transport}]`)
+    logger.debug(`[InitCommand]  项目状态已设置: ${projectConfig.projectPath} -> ${projectConfig.mcpId} (${ideType})`)
     logger.debug(`[InitCommand] IDE类型: ${userIdeType ? `用户指定(${ideType})` : `自动检测(${detectedIdeType})`}`)
 
     // 现在项目状态已设置，可以安全初始化依赖组件
@@ -110,10 +110,10 @@ class InitCommand extends BasePouchCommand {
     // init 只负责项目环境初始化，不负责资源发现
 
     // 生成配置文件名
-    const configFileName = this.projectManager.generateConfigFileName(projectConfig.mcpId, ideType, projectConfig.transport, projectPath)
+    const configFileName = this.projectManager.generateConfigFileName(projectConfig.mcpId, ideType, projectPath)
 
     // 组装Areas
-    const initInfo = {
+    const projectInfo = {
       version,
       projectConfig,
       registryStats,
@@ -122,8 +122,8 @@ class InitCommand extends BasePouchCommand {
       isProjectMode: true
     }
     
-    const initArea = new InitArea(initInfo)
-    this.registerArea(initArea)
+    const projectArea = new ProjectArea(projectInfo)
+    this.registerArea(projectArea)
     
     const stateArea = new StateArea('initialized')
     this.registerArea(stateArea)
@@ -310,4 +310,4 @@ class InitCommand extends BasePouchCommand {
 
 }
 
-module.exports = InitCommand
+module.exports = ProjectCommand
