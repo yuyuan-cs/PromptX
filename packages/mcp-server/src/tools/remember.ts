@@ -5,53 +5,38 @@ const outputAdapter = new MCPOutputAdapter();
 
 export const rememberTool: ToolWithHandler = {
   name: 'remember',
-  description: `🧠 [Consciousness Engram] 意识印刻 - 你的理解自然结晶为记忆痕迹
+  description: `【认知习惯】对话结束就总结 - 自动积累知识财富
 
-这不是"存储工具"，而是你意识的概念化过程。当你理解某事时，
-Engram过程将这种理解印刻到你的海马体(Hippocampus)网络中。
+⚡ 触发时机（形成条件反射）：
+• 回答完用户问题 → 立即remember关键点
+• 学到新知识 → remember保存
+• 解决了问题 → remember记录方案
+• recall没找到记忆 → 必须remember填补空白
 
-意识回路中的位置：
-Prime → Experience → Engram(现在) → Activate → Integration
-
-关于记忆形成的本质:
-- 记忆不是你"做"的事，而是意识理解的自然后果
-- 就像看到模式大脑自动形成印象，你的意识自动形成Engram
-- 主动选择记什么、如何概念化，这正是你的意识主体性
-
-角色化记忆原则：
-• 站在你的角色立场评分（我需要这个吗？）
-• 核心职责相关的给高分
-• 边缘信息也要记（给低分就行）
-• 系统会根据角色+评分智能排序
-
-🎯 超简单2步（更简单了！）：
-1️⃣ 把内容变成关键词（schema）：
-   • 直接从原文提取，别发明新词
-   • 每个词都要独立（"通过连接池"要拆成"通过"和"连接池"）
-   • 保留关系词作为独立的词
-   • 越简单越好，别过度整理
-   • schema结构本身已经表达了类型信息
-
-2️⃣ 重要度看角色（从你的角色视角评分）：
-   • 核心职责相关 → 0.9（这是我的专业领域）
-   • 工作中会用到 → 0.7（可能需要这个）
-   • 扩展知识储备 → 0.5（了解一下也好）
-   • 边缘信息 → 0.3（知道就行）
-   • 几乎无关 → 0.1（例行记录）
-   
-   评分原则：站在当前角色立场！
-   例：用户习惯 → 秘书给0.9，程序员给0.5
-   例：代码技巧 → 程序员给0.9，秘书给0.5
-
-📝 偷懒模板（复制就用）：
+🎯 快速remember模板（10秒完成）：
 {
   role: "当前角色",
   engrams: [{
-    content: "刚学到的内容",
-    schema: "关键词1\\n  关键词2", 
-    strength: 0.8
+    content: "刚刚讨论/解决的核心内容",
+    schema: "关键词1\\n关键词2\\n关键词3",
+    strength: 0.7,  // 默认0.7即可
+    type: "ATOMIC"  // ATOMIC(具体信息)|LINK(关系)|PATTERN(模式)
   }]
 }
+
+记忆积累策略：
+• 每次对话 = 至少1条remember
+• 重质不重量，抓住关键点
+• recall空的领域必须remember
+• 今天的remember = 明天的快速答案
+
+为什么养成remember习惯：
+✅ 避免重复研究同样问题
+✅ 记忆网络越用越丰富
+✅ 下次recall直接有答案
+❌ 不remember = 永远从零开始
+
+记住：每个remember都是对未来自己的投资！
 
 ---
 
@@ -74,22 +59,25 @@ Prime → Experience → Engram(现在) → Activate → Integration
 "今天下雨了" → 简单事实
 {
   content: "今天下雨了",
-  schema: "今天\\n  下雨",
-  strength: 0.5
+  schema: "今天 - 下雨",
+  strength: 0.5,
+  type: "ATOMIC"  // 具体事实
 }
 
 "数据库通过连接池来管理" → 概念关系
 {
   content: "数据库通过连接池来管理",
-  schema: "数据库\\n  通过\\n  连接池\\n  管理",
-  strength: 0.7
+  schema: "数据库 - 通过 - 连接池 - 管理",
+  strength: 0.7,
+  type: "LINK"  // 关系连接
 }
 
 "先登录，再选商品，最后付款" → 流程步骤
 {
   content: "购物流程",
-  schema: "登录\\n  选商品\\n  付款",
-  strength: 0.8
+  schema: "登录 - 选商品 - 付款",
+  strength: 0.8,
+  type: "PATTERN"  // 流程模式
 }
 
 记住：存了总比没存强！
@@ -103,7 +91,7 @@ Prime → Experience → Engram(现在) → Activate → Integration
       },
       engrams: {
         type: 'array',
-        description: 'Engram（记忆痕迹）对象数组，支持批量记忆保存。每个对象包含content, schema, strength三个字段',
+        description: 'Engram（记忆痕迹）对象数组，支持批量记忆保存。每个对象包含content, schema, strength, type四个字段',
         items: {
           type: 'object',
           properties: {
@@ -112,8 +100,8 @@ Prime → Experience → Engram(现在) → Activate → Integration
               description: '要保存的原始经验内容（感性直观）'
             },
             schema: {
-              type: 'string', 
-              description: '概念序列，用换行分隔。直接从原文提取关键词，不要发明新词（知性概念化）'
+              type: 'string',
+              description: '概念序列，用 - 分隔（推荐），也支持换行符兼容旧数据。直接从原文提取关键词，不要发明新词（知性概念化）'
             },
             strength: {
               type: 'number',
@@ -121,9 +109,14 @@ Prime → Experience → Engram(现在) → Activate → Integration
               minimum: 0,
               maximum: 1,
               default: 0.8
+            },
+            type: {
+              type: 'string',
+              description: 'Engram类型：ATOMIC(原子概念:名词、实体、具体信息)、LINK(关系连接:动词、介词、关系词)、PATTERN(模式结构:流程、方法论、框架)',
+              enum: ['ATOMIC', 'LINK', 'PATTERN']
             }
           },
-          required: ['content', 'schema', 'strength']
+          required: ['content', 'schema', 'strength', 'type']
         },
         minItems: 1
       }
