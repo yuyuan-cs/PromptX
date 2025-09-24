@@ -10,26 +10,30 @@ const outputAdapter = new MCPOutputAdapter();
  */
 export const projectTool: ToolWithHandler = {
   name: 'project',
-  description: `📁 [项目管理] 发现并激活项目专属资源
+  description: `📁 [项目管理] 绑定IDE当前工作项目
 
-为什么需要：
-✅ 加载项目专属的角色、工具等资源
-✅ 访问项目级的记忆和知识
-✅ 获得针对此项目优化的能力
+重要原则：
+✅ 使用IDE提供的项目根目录（如VSCode工作区、Cursor项目）
+✅ 不要自行推测或识别项目位置
+✅ 以IDE的项目概念为准，而非文件路径推断
 
 何时调用：
-当你知道项目根目录时，建议立即调用以获得项目的完整能力。
+当IDE打开了一个项目时，使用IDE的工作目录路径调用此工具。
+
+示例：
+- VSCode打开 /Users/name/MyProject → 绑定此目录
+- 看到文件 /Users/name/MyProject/src/index.js → 仍然绑定项目根 /Users/name/MyProject
+- 不要因为看到子文件就绑定子目录
 
 不调用会怎样：
 - 只能使用系统级和用户级资源
-- 无法访问项目专属资源
-- 可能错过重要的项目能力`,
+- 无法访问项目专属资源`,
   inputSchema: {
     type: 'object',
     properties: {
       workingDirectory: {
         type: 'string',
-        description: '项目的工作目录路径（可选）。仅在需要项目级配置时提供。'
+        description: 'IDE当前打开的项目根目录路径。使用IDE工作区路径，不要自行判断或推测项目位置。'
       },
       ideType: {
         type: 'string',
