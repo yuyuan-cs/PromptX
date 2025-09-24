@@ -26,12 +26,12 @@ class ToolListArea extends BaseArea {
       tools.sort((a, b) => a.id.localeCompare(b.id))
       
       tools.forEach(tool => {
-        const manualCommand = `learn("@manual://${tool.id}")`
-        const toolCommand = `toolx("@tool://${tool.id}", parameters)`
-        
+        const toolCommand = `toolx("@tool://${tool.id}", mode: 'manual')`
+        const executeCommand = `toolx("@tool://${tool.id}", parameters)`
+
         content += `- \`${tool.id}\`: ${tool.name || tool.title || '未命名工具'}\n`
-        content += `  - 📖 查看使用手册: ${manualCommand}\n`
-        content += `  - 🔧 执行工具: ${toolCommand}\n`
+        content += `  - 📖 查看使用手册: ${toolCommand}\n`
+        content += `  - 🔧 执行工具: ${executeCommand}\n`
       })
     }
     
