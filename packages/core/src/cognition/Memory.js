@@ -1,5 +1,7 @@
-const { open } = require('lmdb');
+const Database = require('better-sqlite3');
 const logger = require('@promptx/logger');
+const path = require('path');
+const fs = require('fs-extra');
 
 /**
  * Memory - 记忆内容存储
@@ -16,8 +18,8 @@ const logger = require('@promptx/logger');
  *
  * ## 设计决策
  *
- * Q: 为什么用LMDB而不是LevelDB?
- * A: LMDB提供真正的多进程支持，解决"Database is not open"问题
+ * Q: 为什么用better-sqlite3而不是LMDB?
+ * A: better-sqlite3与Electron高版本兼容，避免V8沙箱问题，且性能优秀
  *
  * Q: 为什么不在Memory中管理role?
  * A: 职责分离，Memory只管存储，role由上层管理
@@ -28,32 +30,105 @@ class Memory {
   /**
    * 创建Memory实例
    *
-   * @param {string} dbPath - LMDB数据库路径
+   * @param {string} dbPath - 数据库路径
    */
   constructor(dbPath) {
-    // 改名：从 engrams.db 到 engrams
-    this.dbPath = dbPath.replace('engrams.db', 'engrams');
+    // 兼容旧路径：如果是 engrams 结尾，改为 engrams.db
+    if (dbPath.endsWith('engrams')) {
+      this.dbPath = dbPath + '.db';
+    } else if (!dbPath.endsWith('.db')) {
+      this.dbPath = dbPath.replace('engrams.db', 'engrams') + '.db';
+    } else {
+      this.dbPath = dbPath;
+    }
+
+    // 确保目录存在
+    fs.ensureDirSync(path.dirname(this.dbPath));
 
     /**
-     * LMDB数据库实例
+     * SQLite数据库实例
      * @type {Object}
      */
-    this.db = open(this.dbPath, {
-      encoding: 'json',          // 自动JSON序列化
-      compression: true,         // 启用压缩
-      maxDbs: 4,                 // 支持多个子数据库
-      mapSize: 100 * 1024 * 1024 // 100MB映射空间
-    });
+    this.db = new Database(this.dbPath);
+    this.db.pragma('journal_mode = WAL'); // 启用WAL模式，支持并发读
+    this.db.pragma('synchronous = NORMAL'); // 平衡性能和安全
 
-    // 子数据库用于多索引
-    this.engramDb = this.db.openDB('engrams');      // 主engram存储
-    this.cueIndexDb = this.db.openDB('cue_index');   // Cue -> Engram映射
-    this.timeIndexDb = this.db.openDB('time_index'); // 时间索引
-    this.typeIndexDb = this.db.openDB('type_index'); // 类型索引 (ATOMIC/LINK/PATTERN)
+    // 创建表和索引
+    this._initializeSchema();
 
-    logger.debug('[Memory] Initialized with LMDB', { dbPath: this.dbPath });
+    logger.debug('[Memory] Initialized with SQLite', { dbPath: this.dbPath });
   }
-  
+
+  /**
+   * 初始化数据库schema
+   * @private
+   */
+  _initializeSchema() {
+    // 主engram表
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS engrams (
+        id TEXT PRIMARY KEY,
+        content TEXT,
+        schema TEXT,
+        type TEXT,
+        timestamp INTEGER,
+        strength REAL,
+        metadata TEXT
+      )
+    `);
+
+    // cue索引表
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS cue_index (
+        word TEXT,
+        engram_id TEXT,
+        PRIMARY KEY (word, engram_id),
+        FOREIGN KEY (engram_id) REFERENCES engrams(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 创建索引以提高查询性能
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_engrams_type ON engrams(type);
+      CREATE INDEX IF NOT EXISTS idx_engrams_timestamp ON engrams(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_cue_word ON cue_index(word);
+    `);
+
+    // 准备常用语句
+    this._prepareStatements();
+  }
+
+  /**
+   * 准备常用SQL语句
+   * @private
+   */
+  _prepareStatements() {
+    this.stmts = {
+      insertEngram: this.db.prepare(`
+        INSERT OR REPLACE INTO engrams (id, content, schema, type, timestamp, strength, metadata)
+        VALUES (@id, @content, @schema, @type, @timestamp, @strength, @metadata)
+      `),
+      deleteCues: this.db.prepare('DELETE FROM cue_index WHERE engram_id = ?'),
+      insertCue: this.db.prepare(`
+        INSERT OR IGNORE INTO cue_index (word, engram_id)
+        VALUES (@word, @engram_id)
+      `),
+      getEngram: this.db.prepare('SELECT * FROM engrams WHERE id = ?'),
+      getEngramsByWord: this.db.prepare(`
+        SELECT DISTINCT e.* FROM engrams e
+        JOIN cue_index c ON e.id = c.engram_id
+        WHERE c.word = ?
+      `),
+      getEngramsByType: this.db.prepare('SELECT * FROM engrams WHERE type = ?'),
+      getEngramsByTypeAndWord: this.db.prepare(`
+        SELECT DISTINCT e.* FROM engrams e
+        JOIN cue_index c ON e.id = c.engram_id
+        WHERE e.type = ? AND c.word = ?
+      `),
+      countEngrams: this.db.prepare('SELECT COUNT(*) as count FROM engrams')
+    };
+  }
+
   /**
    * 存储Engram对象
    *
@@ -66,46 +141,39 @@ class Memory {
 
     try {
       // 使用事务进行原子操作
-      await this.db.transaction(() => {
+      const transaction = this.db.transaction(() => {
         // 1. 存储主engram
-        this.engramDb.put(key, engramData);
+        this.stmts.insertEngram.run({
+          id: key,
+          content: engramData.content,
+          schema: JSON.stringify(engramData.schema || []),
+          type: engramData.type || 'ATOMIC',
+          timestamp: engramData.timestamp || Date.now(),
+          strength: engramData.strength || 0.5,
+          metadata: JSON.stringify({
+            metadata: engramData.metadata,
+            role: engramData.role
+          })
+        });
 
-        // 2. 建立Cue索引
-        if (engramData.schema) {
+        // 2. 先删除旧的cue索引
+        this.stmts.deleteCues.run(key);
+
+        // 3. 建立新的Cue索引
+        if (engramData.schema && Array.isArray(engramData.schema)) {
           for (const word of engramData.schema) {
-            const existingIds = this.cueIndexDb.get(word) || [];
-            if (!existingIds.includes(key)) {
-              existingIds.push(key);
-              this.cueIndexDb.put(word, existingIds);
-            }
-          }
-        }
-
-        // 3. 建立时间索引
-        if (engramData.timestamp) {
-          const timeKey = new Date(engramData.timestamp).toISOString().slice(0, 10);
-          const dailyIds = this.timeIndexDb.get(timeKey) || [];
-          if (!dailyIds.includes(key)) {
-            dailyIds.push(key);
-            this.timeIndexDb.put(timeKey, dailyIds);
-          }
-        }
-
-        // 4. 建立type索引
-        if (engramData.type) {
-          const typeIds = this.typeIndexDb.get(engramData.type) || [];
-          if (!typeIds.includes(key)) {
-            typeIds.push(key);
-            this.typeIndexDb.put(engramData.type, typeIds);
+            this.stmts.insertCue.run({ word, engram_id: key });
           }
         }
       });
 
-      logger.debug('[Memory] Stored engram with LMDB', {
+      transaction();
+
+      logger.debug('[Memory] Stored engram with SQLite', {
         key,
-        type: engram.type,
-        preview: engram.getPreview(),
-        strength: engram.strength
+        type: engramData.type || 'ATOMIC',
+        preview: engramData.content ? engramData.content.substring(0, 50) + '...' : '',
+        strength: engramData.strength || 0.5
       });
 
       return key;
@@ -117,7 +185,7 @@ class Memory {
       throw error;
     }
   }
-  
+
   /**
    * 获取Engram对象
    *
@@ -126,12 +194,15 @@ class Memory {
    */
   async get(key) {
     try {
-      const data = this.engramDb.get(key);
+      const row = this.stmts.getEngram.get(key);
 
-      if (!data) {
+      if (!row) {
         logger.debug('[Memory] Engram not found', { key });
         return null;
       }
+
+      // 转换回原始格式
+      const data = this._rowToEngram(row);
 
       logger.debug('[Memory] Retrieved engram', {
         key,
@@ -156,19 +227,15 @@ class Memory {
    */
   async getByWord(word) {
     try {
-      const engramIds = this.cueIndexDb.get(word) || [];
-      const engrams = [];
-
-      for (const id of engramIds) {
-        const engram = this.engramDb.get(id);
-        if (engram) {
-          // 兼容旧数据：如果没有type字段，默认为ATOMIC
-          if (!engram.type) {
-            engram.type = 'ATOMIC';
-          }
-          engrams.push(engram);
+      const rows = this.stmts.getEngramsByWord.all(word);
+      const engrams = rows.map(row => {
+        const engram = this._rowToEngram(row);
+        // 兼容旧数据：如果没有type字段，默认为ATOMIC
+        if (!engram.type) {
+          engram.type = 'ATOMIC';
         }
-      }
+        return engram;
+      });
 
       logger.debug('[Memory] Retrieved engrams by word', {
         word,
@@ -184,7 +251,7 @@ class Memory {
       throw error;
     }
   }
-  
+
   /**
    * 根据类型查询Engram对象
    *
@@ -194,18 +261,14 @@ class Memory {
    */
   async getByType(type, word = null) {
     try {
-      const typeIds = this.typeIndexDb.get(type) || [];
-      const engrams = [];
-
-      for (const id of typeIds) {
-        const engram = this.engramDb.get(id);
-        if (engram) {
-          // 如果指定了word，检查schema中是否包含该词
-          if (!word || (engram.schema && engram.schema.includes(word))) {
-            engrams.push(engram);
-          }
-        }
+      let rows;
+      if (word) {
+        rows = this.stmts.getEngramsByTypeAndWord.all(type, word);
+      } else {
+        rows = this.stmts.getEngramsByType.all(type);
       }
+
+      const engrams = rows.map(row => this._rowToEngram(row));
 
       logger.debug('[Memory] Retrieved engrams by type', {
         type,
@@ -265,7 +328,7 @@ class Memory {
   async close() {
     try {
       this.db.close();
-      logger.debug('[Memory] LMDB database closed');
+      logger.debug('[Memory] SQLite database closed');
     } catch (error) {
       logger.error('[Memory] Failed to close database', {
         error: error.message
@@ -273,7 +336,7 @@ class Memory {
       throw error;
     }
   }
-  
+
   /**
    * 获取存储统计信息
    *
@@ -281,13 +344,10 @@ class Memory {
    */
   async getStatistics() {
     try {
-      let count = 0;
-      for (const _ of this.engramDb.getKeys()) {
-        count++;
-      }
+      const result = this.stmts.countEngrams.get();
 
       return {
-        totalEngrams: count,
+        totalEngrams: result.count,
         dbPath: this.dbPath
       };
     } catch (error) {
@@ -300,6 +360,25 @@ class Memory {
         error: error.message
       };
     }
+  }
+
+  /**
+   * 将数据库行转换为Engram格式
+   * @private
+   */
+  _rowToEngram(row) {
+    const metadata = JSON.parse(row.metadata || '{}');
+    const schema = JSON.parse(row.schema || '[]');
+
+    return {
+      id: row.id,
+      content: row.content,
+      schema: schema,
+      type: row.type || 'ATOMIC',
+      timestamp: row.timestamp,
+      strength: row.strength,
+      ...metadata
+    };
   }
 }
 

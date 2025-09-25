@@ -37,6 +37,7 @@
     "@promptx/logger": "workspace:*",
     "@promptx/resource": "workspace:*",
     "ajv": "^8.17.1",
+    "better-sqlite3": "^11.10.0",
     "env-paths": "2.2.1",
     "eta": "^3.5.0",
     "extract-comments": "^1.1.0",
@@ -44,7 +45,6 @@
     "glob": "^10.4.5",
     "importx": "^0.5.2",
     "is-electron": "^2.2.2",
-    "lmdb": "^3.4.2",
     "peggy": "^5.0.5"
   },
   "files": [
