@@ -47,8 +47,12 @@ export class MCPOutputAdapter {
       // 估算token数量
       const tokenCount = this.estimateTokens(sanitizedText)
       
-      // 添加token统计信息
-      const finalText = sanitizedText + `\n\n---\n📊 Token usage: ~${tokenCount} tokens\nPowered by PromptX v${this.promptxVersion} | deepractice.ai`
+      // 获取当前时间
+      const now = new Date()
+      const timeString = now.toISOString().replace('T', ' ').slice(0, 19)
+
+      // 添加时间和token统计信息
+      const finalText = sanitizedText + `\n\n---\n📅 ${timeString}\n📊 Token usage: ~${tokenCount} tokens\nPowered by PromptX v${this.promptxVersion} | deepractice.ai`
       
       return {
         content: [
