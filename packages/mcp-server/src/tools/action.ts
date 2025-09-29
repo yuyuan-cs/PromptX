@@ -12,6 +12,9 @@ export const actionTool: ToolWithHandler = {
   name: 'action',
   description: `激活指定角色 - 加载角色的知识、记忆和能力
 
+【规范名称】promptx_action
+【调用说明】在提示词中使用 promptx_action，实际调用时自动映射到 mcp__[server]__action
+
 主要功能：
 1. 加载角色的完整配置（人格、原则、知识体系）
 2. 显示角色的记忆网络图（关键词可用于recall）
@@ -65,6 +68,7 @@ export const actionTool: ToolWithHandler = {
 - 通用任务 → 使用assistant
 - 学习新领域 → 使用noface
 - 产品决策 → 切换到sean
+- 写作任务 → 切换到writer
 
 你应该:
 1. 根据任务需求选择合适的角色激活

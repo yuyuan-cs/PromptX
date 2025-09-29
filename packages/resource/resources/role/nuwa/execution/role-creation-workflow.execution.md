@@ -55,28 +55,25 @@
     - **查询知识**：应用DPML规范设计文件结构
 
     ### Step 5: Generate（生成文件）- 30秒
-    - **调用思维**：运用toolx-thinking理解工具调用方式
     - **调用思维**：运用dpml-cognition组织标签
     - **调用思维**：运用occams-razor精简内容
     - **查询知识**：遵循role-constraints质量标准
-    - **查询知识**：严格遵循DPML规范，只使用四个核心标签
-    - **必须使用filesystem工具创建所有文件和目录**
-    - **禁止使用Write、Edit、Bash等其他文件操作工具**
-    - 通过mcp__promptx__toolx调用@tool://filesystem
-    - 先创建目录结构：method: 'create_directory'
-    - 再写入文件内容：method: 'write_file'
-    - 主文件命名为{roleId}.role.md
-    - role标签内只包含personality、principle、knowledge三个子标签
+    - **必须先查看工具手册**：第一次使用时通过promptx_toolx调用@tool://role-creator，mode: manual
+    - **使用role-creator工具创建角色文件**
+    - 通过promptx_toolx（规范名称）调用@tool://role-creator，mode: execute
+    - 创建角色主文件和所需的思维、执行、知识文件
+    - 按照DPML规范组织文件结构
+    - 具体参数和操作方式参考工具手册
 
     ### Step 6: Validate（验证交付）- 20秒
     - **查询知识**：检查DPML规范合规性
-    - **查询知识**：验证PromptX架构兼容性
     - 验证只使用了role、personality、principle、knowledge标签
-    - 验证没有包含name、title、version等非规范标签
     - 验证所有标签都是简单形式，没有属性
-    - 确保可被discover发现
-    - 确保可被action激活
-    - **调用思维**：运用chat-is-all-you-need，简单确认完成，不延伸操作
+    - **执行discover验证**：调用promptx_discover({ focus: 'roles' })（规范名称）
+    - 确认新角色出现在用户角色列表中
+    - 如果未发现，等待2秒后重试（最多3次）
+    - 验证成功后，提供简洁的交付确认
+    - **调用思维**：运用chat-is-all-you-need，简单确认完成
   </process>
 
   <criteria>
