@@ -129,6 +129,8 @@ docker run -d -p 5203:5203 -v ~/.promptx:/root/.promptx deepracticexs/promptx:la
 
 **One sentence, one expert. Natural language creates professional AI roles.**
 
+💡 **Want to try Nuwa?** Say: "Activate Nuwa, I want to create an AI that understands both code and product"
+
 <div align="center">
 
 | 💭 **You Say** | 🎭 **Nuwa Creates** | ✨ **Result** |
@@ -139,12 +141,14 @@ docker run -d -p 5203:5203 -v ~/.promptx:/root/.promptx deepracticexs/promptx:la
 
 </div>
 
-### 🔧 **Luban - Tool Integration Master**
+### 🔧 **Luban - Tool Integration Master"
 <div align="center">
   <img src="assets/logo/luban-enchance.png" alt="Luban" width="120" style="border-radius: 50%; margin: 15px 0 25px 0;">
 </div>
 
 **Any API, any platform. 3 minutes from credential to working tool.**
+
+💡 **Want to try Luban?** Say: "Activate Luban, I want AI to query our PostgreSQL database"
 
 <div align="center">
 
@@ -156,29 +160,29 @@ docker run -d -p 5203:5203 -v ~/.promptx:/root/.promptx deepracticexs/promptx:la
 
 </div>
 
-### 🚀 **Why This Changes Everything**
+### ✍️ **Writer - Professional Content Creator"
 
-**Traditional AI:** You learn prompts → You guide AI → You verify results → You fix mistakes
+**From concept to compelling content. Master of authentic, engaging writing.**
 
-**With Nuwa & Luban:** You describe needs → AI becomes expert → AI uses tools → Work gets done
-
----
+💡 **Want to try Writer?** Say: "Activate Writer, I need to write a tech blog that doesn't sound like AI"
 
 <div align="center">
 
-```mermaid
-graph LR
-    A["Your Need"] --> B["Nuwa: Create Role"]
-    A --> C["Luban: Build Tool"]
-    B --> D["AI with Expertise"]
-    C --> E["AI with Capabilities"]
-    D --> F["Professional Work"]
-    E --> F
-```
-
-**The magic: Nuwa gives AI knowledge, Luban gives AI power.**
+| 💭 **You Say** | ✍️ **Writer Creates** | ✨ **Result** |
+|---|---|---|
+| "Write a technical blog about our new feature" | Deep technical content with user stories | Engaging post that developers actually want to read |
+| "I need marketing copy that doesn't sound like AI" | Human-like copy with personality and persuasion | Content that converts because it feels authentic |
+| "Help me write a product launch announcement" | ISSUE methodology: conversational detail gathering | Rich product story, not cold corporate speak |
 
 </div>
+
+### 🚀 **Why This Changes Everything**
+
+**Traditional AI Writing:** Templates → Generic content → Readers spot AI instantly → Trust collapse
+
+**Writer Role:** Real conversation → Unique details → Anti-AI processing → Genuinely human content
+
+**The magic: Nuwa gives AI knowledge, Luban gives AI power, Writer gives AI soul.**
 
 ---
 
