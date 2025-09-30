@@ -23,7 +23,7 @@ import type { ToolWorkerPool } from '~/interfaces/ToolWorkerPool.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import packageJson from '../../package.json' assert { type: 'json' };
+import packageJson from '../../package.json\' assert { type: 'json' };
 
 const SESSION_ID_HEADER_NAME = "mcp-session-id";
 
@@ -195,27 +195,55 @@ export class StreamableHttpMCPServer extends BaseMCPServer {
    */
   private setupExpress(): void {
     if (!this.app) return;
-    
+
+    // CORS 中间件 - 允许所有来源
+    this.app.use((req, res, next) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id, Authorization');
+      res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id');
+
+      // 处理 OPTIONS 预检请求
+      if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+      }
+
+      next();
+    });
+
     // 仿照官方：只有基础的 JSON 解析
     this.app.use(express.json());
-    
+
+    // 托管静态文件（Web UI）
+    const webUIPath = path.join(process.cwd(), '../../apps/web/dist');
+    this.logger.info(`Attempting to serve Web UI from: ${webUIPath}`);
+
+    // 检查目录是否存在
+    fs.access(webUIPath).then(() => {
+      this.app!.use('/ui', express.static(webUIPath));
+      this.logger.info('Web UI static files served at /ui');
+    }).catch(() => {
+      this.logger.warn('Web UI dist directory not found, skipping static file serving');
+    });
+
     // 仿照官方：使用 Router
     const router = express.Router();
-    
+
     // 健康检查端点 - 在其他路由之前定义
     router.get('/health', (req, res) => {
       this.handleHealthCheck(req, res);
     });
-    
+
     // 仿照官方：路由定义
     router.post('/mcp', async (req, res) => {
       await this.handlePostRequest(req, res);
     });
-    
+
     router.get('/mcp', async (req, res) => {
       await this.handleGetRequest(req, res);
     });
-    
+
     // 仿照官方：挂载路由
     this.app.use('/', router);
   }

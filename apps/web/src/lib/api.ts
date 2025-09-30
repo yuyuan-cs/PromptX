@@ -1,6 +1,6 @@
 import type { DiscoverResponse, Role, Memory } from '~/types'
 
-const API_BASE = '/api'
+const API_BASE = window.location.pathname.startsWith('/ui') ? '' : '/api'
 const SESSION_ID_HEADER = 'mcp-session-id'
 
 class PromptXAPI {
