@@ -1,132 +1,84 @@
 # PromptX Web UI
 
-Modern web interface for PromptX - AI Role & Tool Management Platform.
+PromptX 的现代化 Web 界面 - AI 角色与工具管理平台。
 
-## Features
+## 功能特性
 
-- 🎭 **Role Management**: Browse, search, and activate AI expert roles
-- 🔧 **Tool Explorer**: Discover and manage available tools
-- 📁 **Project Integration**: Bind projects to access project-specific resources
-- 🧠 **Memory Network**: Store and recall knowledge using the cognitive memory system
-- 🎨 **Modern UI**: Clean, responsive interface built with React and Tailwind CSS
+- 🎭 **角色管理**：浏览、搜索和激活 AI 专家角色
+- 🔧 **工具浏览器**：发现和管理可用工具
+- 📁 **项目集成**：绑定项目以访问项目特定资源
+- 🧠 **记忆网络**：使用认知记忆系统存储和调用知识
+- 🎨 **现代化 UI**：使用 React 和 Tailwind CSS 构建的简洁响应式界面
 
-## Tech Stack
+## 技术栈
 
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Data Fetching**: TanStack Query (React Query)
-- **Routing**: React Router v6
+- **前端**：React 18 + TypeScript
+- **构建工具**：Vite
+- **样式**：Tailwind CSS
+- **状态管理**：Zustand
+- **数据获取**：TanStack Query (React Query)
+- **路由**：React Router v6
 
-## Development
+## 开发
 
-### Prerequisites
+### 前置要求
 
 - Node.js >= 14.0.0
-- pnpm (recommended)
+- pnpm (推荐)
 
-### Setup
+### 设置
 
-1. Install dependencies:
+1. 安装依赖：
 ```bash
 pnpm install
 ```
 
-2. Start development server:
+2. 启动开发服务器：
 ```bash
 pnpm dev
 ```
 
-The web UI will be available at `http://localhost:3000`.
+Web UI 将在 `http://localhost:3000` 上可用。
 
-### API Connection
+### API 连接
 
-The web UI connects to the PromptX MCP server running on `http://127.0.0.1:5203`. Make sure the server is running before using the web UI.
+Web UI 连接到运行在 `http://127.0.0.1:5203` 的 PromptX MCP 服务器。在使用 Web UI 之前，请确保服务器正在运行。
 
-You can start the server using:
-- PromptX Desktop app (recommended)
+您可以使用以下方式启动服务器：
+- PromptX 桌面应用（推荐）
 - CLI: `npx @promptx/mcp-server`
 - Docker: `docker run -p 5203:5203 deepracticexs/promptx:latest`
 
-## Building
+## 构建
 
-Build the web UI for production:
+为生产构建 Web UI：
 
 ```bash
 pnpm build
 ```
 
-The built files will be in the `dist` directory and can be served by any static file server.
+构建后的文件将在 `dist` 目录中，可由任何静态文件服务器提供。
 
-## Project Structure
+## 项目结构
 
 ```
 apps/web/
 ├── src/
-│   ├── components/     # Reusable UI components
-│   │   └── Layout.tsx  # Main layout with sidebar
-│   ├── pages/          # Page components
+│   ├── components/     # 可复用 UI 组件
+│   │   └── Layout.tsx  # 带侧边栏的主布局
+│   ├── pages/          # 页面组件
 │   │   ├── HomePage.tsx
 │   │   ├── RolesPage.tsx
 │   │   ├── ToolsPage.tsx
 │   │   ├── ProjectsPage.tsx
 │   │   └── MemoryPage.tsx
-│   ├── lib/            # Core utilities
-│   │   ├── api.ts      # API client
-│   │   └── store.ts    # Global state
-│   ├── hooks/          # Custom React hooks
+│   ├── lib/            # 核心工具库
+│   │   ├── api.ts      # API 客户端
+│   │   └── store.ts    # 全局状态
+│   ├── hooks/          # 自定义 React hooks
 │   │   └── usePromptX.ts
-│   ├── types/          # TypeScript type definitions
+│   ├── types/          # TypeScript 类型定义
 │   │   └── index.ts
-│   ├── App.tsx         # Root component
-│   ├── main.tsx        # Entry point
-│   └── index.css       # Global styles
-├── index.html
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── tailwind.config.js
-```
-
-## Integration with Desktop App
-
-The web UI is automatically bundled with the PromptX desktop application. When building the desktop app, the web UI is:
-
-1. Built using `pnpm build` in the web directory
-2. Packaged into the `resources/web` folder
-3. Loaded by the desktop app's Web UI window
-
-Users can access it via the tray menu: **Open Web UI**
-
-## Pages Overview
-
-### Home
-- Overview of available resources
-- Quick statistics
-- Getting started guide
-
-### Roles
-- Browse all available AI roles
-- Filter by source (system/project/user)
-- Search by name or description
-- Activate roles with one click
-
-### Tools
-- Explore available tools
-- View tool parameters and documentation
-- Search functionality
-
-### Projects
-- Bind project directories
-- View active project
-- Access project-specific resources
-
-### Memory
-- Store new memories with keywords
-- Recall memories by keyword search
-- View memory network connections
-
-## License
-
-MIT
+│   ├── App.tsx         # 根组件
+│   ├── main.tsx        # 入口点
+│   └── index.css       # 全局样式
