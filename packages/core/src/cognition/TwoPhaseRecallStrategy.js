@@ -16,10 +16,23 @@
 const Mind = require('./Mind');
 const ActivationContext = require('./ActivationContext');
 const HippocampalActivationStrategy = require('./ActivationStrategy').HippocampalActivationStrategy;
+const ActivationMode = require('./ActivationMode');
 const logger = require('@promptx/logger');
 
 class TwoPhaseRecallStrategy {
   constructor(options = {}) {
+    // 如果指定了 mode，使用 ActivationMode 配置
+    if (options.mode) {
+      const modeConfig = ActivationMode.createRecallConfig(options.mode);
+      // modeConfig 提供默认值，options 可以覆盖
+      options = { ...modeConfig, ...options };
+
+      logger.info('[TwoPhaseRecallStrategy] Using ActivationMode', {
+        mode: options.mode,
+        modeConfig
+      });
+    }
+
     // 第一阶段配置
     this.coarseRecall = {
       // 激活策略（可替换）
@@ -62,6 +75,7 @@ class TwoPhaseRecallStrategy {
     this.memory = null;
 
     logger.info('[TwoPhaseRecallStrategy] Initialized', {
+      mode: options.mode,
       coarseRecall: this.coarseRecall,
       fineRanking: this.fineRanking
     });
@@ -106,12 +120,19 @@ class TwoPhaseRecallStrategy {
 
     // 1. 分词和查找中心Cue
     const words = this.tokenize(query);
+    logger.debug('[Phase1] Tokenized words', { words, networkSize: this.network?.size() });
+
     const centerCue = await this.findBestCue(words);
 
     if (!centerCue) {
-      logger.warn('[Phase1] No center cue found', { query });
+      logger.warn('[Phase1] No center cue found', { query, words, networkSize: this.network?.size() });
       return new Mind(null);
     }
+
+    logger.info('[Phase1] Found center cue', {
+      word: centerCue.word,
+      connections: centerCue.connections.size
+    });
 
     // 2. 使用原有的Recall类进行激活扩散（临时方案）
     const Recall = require('./Recall');
@@ -119,7 +140,8 @@ class TwoPhaseRecallStrategy {
       activationStrategy: this.coarseRecall.activationStrategy
     });
 
-    const mind = recall.execute(query);
+    // 修复：使用 centerCue.word 而不是完整 query
+    const mind = recall.execute(centerCue.word);
 
     if (!mind) {
       logger.warn('[Phase1] Recall failed', { query });
