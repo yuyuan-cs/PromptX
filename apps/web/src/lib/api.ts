@@ -1,13 +1,87 @@
 import type { DiscoverResponse, Role, Memory } from '~/types'
 
 const API_BASE = '/api'
+const SESSION_ID_HEADER = 'mcp-session-id'
 
 class PromptXAPI {
+  private sessionId: string | null = null
+  private initPromise: Promise<void> | null = null
+
+  async ensureSession(): Promise<void> {
+    if (this.sessionId) return
+
+    if (this.initPromise) {
+      return this.initPromise
+    }
+
+    this.initPromise = this.initSession()
+    return this.initPromise
+  }
+
+  private async initSession(): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {
+              roots: {
+                listChanged: true
+              },
+              sampling: {}
+            },
+            clientInfo: {
+              name: 'promptx-web-ui',
+              version: '1.0.0'
+            }
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Initialize failed:', errorText)
+        throw new Error(`Failed to initialize session: ${response.statusText}`)
+      }
+
+      const sessionId = response.headers.get(SESSION_ID_HEADER)
+      const data = await response.json()
+
+      console.log('Initialize response:', data)
+      console.log('Session ID from header:', sessionId)
+
+      if (!sessionId) {
+        throw new Error('No session ID in response headers')
+      }
+
+      this.sessionId = sessionId
+      console.log('Session initialized successfully:', this.sessionId)
+    } catch (error) {
+      console.error('Session initialization error:', error)
+      this.initPromise = null
+      throw error
+    }
+  }
+
   async callMCP<T = any>(method: string, params?: Record<string, any>): Promise<T> {
+    await this.ensureSession()
+
+    if (!this.sessionId) {
+      throw new Error('No active session')
+    }
+
     const response = await fetch(`${API_BASE}/mcp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        [SESSION_ID_HEADER]: this.sessionId,
       },
       body: JSON.stringify({
         jsonrpc: '2.0',
@@ -119,6 +193,11 @@ class PromptXAPI {
     const memories: Memory[] = []
 
     return memories
+  }
+
+  disconnect(): void {
+    this.sessionId = null
+    this.initPromise = null
   }
 }
 

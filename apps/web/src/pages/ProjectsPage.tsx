@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useBindProject } from '~/hooks/usePromptX'
 import { useAppStore } from '~/lib/store'
-import { FolderOpen, Plus, CircleCheck as CheckCircle } from 'lucide-react'
+import { FolderOpen, Plus, CheckCircle } from 'lucide-react'
 
 export default function ProjectsPage() {
   const [projectPath, setProjectPath] = useState('')
