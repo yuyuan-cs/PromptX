@@ -21,6 +21,7 @@ import * as fs from 'node:fs'
 import * as logger from '@promptx/logger'
 // import { createPIcon } from '~/utils/createPIcon' // Deprecated - using new icons
 import { ResourceManager } from '~/main/ResourceManager'
+import { WebUIWindow } from '~/main/windows/WebUIWindow'
 import packageJson from '../../../package.json'
 
 interface TrayMenuItem {
@@ -36,6 +37,7 @@ export class TrayPresenter {
   private tray: Tray
   private currentStatus: ServerStatus = ServerStatus.STOPPED
   private logsWindow: BrowserWindow | null = null
+  private webUIWindow: WebUIWindow | null = null
   private statusListener: (status: ServerStatus) => void
   private resourceManager: ResourceManager
   private appIcon: nativeImage | undefined
@@ -49,6 +51,8 @@ export class TrayPresenter {
   ) {
     // Initialize resource manager
     this.resourceManager = new ResourceManager()
+    // Initialize Web UI window
+    this.webUIWindow = new WebUIWindow()
     // Create tray icon
     this.tray = this.createTray()
     // Load app icon for dialogs
@@ -228,7 +232,14 @@ export class TrayPresenter {
     }
 
     menuItems.push({ type: 'separator' })
-    
+
+    // Open Web UI
+    menuItems.push({
+      id: 'open-ui',
+      label: 'Open Web UI',
+      click: () => this.handleOpenWebUI()
+    })
+
     // Resource management (roles and tools)
     menuItems.push({
       id: 'resources',
@@ -390,6 +401,12 @@ return
     }
   }
 
+  async handleOpenWebUI(): Promise<void> {
+    if (this.webUIWindow) {
+      this.webUIWindow.show()
+    }
+  }
+
   async handleShowResources(): Promise<void> {
     this.resourceManager.showResourceList()
   }
@@ -512,6 +529,11 @@ return
     // Close logs window if open
     if (this.logsWindow && !this.logsWindow.isDestroyed()) {
       this.logsWindow.close()
+    }
+
+    // Close Web UI window if open
+    if (this.webUIWindow) {
+      this.webUIWindow.destroy()
     }
 
     // Destroy resource manager
