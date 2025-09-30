@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Home, Users, Wrench, FolderOpen, Brain, Menu } from 'lucide-react'
+import { Hop as Home, Users, Wrench, FolderOpen, Brain, Menu } from 'lucide-react'
 import { useAppStore } from '~/lib/store'
 import clsx from 'clsx'
 
