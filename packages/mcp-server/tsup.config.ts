@@ -21,6 +21,7 @@ export default defineConfig({
   // 不打包外部依赖
   external: [
     '@promptx/core',
+    '@promptx/logger',
     'fastmcp',
     'zod',
     'express',

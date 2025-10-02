@@ -27,9 +27,6 @@ echo ""
 # 2. 构建 core
 echo "🔨 [2/4] 构建 @promptx/core..."
 cd packages/core
-if [ ! -d "node_modules" ]; then
-    npm install --legacy-peer-deps
-fi
 npm run build 2>&1 | grep -E "(Build success|error)" || true
 cd "$PROJECT_ROOT"
 echo "✅ core 构建完成"
@@ -38,9 +35,6 @@ echo ""
 # 3. 构建 mcp-server
 echo "🔨 [3/4] 构建 @promptx/mcp-server..."
 cd packages/mcp-server
-if [ ! -d "node_modules" ]; then
-    npm install --legacy-peer-deps
-fi
 npm run build 2>&1 | grep -E "(Build success|error)" || true
 cd "$PROJECT_ROOT"
 echo "✅ mcp-server 构建完成"

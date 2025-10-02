@@ -23,9 +23,11 @@ import type { ToolWorkerPool } from '~/interfaces/ToolWorkerPool.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const packageJson = require('../../package.json');
+// Simple package info without requiring package.json
+const packageJson = {
+  name: '@promptx/mcp-server',
+  version: '1.23.0'
+};
 
 const SESSION_ID_HEADER_NAME = "mcp-session-id";
 
