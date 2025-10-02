@@ -23,7 +23,9 @@ import type { ToolWorkerPool } from '~/interfaces/ToolWorkerPool.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import packageJson from '../../package.json\' assert { type: 'json' };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const packageJson = require('../../package.json');
 
 const SESSION_ID_HEADER_NAME = "mcp-session-id";
 
