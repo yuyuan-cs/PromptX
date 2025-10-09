@@ -24,6 +24,7 @@ class PromptXAPI {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json, text/event-stream',
         },
         body: JSON.stringify({
           jsonrpc: '2.0',
@@ -52,7 +53,19 @@ class PromptXAPI {
       }
 
       const sessionId = response.headers.get(SESSION_ID_HEADER)
-      const data = await response.json()
+      
+      // Parse SSE response
+      const text = await response.text()
+      const lines = text.split('\n')
+      let data = null
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.substring(6)
+          data = JSON.parse(jsonStr)
+          break
+        }
+      }
 
       console.log('Initialize response:', data)
       console.log('Session ID from header:', sessionId)
@@ -81,6 +94,7 @@ class PromptXAPI {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream',
         [SESSION_ID_HEADER]: this.sessionId,
       },
       body: JSON.stringify({
@@ -95,7 +109,22 @@ class PromptXAPI {
       throw new Error(`API call failed: ${response.statusText}`)
     }
 
-    const data = await response.json()
+    // Parse SSE response
+    const text = await response.text()
+    const lines = text.split('\n')
+    let data = null
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const jsonStr = line.substring(6)
+        data = JSON.parse(jsonStr)
+        break
+      }
+    }
+
+    if (!data) {
+      throw new Error('No data in response')
+    }
 
     if (data.error) {
       throw new Error(data.error.message || 'API error')

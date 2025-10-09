@@ -18,9 +18,9 @@ cd ~/project  # 或你的项目路径
 npm install
 
 # 3. 构建所有包（使用workspace）
-cd packages/logger && npm install && npm run build
-cd ../core && npm install && npm run build
-cd ../mcp-server && npm install && npm run build
+cd packages/logger && pnpm install && pnpm run build
+cd ../core && pnpm install && pnpm run build
+cd ../mcp-server && pnpm install && pnpm run build
 cd ../..
 
 # 4. 确保 Web UI 已构建
